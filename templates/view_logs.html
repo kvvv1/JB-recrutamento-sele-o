@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Logs do Sistema{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Logs do Sistema</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Usuário</th>
+                <th>Ação</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.id }}</td>
+                <td>{{ log.user_id }}</td>
+                <td>{{ log.action }}</td>
+                <td>{{ log.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

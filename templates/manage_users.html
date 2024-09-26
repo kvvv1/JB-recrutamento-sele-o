@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Usuários</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Gerenciamento de Usuários</h1>
+        
+        <!-- Formulário para adicionar novo usuário -->
+        <form method="POST" action="{{ url_for('add_user') }}">
+            <div class="mb-3">
+                <label for="username" class="form-label">Nome de Usuário</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label">Nome Completo</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">E-mail</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="is_admin" name="is_admin">
+                <label class="form-check-label" for="is_admin">Administrador</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Adicionar Usuário</button>
+        </form>
+        
+        <!-- Lista de usuários cadastrados com opção de edição -->
+        <h2 class="mt-4">Usuários Cadastrados</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome de Usuário</th>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Administrador</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ 'Sim' if user.is_admin else 'Não' }}</td>
+                    <td>
+                        <!-- Botão de Editar que abre um modal -->
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}">
+                            Editar
+                        </button>
+
+                        <!-- Modal para editar o usuário -->
+                        <div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ user.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editUserModalLabel{{ user.id }}">Editar Usuário</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
+                                            <div class="mb-3">
+                                                <label for="username{{ user.id }}" class="form-label">Nome de Usuário</label>
+                                                <input type="text" class="form-control" id="username{{ user.id }}" name="username" value="{{ user.username }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="name{{ user.id }}" class="form-label">Nome Completo</label>
+                                                <input type="text" class="form-control" id="name{{ user.id }}" name="name" value="{{ user.name }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="email{{ user.id }}" class="form-label">E-mail</label>
+                                                <input type="email" class="form-control" id="email{{ user.id }}" name="email" value="{{ user.email }}" required>
+                                            </div>
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="checkbox" id="is_admin{{ user.id }}" name="is_admin" {% if user.is_admin %}checked{% endif %}>
+                                                <label class="form-check-label" for="is_admin{{ user.id }}">Administrador</label>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

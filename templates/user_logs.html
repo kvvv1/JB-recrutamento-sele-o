@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Logs de Usuários{% endblock %}
+
+{% block content %}
+
+<style>
+    .btn-primary{
+        background-color: #AB1A18;
+        border-color: #AB1A18;
+    }
+</style>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Logs de Usuários</h1>
+
+    <!-- Filtros e Busca -->
+    <form method="GET" class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control" placeholder="Buscar por usuário ou ação" value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="user_id" class="form-control" placeholder="Filtrar por ID do Usuário" value="{{ user_id_filter }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="action" class="form-control" placeholder="Filtrar por Ação" value="{{ action_filter }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Filtrar e Buscar</button>
+        </div>
+    </form>
+
+    <!-- Tabela de Logs -->
+    <table class="table table-bordered table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ID do Usuário</th>
+                <th>Nome do Usuário</th>
+                <th>Ação</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.id }}</td>
+                <td>{{ log.user_id }}</td>
+                <td>{{ log.name }}</td>
+                <td>{{ log.action }}</td>
+                <td>{{ log.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Paginação -->
+    <nav aria-label="Navegação de página">
+        {{ pagination.links }}
+    </nav>
+</div>
+{% endblock %}

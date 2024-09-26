@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistema RS{% endblock %}
+
+{% block content %}
+
+<style>
+    .title-main {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #AB1A18;
+        text-transform: uppercase;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        letter-spacing: 1px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #AB1A18;
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .title-main:hover {
+        color: #8E1615;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-primary {
+        background-color: #AB1A18;
+        border-color: #AB1A18;
+    }
+
+    .btn-primary:hover {
+        background-color: #8E1615;
+        border-color: #8E1615;
+    }
+
+    .card {
+        border: solid 1px 1px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%; /* Garantir que todos os cards tenham a mesma altura */
+    }
+
+    .card-body {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .card-text {
+        font-size: 1rem;
+        color: #6c757d;
+        flex-grow: 1; /* O texto vai crescer para ocupar o espaço disponível */
+    }
+
+    .container {
+        margin-top: 3rem;
+    }
+
+    .row {
+        justify-content: center;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .card-footer {
+        margin-top: 10px;
+        background-color: white;
+        border: none;
+    }
+</style>
+
+<div class="container">
+    <h2 class="text-center mb-4 title-main">Sistema de Recrutamento e Seleção</h2>
+    <div class="row">
+        <!-- Gestão de Candidatos -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Gestão de Candidatos</h5>
+                    <p class="card-text">Gerencie os processos de recrutamento e selecione candidatos adequados para as vagas.</p>
+                    <div class="card-footer">
+                        <a href="{{ url_for('gestao_pessoas') }}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banco R&S -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Banco R&S</h5>
+                    <p class="card-text">Consulte e gerencie o banco de dados de candidatos para futuras seleções.</p>
+                    <div class="card-footer">
+                        <a href="{{ url_for('banco_rs') }}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

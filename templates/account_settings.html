@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações da Conta{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Configurações da Conta</h1>
+    
+    <!-- Exibe mensagens flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert alert-dismissible fade show">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    <form method="POST" onsubmit="return verificarSenha()">
+        <div class="mb-3">
+            <label for="name" class="form-label">Nome Completo</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ current_user.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">E-mail</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Senha (deixe em branco se não quiser alterar)</label>
+            <input type="password" class="form-control" id="password" name="password">
+        </div>
+        <div class="mb-3">
+            <label for="confirm_password" class="form-label">Confirme a Senha</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+        </div>
+        <button type="submit" class="btn" style="background-color: #AB1A18; color: white;">Atualizar Configurações</button>
+    </form>
+</div>
+
+<script>
+    function verificarSenha() {
+        var password = document.getElementById("password").value;
+        var confirmPassword = document.getElementById("confirm_password").value;
+
+        if (password !== confirmPassword) {
+            alert("As senhas não coincidem. Por favor, tente novamente.");
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

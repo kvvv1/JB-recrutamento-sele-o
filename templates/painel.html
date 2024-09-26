@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 240px;
+            padding: 20px;
+            background-color: #ffff;
+            color: black;
+            border-right: 3px solid #dee2e6;
+            transition: width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar .logo img {
+            width: 100%;
+        }
+
+        .sidebar.collapsed .logo img {
+            width: 150%;
+        }
+
+        .sidebar .toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: #ffffff;
+            color: black;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .sidebar .toggle-btn i {
+            color: black;
+        }
+
+        .sidebar.collapsed .toggle-btn {
+            width: 30px;
+            height: 30px;
+        }
+
+        .sidebar .nav-link {
+            color: black;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: start;
+            padding: 10px 10px;
+        }
+
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .nav-link-text,
+        .sidebar.collapsed .title {
+            display: none;
+        }
+
+        .content {
+            margin-left: 260px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content.collapsed {
+            margin-left: 80px;
+        }
+
+        .navbar-profile {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+        }
+
+        .navbar-profile i {
+            font-size: 40px;
+            color: black;
+            margin-right: 10px;
+        }
+
+        .navbar-profile a {
+            color: black;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .navbar-profile a:hover {
+            color: #AB1A18;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .status-espera {
+            color: #007bff;
+        }
+
+        .status-chamado {
+            color: #ffc107;
+        }
+
+        .status-concluido {
+            color: #28a745;
+        }
+
+        .ticket-details {
+            display: none;
+            background-color: #f9f9f9;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+        }
+
+        .ticket-details.visible {
+            display: table-row;
+        }
+
+        .details-container {
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #173145;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .title span.conservadora {
+            color: #AB1A18;
+        }
+
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-custom:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.875rem;
+            border-radius: 3px;
+        }
+
+        .btn-dark {
+            background-color: #343a40;
+            border-color: #343a40;
+        }
+
+        .loading-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .navbar-profile {
+                position: static;
+                text-align: center;
+            }
+
+            .form-group {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .table {
+                font-size: 0.8rem;
+            }
+
+            .title {
+                display: none;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+            }
+
+            .content {
+                margin-left: 100px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .navbar-profile {
+                font-size: 1rem;
+            }
+
+            .card-title {
+                font-size: 1.4rem;
+            }
+
+            .btn {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                margin-left: 120px;
+            }
+
+            .sidebar .nav-link-text {
+                display: none;
+            }
+
+            .table {
+                font-size: 1rem;
+            }
+        }
+
+        .form-group.d-flex {
+            align-items: center;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.875rem;
+            margin-right: 5px;
+        }
+
+        .form-control-sm {
+            max-width: 100px;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
+            /* Espaço entre os botões */
+        }
+
+        .hidden-actions {
+            display: none;
+            /* Oculta inicialmente os botões */
+        }
+
+        .visible-actions {
+            display: flex;
+            /* Mostra os botões Chamar e Concluir após o envio */
+        }
+
+        .toggle-details i {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-details i.fa-angle-up {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" id="toggle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="logo text-center py-3">
+            <img src="/static/images/logo2.png" alt="Logo" class="img-fluid">
+        </div>
+        <div class="title">
+            Sistema de Senha <span class="conservadora">JB Conservadora</span>
+        </div>
+        <ul class="nav flex-column px-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('home') }}">
+                    <i class="fas fa-home"></i> &nbsp;
+                    <span class="nav-link-text"> Página Inicial</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('indicadores') }}">
+                    <i class="fas fa-chart-bar"></i> &nbsp;
+                    <span class="nav-link-text"> Indicadores</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('display') }}" target="_blank">
+                    <i class="fas fa-tv"></i> &nbsp;
+                    <span class="nav-link-text">Painel da TV</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('historico_completo') }}">
+                    <i class="fas fa-history"></i> &nbsp;
+                    <span class="nav-link-text"> Histórico</span>
+                </a>
+            </li>
+            {% if current_user.is_admin %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-users-cog"></i> &nbsp;
+                    <span class="nav-link-text">Gerenciamento</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <div class="navbar-profile">
+        <i class="fas fa-user-circle"></i>
+        <div class="dropdown">
+            <a href="#" class="dropdown-toggle" id="profileDropdown" role="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                {{ current_user.name }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('account_settings') }}">Configurações da Conta</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content" id="content">
+        <h1 class="mb-4">Painel de Controle</h1>
+
+        <div id="loading-cpf" class="loading-message" style="display: none;">
+            <span>Aguarde...</span>
+        </div>
+
+        <div id="loading-ticket" class="loading-message" style="display: none;">
+            <span>Aguarde...</span>
+        </div>
+
+        <form id="cpf-form" class="form-inline mb-4">
+            <div class="form-group">
+                <label for="category">Categoria:</label>
+                <select name="category" id="category" class="form-control"
+                    onchange="toggleFields(); toggleRecruiterSelect();" required>
+                    <option value="Admissão">Admissão</option>
+                    <option value="Demissão">Demissão</option>
+                    <option value="Entrevista">Entrevista</option>
+                    <option value="Agendado">Agendado</option>
+                    <option value="Treinamento">Treinamento</option>
+                    <option value="Documentação">Documentação</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+            <br>
+            <div class="form-group" id="especifique-group" style="display: none;">
+                <label for="especificacao">Especifique:</label>
+                <input type="text" name="especificacao" id="especificacao" class="form-control"
+                    placeholder="Preencha a especificação">
+            </div>
+
+
+            <div class="form-group" id="recruiter-select" style="display: none;">
+                <label for="recruiter">Recrutador:</label>
+                <select name="recruiter" id="recruiter" class="form-control">
+                    <option value="samira.barbosa">Samira</option>
+                    <option value="nara.rodrigues">Nara</option>
+                    <option value="wilson.monteiro">Wilson</option>
+                    <option value="vivian.wanderley">Vivian</option>
+                    <option value="grasielle.mapa">Grasielle</option>
+                </select>
+            </div>
+            <br>
+            <div class="form-group">
+                <label for="cpf">CPF:</label>
+                <input type="text" name="cpf" id="cpf" class="form-control" required>
+            </div>
+            <br>
+            <button type="submit" class="btn btn-custom">Verificar CPF</button>
+        </form>
+
+        <div id="process-info" class="alert alert-warning alert-dismissible fade show" role="alert"
+            style="display: none;">
+            <strong>Atenção!</strong> O candidato <span id="candidate-name"></span> já participou do processo no dia
+            <span id="process-date"></span>. Situação: <span id="process-status"></span>.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div id="cpf-notification" class="notification"></div>
+
+        <form action="{{ url_for('create_ticket') }}" method="POST" class="mb-4" id="ticket-form"
+            style="display: none;">
+            <div class="form-group">
+                <label for="name">Nome Completo:</label>
+                <input type="text" name="name" id="name" class="form-control" required
+                    value="{{ form_data['name'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="cep">CEP:</label>
+                <div class="input-group">
+                    <input type="text" name="cep" id="cep" class="form-control" required value="{{ form_data['cep'] }}">
+                    <span class="input-group-text" onclick="buscarEndereco()">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="rua">Rua:</label>
+                <input type="text" name="rua" id="rua" class="form-control" required
+                    value="{{ form_data['rua'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="numero">Número:</label>
+                <input type="text" name="numero" id="numero" class="form-control" required
+                    value="{{ form_data['numero'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="complemento">Complemento:</label>
+                <input type="text" name="complemento" id="complemento" class="form-control"
+                    value="{{ form_data['complemento'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="bairro">Bairro:</label>
+                <input type="text" name="bairro" id="bairro" class="form-control" required
+                    value="{{ form_data['bairro'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="cidade">Cidade:</label>
+                <input type="text" name="cidade" id="cidade" class="form-control" required
+                    value="{{ form_data['cidade'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="telefones">Telefones:</label>
+                <input type="text" name="telefones" id="telefones" class="form-control" required
+                    value="{{ form_data['telefones'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="priority">Prioridade:</label>
+                <select name="priority" id="priority" class="form-control" required>
+                    <option value="0" {% if form_data['priority']=="0" %}selected{% endif %}>Normal</option>
+                    <option value="1" {% if form_data['priority']=="1" %}selected{% endif %}>Prioritário (Gestantes,
+                        Idosos)</option>
+                </select>
+            </div>
+            <input type="hidden" name="category" id="ticket-category">
+            <input type="hidden" name="recruiter" id="ticket-recruiter">
+            <input type="hidden" name="cpf" id="ticket-cpf">
+            <input type="hidden" name="especificacao" id="ticket-especificacao">
+            <br>
+            <button type="submit" class="btn btn-custom">Pegar Senha</button>
+        </form>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">Tickets em Espera</h5>
+                        <p class="card-text">{{ counts['Admissão'] + counts['Demissão'] + counts['Entrevista'] }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Tickets em Atendimento</h5>
+                        <p class="card-text">{{ called_tickets|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Tickets Concluídos</h5>
+                        <p class="card-text">{{ total_concluido }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mt-5">Últimos Tickets</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Status</th>
+                        <th>Guichê</th>
+                        <th>Última Atualização</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="ticket-list">
+                    {% for ticket in waiting_tickets %}
+                    <tr>
+                        <td>{{ ticket.ticket_number }}</td>
+                        <td>{{ ticket.name }}</td>
+                        <td>{{ ticket.category }}</td>
+                        <td class="status status-espera">EM ESPERA</td>
+                        <td id="guiche-{{ ticket.id }}">{{ ticket.guiche or 'Nenhum' }}</td>
+                        <td>{{ ticket.created_at | format_brazilian_date }}</td>
+                        <td>
+                            <div class="btn-container">
+                                <!-- Formulário de seleção do guichê e envio para TV -->
+                                <form action="{{ url_for('send_tv', id=ticket.id) }}" method="POST" class="d-inline"
+                                    onsubmit="sendToTV(event, '{{ ticket.id }}')">
+                                    <div class="form-group d-flex align-items-center">
+                                        <select name="guiche" id="guiche-select-{{ ticket.id }}"
+                                            class="form-control form-control-sm me-2" style="width:auto;" required>
+                                            <option value="1" {% if ticket.guiche=='1' %}selected{% endif %}>1</option>
+                                            <option value="2" {% if ticket.guiche=='2' %}selected{% endif %}>2</option>
+                                            <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3</option>
+                                            <option value="4" {% if ticket.guiche=='4' %}selected{% endif %}>4</option>
+                                            <option value="5" {% if ticket.guiche=='5' %}selected{% endif %}>5</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
+                                    </div>
+                                </form>
+
+                                <!-- Botões Chamar e Concluir, inicialmente escondidos até que o ticket seja enviado à TV -->
+                                <div id="actions-{{ ticket.id }}" class="visible-actions">
+                                    <form action="{{ url_for('call_with_alert', id=ticket.id) }}" method="POST"
+                                        class="d-inline" onsubmit="callTicket(event, '{{ ticket.id }}')">
+                                        <input type="hidden" name="guiche" id="guiche-input-call-{{ ticket.id }}"
+                                            value="{{ ticket.guiche }}">
+                                        <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+                                    </form>
+                                    <form action="{{ url_for('conclude_ticket', id=ticket.id) }}" method="POST"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm me-2"
+                                            onclick="validateAction(event, '{{ ticket.id }}')">Concluir</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <!-- Ícone de ver detalhes -->
+                            <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">
+                                <i class="fas fa-angle-down"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="details-{{ ticket.id }}" class="ticket-details">
+                        <td colspan="7">
+                            <div class="details-container">
+                                <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
+                                <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
+                                    ticket.called_at else 'Não chamado' }}</p>
+                                <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
+                                    ticket.concluded_at else 'Não concluído' }}</p>
+                                {% if ticket.category == 'Agendado' %}
+                                <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
+                                {% endif %}
+                                {% if ticket.category == 'Outros' %}
+                                <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
+                                {% endif %}
+                                <button class="btn btn-warning btn-sm"
+                                    onclick="openEditForm('{{ ticket.id }}')">Editar</button>
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for ticket in called_tickets %}
+                    <tr>
+                        <td>{{ ticket.ticket_number }}</td>
+                        <td>{{ ticket.name }}</td>
+                        <td>{{ ticket.category }}</td>
+                        <td class="status status-chamado">CHAMADO</td>
+                        <td id="guiche-{{ ticket.id }}">{{ ticket.guiche or 'Nenhum' }}</td>
+                        <td>{{ ticket.called_at | format_brazilian_date }}</td>
+                        <td>
+                            <div class="btn-container">
+                                <!-- Formulário de seleção do guichê e envio para TV -->
+                                <form action="{{ url_for('send_tv', id=ticket.id) }}" method="POST" class="d-inline"
+                                    onsubmit="sendToTV(event, '{{ ticket.id }}')">
+                                    <div class="form-group d-flex align-items-center">
+                                        <select name="guiche" id="guiche-select-{{ ticket.id }}"
+                                            class="form-control form-control-sm me-2" style="width:auto;" required>
+                                            <option value="1" {% if ticket.guiche=='1' %}selected{% endif %}>1</option>
+                                            <option value="2" {% if ticket.guiche=='2' %}selected{% endif %}>2</option>
+                                            <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3</option>
+                                            <option value="4" {% if ticket.guiche=='4' %}selected{% endif %}>4</option>
+                                            <option value="5" {% if ticket.guiche=='5' %}selected{% endif %}>5</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
+                                    </div>
+                                </form>
+
+                                <!-- Botões Chamar e Concluir, inicialmente escondidos até que o ticket seja enviado à TV -->
+                                <div id="actions-{{ ticket.id }}" class="visible-actions">
+                                    <form action="{{ url_for('call_with_alert', id=ticket.id) }}" method="POST"
+                                        class="d-inline" onsubmit="callTicket(event, '{{ ticket.id }}')">
+                                        <input type="hidden" name="guiche" id="guiche-input-call-{{ ticket.id }}"
+                                            value="{{ ticket.guiche }}">
+                                        <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+                                    </form>
+                                    <form action="{{ url_for('conclude_ticket', id=ticket.id) }}" method="POST"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm me-2"
+                                            onclick="validateAction(event, '{{ ticket.id }}')">Concluir</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <!-- Ícone de ver detalhes -->
+                            <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">
+                                <i class="fas fa-angle-down"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="details-{{ ticket.id }}" class="ticket-details">
+                        <td colspan="7">
+                            <div class="details-container">
+                                <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
+                                <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
+                                    ticket.called_at else 'Não chamado' }}</p>
+                                <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
+                                    ticket.concluded_at else 'Não concluído' }}</p>
+                                {% if ticket.category == 'Agendado' %}
+                                <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
+                                {% endif %}
+                                {% if ticket.category == 'Outros' %}
+                                <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
+                                {% endif %}
+                                <button class="btn btn-warning btn-sm"
+                                    onclick="openEditForm('{{ ticket.id }}')">Editar</button>
+
+
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for ticket in concluded_tickets %}
+                    <tr>
+                        <td>{{ ticket.ticket_number }}</td>
+                        <td>{{ ticket.name }}</td>
+                        <td>{{ ticket.category }}</td>
+                        <td class="status status-concluido">CONCLUÍDO</td>
+                        <td>{{ ticket.guiche }}</td>
+                        <td>{{ ticket.concluded_at | format_brazilian_date }}</td>
+                        <td>
+                            <!-- Texto Ver Detalhes -->
+                            <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">Ver
+                                Detalhes</button>
+                        </td>
+                    </tr>
+                    <tr id="details-{{ ticket.id }}" class="ticket-details">
+                        <td colspan="7">
+                            <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
+                            <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
+                                ticket.called_at else 'Não chamado' }}</p>
+                            <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
+                                ticket.concluded_at else 'Não concluído' }}</p>
+                            {% if ticket.category == 'Agendado' %}
+                            <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
+                            {% endif %}
+                            {% if ticket.category == 'Outros' %}
+                            <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
+                            {% endif %}
+
+                            <button class="btn btn-warning btn-sm"
+                                onclick="openEditForm('{{ ticket.id }}')">Editar</button>
+
+
+
+
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- Modal de Edição -->
+            <div class="modal fade" id="editTicketModal" tabindex="-1" aria-labelledby="editTicketModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editTicketModalLabel">Editar Ticket</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Formulário de Edição -->
+                            <form id="edit-ticket-form" action="{{ url_for('update_ticket') }}" method="POST">
+                                <!-- Campo oculto para o ID do ticket -->
+                                <input type="hidden" name="ticket_id" id="edit-ticket-id">
+
+                                <!-- Nome Completo -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-name">Nome Completo:</label>
+                                    <input type="text" name="name" id="edit-name" class="form-control" required>
+                                </div>
+
+                                <!-- Categoria -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-category">Categoria:</label>
+                                    <select name="category" id="edit-category" class="form-control" required
+                                        onchange="toggleFields(); toggleRecruiterSelect();">
+                                        <option value="Admissão">Admissão</option>
+                                        <option value="Demissão">Demissão</option>
+                                        <option value="Entrevista">Entrevista</option>
+                                        <option value="Agendado">Agendado</option>
+                                        <option value="Treinamento">Treinamento</option>
+                                        <option value="Documentação">Documentação</option>
+                                        <option value="Outros">Outros</option>
+                                    </select>
+                                </div>
+
+                                <!-- Campo de especificação (visível apenas para "Outros") -->
+                                <div class="form-group mb-3" id="edit-especifique-group" style="display: none;">
+                                    <label for="edit-especificacao">Especifique:</label>
+                                    <input type="text" name="especificacao" id="edit-especificacao"
+                                        class="form-control">
+                                </div>
+
+                                <!-- Recrutador (visível apenas para "Agendado") -->
+                                <div class="form-group mb-3" id="edit-recruiter-select" style="display: none;">
+                                    <label for="recruiter">Recrutador:</label>
+                                    <select name="recruiter" id="edit-recruiter" class="form-control">
+                                        <option value="samira.barbosa">Samira</option>
+                                        <option value="nara.rodrigues">Nara</option>
+                                        <option value="wilson.monteiro">Wilson</option>
+                                        <option value="vivian.wanderley">Vivian</option>
+                                        <option value="grasielle.mapa">Grasielle</option>
+                                    </select>
+                                </div>
+
+                                <!-- CPF -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-cpf">CPF:</label>
+                                    <input type="text" name="cpf" id="edit-cpf" class="form-control" required>
+                                </div>
+
+                                <!-- CEP -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-cep">CEP:</label>
+                                    <div class="input-group">
+                                        <input type="text" name="cep" id="edit-cep" class="form-control" required>
+                                        <span class="input-group-text" onclick="buscarEndereco()">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Rua -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-rua">Rua:</label>
+                                    <input type="text" name="rua" id="edit-rua" class="form-control" required>
+                                </div>
+
+                                <!-- Número -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-numero">Número:</label>
+                                    <input type="text" name="numero" id="edit-numero" class="form-control" required>
+                                </div>
+
+                                <!-- Complemento -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-complemento">Complemento:</label>
+                                    <input type="text" name="complemento" id="edit-complemento" class="form-control">
+                                </div>
+
+                                <!-- Bairro -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-bairro">Bairro:</label>
+                                    <input type="text" name="bairro" id="edit-bairro" class="form-control" required>
+                                </div>
+
+                                <!-- Cidade -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-cidade">Cidade:</label>
+                                    <input type="text" name="cidade" id="edit-cidade" class="form-control" required>
+                                </div>
+
+                                <!-- Telefones -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-telefones">Telefones:</label>
+                                    <input type="text" name="telefones" id="edit-telefones" class="form-control"
+                                        required>
+                                </div>
+
+                                <!-- Prioridade -->
+                                <div class="form-group mb-3">
+                                    <label for="edit-priority">Prioridade:</label>
+                                    <select name="priority" id="edit-priority" class="form-control" required>
+                                        <option value="0">Normal</option>
+                                        <option value="1">Prioritário (Gestantes, Idosos)</option>
+                                    </select>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Fechar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/verify_cpf.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mascaras.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+
+        function sendToTV(event, ticketId) {
+            event.preventDefault(); // Impede o envio tradicional do formulário
+
+            var guiche = document.getElementById('guiche-select-' + ticketId).value; // Obtém o guichê selecionado
+
+            // Envia a requisição via AJAX
+            fetch(`/send_tv/${ticketId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'guiche': guiche
+                })
+            }).then(response => {
+                if (response.ok) {
+                    // Atualiza a coluna correspondente ao guichê no DOM (tabela)
+                    document.getElementById('guiche-display-' + ticketId).innerText = guiche;
+                    alert('Enviado para o guichê ' + guiche);
+                } else {
+                    alert('Erro ao enviar para a TV.');
+                }
+            })
+        }
+
+        document.querySelectorAll('.btn-edit').forEach(button => {
+            button.addEventListener('click', function () {
+                const ticketId = this.getAttribute('data-id');
+                openEditForm(ticketId); // Chama a função ao clicar no botão de editar
+            });
+        });
+
+        function openEditForm(ticketId) {
+            // Faz a requisição para buscar os dados do ticket
+            fetch(`/get_ticket/${ticketId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Preenche os campos do modal com os dados do ticket
+                    document.getElementById('edit-ticket-id').value = data.id;
+                    document.getElementById('edit-name').value = data.name;
+                    document.getElementById('edit-category').value = data.category;
+                    document.getElementById('edit-cpf').value = data.cpf;
+                    document.getElementById('edit-cep').value = data.cep;
+                    document.getElementById('edit-rua').value = data.rua;
+                    document.getElementById('edit-numero').value = data.numero;
+                    document.getElementById('edit-complemento').value = data.complemento;
+                    document.getElementById('edit-bairro').value = data.bairro;
+                    document.getElementById('edit-cidade').value = data.cidade;
+                    document.getElementById('edit-telefones').value = data.telefones;
+                    document.getElementById('edit-priority').value = data.priority;
+
+                    // Preenche o recrutador e especificação, se necessário
+                    const recruiterSelect = document.getElementById('edit-recruiter');
+                    recruiterSelect.value = data.recruiter || '';
+
+                    // Carrega a especificação se a categoria for "Outros"
+                    document.getElementById('edit-especificacao').value = data.especificacao || '';
+
+                    // Exibe ou oculta os campos relevantes
+                    toggleFields(); // Verifica se deve mostrar o campo de especificação
+                    toggleRecruiterSelect(); // Verifica se deve mostrar o campo de recrutador
+
+                    // Se a categoria for "Outros", mostra o campo de especificação
+                    if (data.category === "Outros") {
+                        document.getElementById('edit-especifique-group').style.display = "block";
+                    } else {
+                        document.getElementById('edit-especifique-group').style.display = "none";
+                    }
+
+                    // Se a categoria for "Agendado", mostra o campo de recrutador
+                    if (data.category === "Agendado") {
+                        document.getElementById('edit-recruiter-select').style.display = "block";
+                    } else {
+                        document.getElementById('edit-recruiter-select').style.display = "none";
+                    }
+
+                    // Abre o modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editTicketModal'));
+                    editModal.show();
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar ticket:', error);
+                });
+        }
+
+
+        function toggleEditFields() {
+            const category = document.getElementById("edit-category").value;
+            const especifiqueGroup = document.getElementById("edit-especifique-group");
+            const recruiterSelect = document.getElementById("edit-recruiter-select");
+
+            if (category === "Outros") {
+                especifiqueGroup.style.display = "block";
+                document.getElementById('edit-especificacao').disabled = false;
+            } else {
+                especifiqueGroup.style.display = "none";
+                document.getElementById('edit-especificacao').disabled = true;
+            }
+
+            if (category === "Agendado") {
+                recruiterSelect.style.display = "block";
+            } else {
+                recruiterSelect.style.display = "none";
+            }
+        }
+
+        // Atualiza os campos dinamicamente quando a categoria é alterada no modal
+        document.getElementById('edit-category').addEventListener('change', toggleEditFields);
+
+
+        function toggleFields() {
+            var category = document.getElementById("category").value;
+            var especifiqueGroup = document.getElementById("especifique-group");
+            var recruiterSelect = document.getElementById("recruiter-select");
+
+            // Exibe o campo "Especifique" apenas quando a categoria é "Outros"
+            if (category === "Outros") {
+                especifiqueGroup.style.display = "block";
+                document.getElementById('especificacao').disabled = false; // Habilita o campo
+            } else {
+                especifiqueGroup.style.display = "none";
+                document.getElementById('especificacao').disabled = true; // Desabilita o campo quando não for 'Outros'
+            }
+
+
+            // Exibe o campo "Recrutador" apenas quando a categoria é "Agendado"
+            if (category === "Agendado") {
+                recruiterSelect.style.display = "block";
+            } else {
+                recruiterSelect.style.display = "none";
+            }
+        }
+
+        // Adiciona o evento de mudança na categoria
+        document.getElementById('category').addEventListener('change', toggleFields);
+
+        // Preenchendo os campos ocultos no submit do formulário
+        document.getElementById('ticket-form').addEventListener('submit', function (event) {
+            var recruiterElement = document.getElementById('recruiter');
+            var recruiter = recruiterElement && recruiterElement.style.display !== 'none' ? recruiterElement.value : '';
+            var category = document.getElementById('category').value;
+
+            // Captura o valor do campo de especificação
+            var especificacaoElement = document.getElementById('especificacao');
+            var especificacao = especificacaoElement ? especificacaoElement.value : ''; // Agora está capturando o valor
+
+            document.getElementById('ticket-recruiter').value = recruiter;
+            document.getElementById('ticket-category').value = category;
+            document.getElementById('ticket-especificacao').value = especificacao; // Envia o valor correto de especificacao
+        });
+
+
+
+        socket.on('update_guiche', function (data) {
+            var ticketId = data.ticket_id;
+            var guiche = data.guiche;
+            var guicheCell = document.getElementById(`guiche-${ticketId}`);
+            if (guicheCell) {
+                guicheCell.textContent = guiche;
+            }
+        });
+
+        function buscarEndereco() {
+            var cep = document.getElementById('cep').value.replace(/\D/g, '');
+
+            if (cep !== "") {
+                // Expressão regular para validar o CEP
+                var validacep = /^[0-9]{8}$/;
+
+                if (validacep.test(cep)) {
+                    // Mostrar a mensagem de "Aguarde..."
+                    document.getElementById('loading-ticket').style.display = 'flex';
+
+                    // Fetch para a API do ViaCEP
+                    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!("erro" in data)) {
+                                // Atualiza os campos com os valores retornados pela API
+                                document.getElementById('rua').value = data.logradouro || '';
+                                document.getElementById('bairro').value = data.bairro || '';
+                                document.getElementById('cidade').value = data.localidade || '';
+                            } else {
+                                alert("CEP não encontrado.");
+                            }
+                            // Esconde a mensagem de "Aguarde..."
+                            document.getElementById('loading-ticket').style.display = 'none';
+                        })
+                        .catch(error => {
+                            console.error("Erro ao buscar o endereço:", error);
+                            alert("Erro ao buscar o endereço.");
+                            // Esconde a mensagem de "Aguarde..."
+                            document.getElementById('loading-ticket').style.display = 'none';
+                        });
+                } else {
+                    alert("Formato de CEP inválido.");
+                }
+            } else {
+                alert("Por favor, preencha o campo CEP.");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[id^=guiche-select-]').forEach(function (selectElement) {
+                var ticketId = selectElement.id.split('-')[2];
+                var guicheInputCall = document.getElementById(`guiche-input-call-${ticketId}`);
+
+                // Se o guichê foi selecionado, atualize o campo oculto com o valor correto
+                if (selectElement.value) {
+                    guicheInputCall.value = selectElement.value;
+                }
+
+                // Atualiza o valor do guichê no campo oculto, mesmo após recarregar a página
+                if (selectElement.disabled && selectElement.value) {
+                    var actionsDiv = document.getElementById(`actions-${ticketId}`);
+                    actionsDiv.classList.remove('hidden-actions');
+                    actionsDiv.classList.add('visible-actions');
+                }
+            });
+        });
+
+
+
+        function validateAction(event, ticketId) {
+            var guicheSelect = document.getElementById(`guiche-select-${ticketId}`).value;
+
+            if (!guicheSelect) {
+                alert("Por favor, selecione um guichê antes de realizar esta ação.");
+                event.preventDefault(); // Evita a ação caso o guichê não esteja selecionado
+            }
+        }
+
+
+        function toggleRecruiterSelect() {
+            var category = document.getElementById('category').value;
+            var recruiterSelect = document.getElementById('recruiter-select');
+
+            if (category === 'Agendado') {
+                recruiterSelect.style.display = 'block';
+            } else {
+                recruiterSelect.style.display = 'none';
+            }
+        }
+
+        document.getElementById('category').addEventListener('change', toggleRecruiterSelect);
+
+        document.getElementById('ticket-form').addEventListener('submit', function (event) {
+            var recruiterElement = document.getElementById('recruiter');
+            var recruiter = recruiterElement && recruiterElement.style.display !== 'none' ? recruiterElement.value : '';
+            var category = document.getElementById('category').value;
+
+            document.getElementById('ticket-recruiter').value = recruiter;
+            document.getElementById('ticket-category').value = category;
+        });
+
+
+
+        socket.on('update_guiche', function (data) {
+            var ticketId = data.ticket_id;
+            var guiche = data.guiche;
+            var guicheCell = document.getElementById('guiche-display-' + ticketId);
+
+            if (guicheCell) {
+                guicheCell.textContent = guiche;
+            }
+        });
+
+
+        socket.on('new_ticket', function (ticketData) {
+            // Criar um novo elemento de linha para o ticket
+            var newRow = document.createElement('tr');
+            newRow.innerHTML = `
+        <td>${ticketData.ticket_number}</td>
+        <td>${ticketData.name}</td>
+        <td>${ticketData.category}</td>
+        <td class="status status-espera">EM ESPERA</td>
+        <td id="guiche-${ticketData.id}">${ticketData.guiche ? ticketData.guiche : 'Nenhum'}</td>
+        <td>${ticketData.created_at}</td>
+        <td>
+            <form action="/send_tv/${ticketData.id}" method="POST" class="d-inline" onsubmit="sendToTV(event, '${ticketData.id}')">
+                <div class="form-group d-flex align-items-center">
+                    <select name="guiche" id="guiche-select-${ticketData.id}" class="form-control form-control-sm me-2" style="width:auto;" required>
+                        <option value="" disabled></option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
+                </div>
+            </form>
+            <div id="actions-${ticketData.id}" class="d-flex align-items-center visible-actions">
+                <form action="/call_with_alert/${ticketData.id}" method="POST" class="d-inline" onsubmit="callTicket(event, '${ticketData.id}')">
+                    <input type="hidden" name="guiche" id="guiche-input-call-${ticketData.id}" value="">
+                    <button type="submit" class="btn btn-primary btn-sm me-2" onclick="validateAction(event, '${ticketData.id}')">Chamar</button>
+                </form>
+                <form action="/conclude_ticket/${ticketData.id}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-sm me-2" onclick="validateAction(event, '${ticketData.id}')">Concluir</button>
+                </form>
+            </div>
+        </td>
+    `;
+
+            // Adicionar a nova linha no topo da tabela de tickets
+            var ticketList = document.getElementById('ticket-list');
+            ticketList.insertBefore(newRow, ticketList.firstChild);
+        });
+
+
+
+
+        function updateHiddenInput(ticketId) {
+            var selectElement = document.getElementById(`guiche-select-${ticketId}`);
+            var hiddenInput = document.getElementById(`guiche-input-${ticketId}`);
+            var hiddenCallInput = document.getElementById(`guiche-input-call-${ticketId}`);
+
+            hiddenInput.value = selectElement.value;
+            hiddenCallInput.value = selectElement.value;
+        }
+
+        socket.on('update_queue', function (msg) {
+            location.reload();
+        });
+
+
+
+        document.querySelectorAll('.toggle-details').forEach(button => {
+            button.addEventListener('click', () => {
+                const ticketId = button.getAttribute('data-id');
+                const detailsRow = document.getElementById(`details-${ticketId}`);
+
+                if (detailsRow.classList.contains('visible')) {
+                    detailsRow.classList.remove('visible');
+                    // Voltar ao ícone de "Ver Detalhes"
+                    if (button.querySelector('i')) {
+                        button.querySelector('i').classList.replace('fa-angle-up', 'fa-angle-down');
+                    } else {
+                        button.textContent = 'Ver Detalhes';
+                    }
+                } else {
+                    detailsRow.classList.add('visible');
+                    // Mudar para ícone de "Ocultar Detalhes"
+                    if (button.querySelector('i')) {
+                        button.querySelector('i').classList.replace('fa-angle-down', 'fa-angle-up');
+                    } else {
+                        button.textContent = 'Ocultar Detalhes';
+                    }
+                }
+            });
+        });
+
+        function sendToTV(event, ticketId) {
+            event.preventDefault(); // Impede o envio tradicional do formulário
+
+            var guiche = document.getElementById('guiche-select-' + ticketId).value; // Obtém o guichê selecionado
+
+            if (!guiche) {
+                alert("Por favor, selecione um guichê.");
+                return;
+            }
+
+            // Envia a requisição via AJAX
+            fetch(`/send_tv/${ticketId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'guiche': guiche
+                })
+            })
+                .then(response => response.ok ? response.text() : Promise.reject('Erro'))
+                .then(data => {
+                    console.log('Response Data:', data);
+                    socket.emit('update_guiche', { ticket_id: ticketId, guiche: guiche });
+                    alert('Ticket enviado com sucesso para a TV');
+                })
+                .catch(error => {
+                    alert('Erro ao enviar o ticket para a TV: ' + error.message);
+                });
+        }
+
+
+        function callTicket(event, ticketId) {
+            event.preventDefault();
+            var form = event.target;
+            var guicheInput = document.getElementById(`guiche-input-call-${ticketId}`).value;
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({ guiche: guicheInput })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao chamar o ticket');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    if (data) {
+                        // Se houver dados, você pode processá-los aqui
+                        // Atualize a interface ou faça outra ação conforme necessário
+                    }
+                })
+                .catch(error => {
+                    alert(error.message); // Mostra o erro ao usuário
+                });
+        }
+
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            const content = document.getElementById('content');
+            content.classList.toggle('collapsed');
+        }
+
+        function validateCPF(cpf) {
+            cpf = cpf.replace(/[^\d]+/g, '');
+            if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+            var sum, rest;
+            sum = 0;
+            for (var i = 1; i <= 9; i++) sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+            rest = (sum * 10) % 11;
+            if (rest === 10 || rest === 11) rest = 0;
+            if (rest !== parseInt(cpf.substring(9, 10))) return false;
+            sum = 0;
+            for (var i = 1; i <= 10; i++) {
+                sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+            }
+            rest = (sum * 10) % 11;
+            if (rest === 10 || rest === 11) rest = 0;
+            if (rest !== parseInt(cpf.substring(10, 11))) return false;
+            return true;
+        }
+
+        document.getElementById('cpf-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            var cpf = document.getElementById('cpf').value;
+            var category = document.getElementById('category').value;
+
+            // Exibir a mensagem de "Aguarde..." enquanto a verificação é feita
+            document.getElementById('loading-cpf').style.display = 'flex';
+
+            if (!validateCPF(cpf)) {
+                var notification = document.getElementById('cpf-notification');
+                notification.textContent = 'CPF inválido. Por favor, insira um CPF válido.';
+                document.getElementById('loading-cpf').style.display = 'none';
+                return;
+            }
+
+            fetch('/verify_cpf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cpf: cpf, category: category })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var notification = document.getElementById('cpf-notification');
+                    notification.innerHTML = '';
+                    document.getElementById('loading-cpf').style.display = 'none';
+                    if (data.exists) {
+                        document.getElementById('name').value = data.name;
+                        document.getElementById('cep').value = data.cep || '';
+                        document.getElementById('rua').value = data.rua || '';
+                        document.getElementById('numero').value = data.numero || '';
+                        document.getElementById('complemento').value = data.complemento || '';
+                        document.getElementById('bairro').value = data.bairro || '';
+                        document.getElementById('cidade').value = data.localidade || '';
+                        document.getElementById('telefones').value = data.telefones || '';
+
+                        document.getElementById('ticket-form').style.display = 'block';
+                        document.getElementById('ticket-category').value = category;
+                        document.getElementById('ticket-cpf').value = cpf;
+                    } else {
+                        notification.textContent = 'CPF não encontrado. Prosseguindo com o cadastro.';
+                        document.getElementById('ticket-form').style.display = 'block';
+                        document.getElementById('ticket-category').value = category;
+                        document.getElementById('ticket-cpf').value = cpf;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    document.getElementById('loading-cpf').style.display = 'none';
+                });
+        });
+
+        document.getElementById('ticket-form').addEventListener('submit', function (event) {
+            document.getElementById('loading-ticket').style.display = 'flex';
+        });
+
+        function updateHiddenInput(ticketId) {
+            var selectElement = document.getElementById(`guiche-select-${ticketId}`);
+            var hiddenInput = document.getElementById(`guiche-input-${ticketId}`);
+            var hiddenCallInput = document.getElementById(`guiche-input-call-${ticketId}`);
+            hiddenInput.value = selectElement.value;
+            hiddenCallInput.value = selectElement.value;
+        }
+
+
+    </script>
+
+</body>
+
+</html>

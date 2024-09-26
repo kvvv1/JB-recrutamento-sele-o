@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha do Candidato</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            width: 150px;
+        }
+        h1, h2, h4 {
+            color: #AB1A18;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .form-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="https://imgur.com/a/fSi6hDR" alt="Logo">
+        <h1>Ficha de Inscrição</h1>
+        <h2>{{ form_data.nome_completo }}</h2>
+    </div>
+
+    <div class="form-section">
+        <h4>Informações Pessoais</h4>
+        <table class="table">
+            <tr>
+                <th>Nome Completo</th>
+                <td>{{ form_data.nome_completo }}</td>
+            </tr>
+            <tr>
+                <th>Estado Civil</th>
+                <td>{{ form_data.estado_civil }}</td>
+            </tr>
+            <tr>
+                <th>Telefone</th>
+                <td>{{ form_data.telefone }}</td>
+            </tr>
+            <tr>
+                <th>Data de Nascimento</th>
+                <td>{{ form_data.data_nasc }}</td>
+            </tr>
+            <tr>
+                <th>Idade</th>
+                <td>{{ form_data.idade }}</td>
+            </tr>
+            <tr>
+                <th>Gênero</th>
+                <td>{{ form_data.genero }}</td>
+            </tr>
+            <tr>
+                <th>Fumante</th>
+                <td>{{ form_data.fumante }}</td>
+            </tr>
+            <tr>
+                <th>Bebida</th>
+                <td>{{ form_data.bebida }}</td>
+            </tr>
+            <tr>
+                <th>Alergia</th>
+                <td>{{ form_data.alergia }}</td>
+            </tr>
+            <tr>
+                <th>Medicamento de Uso Constante</th>
+                <td>{{ form_data.medicamento_constante }}</td>
+            </tr>
+            <tr>
+                <th>Qual Medicamento</th>
+                <td>{{ form_data.qual_medicamento }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Endereço</h4>
+        <table class="table">
+            <tr>
+                <th>CEP</th>
+                <td>{{ form_data.cep }}</td>
+            </tr>
+            <tr>
+                <th>Endereço</th>
+                <td>{{ form_data.endereco }}</td>
+            </tr>
+            <tr>
+                <th>Número</th>
+                <td>{{ form_data.numero }}</td>
+            </tr>
+            <tr>
+                <th>Complemento</th>
+                <td>{{ form_data.complemento }}</td>
+            </tr>
+            <tr>
+                <th>Bairro</th>
+                <td>{{ form_data.bairro }}</td>
+            </tr>
+            <tr>
+                <th>Cidade</th>
+                <td>{{ form_data.cidade }}</td>
+            </tr>
+            <tr>
+                <th>Estado</th>
+                <td>{{ form_data.estado_nasc }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Documentação</h4>
+        <table class="table">
+            <tr>
+                <th>Identidade</th>
+                <td>{{ form_data.identidade }}</td>
+            </tr>
+            <tr>
+                <th>CPF</th>
+                <td>{{ form_data.cpf }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Características Físicas</h4>
+        <table class="table">
+            <tr>
+                <th>Peso</th>
+                <td>{{ form_data.peso }}</td>
+            </tr>
+            <tr>
+                <th>Cor da Pele</th>
+                <td>{{ form_data.cor_pele }}</td>
+            </tr>
+            <tr>
+                <th>Tatuagem</th>
+                <td>{{ form_data.tatuagem }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Cursos Realizados</h4>
+        <table class="table">
+            <tr>
+                <th>Descrição dos Cursos</th>
+                <td>{{ form_data.cursos }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Empregos Anteriores</h4>
+        <table class="table">
+            <tr>
+                <th>Empresa 1</th>
+                <td>{{ form_data.empresa1 }}</td>
+            </tr>
+            <tr>
+                <th>Cidade</th>
+                <td>{{ form_data.cidade1 }}</td>
+            </tr>
+            <tr>
+                <th>Função</th>
+                <td>{{ form_data.funcao1 }}</td>
+            </tr>
+            <tr>
+                <th>Data de Admissão</th>
+                <td>{{ form_data.data_admissao1 }}</td>
+            </tr>
+            <tr>
+                <th>Data de Saída</th>
+                <td>{{ form_data.data_saida1 }}</td>
+            </tr>
+            <tr>
+                <th>Motivo da Saída</th>
+                <td>{{ form_data.motivo_saida1 }}</td>
+            </tr>
+            <tr>
+                <th>Salário</th>
+                <td>{{ form_data.salario1 }}</td>
+            </tr>
+        </table>
+
+        <table class="table">
+            <tr>
+                <th>Empresa 2</th>
+                <td>{{ form_data.empresa2 }}</td>
+            </tr>
+            <tr>
+                <th>Cidade</th>
+                <td>{{ form_data.cidade2 }}</td>
+            </tr>
+            <tr>
+                <th>Função</th>
+                <td>{{ form_data.funcao2 }}</td>
+            </tr>
+            <tr>
+                <th>Data de Admissão</th>
+                <td>{{ form_data.data_admissao2 }}</td>
+            </tr>
+            <tr>
+                <th>Data de Saída</th>
+                <td>{{ form_data.data_saida2 }}</td>
+            </tr>
+            <tr>
+                <th>Motivo da Saída</th>
+                <td>{{ form_data.motivo_saida2 }}</td>
+            </tr>
+            <tr>
+                <th>Salário</th>
+                <td>{{ form_data.salario2 }}</td>
+            </tr>
+        </table>
+
+        <table class="table">
+            <tr>
+                <th>Empresa 3</th>
+                <td>{{ form_data.empresa3 }}</td>
+            </tr>
+            <tr>
+                <th>Cidade</th>
+                <td>{{ form_data.cidade3 }}</td>
+            </tr>
+            <tr>
+                <th>Função</th>
+                <td>{{ form_data.funcao3 }}</td>
+            </tr>
+            <tr>
+                <th>Data de Admissão</th>
+                <td>{{ form_data.data_admissao3 }}</td>
+            </tr>
+            <tr>
+                <th>Data de Saída</th>
+                <td>{{ form_data.data_saida3 }}</td>
+            </tr>
+            <tr>
+                <th>Motivo da Saída</th>
+                <td>{{ form_data.motivo_saida3 }}</td>
+            </tr>
+            <tr>
+                <th>Salário</th>
+                <td>{{ form_data.salario3 }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Empregos Informais</h4>
+        <p>{{ form_data.empregos_informais }}</p>
+    </div>
+
+    <div class="form-section">
+        <h4>Regiões de Preferência para Trabalhar</h4>
+        <table class="table">
+            <tr>
+                <th>Regiões</th>
+                <td>{{ form_data.regioes_preferencia }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Disponibilidade de Horário</h4>
+        <table class="table">
+            <tr>
+                <th>Disponibilidade</th>
+                <td>{{ form_data.disponibilidade_horario }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Avaliações</h4>
+        <table class="table">
+            <tr>
+                <th>Avaliação RH</th>
+                <td>{{ form_data.avaliacao_rh }}</td>
+            </tr>
+            <tr>
+                <th>Avaliação Gerência</th>
+                <td>{{ form_data.avaliacao_gerencia }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Observações</h4>
+        <p>{{ form_data.observacoes }}</p>
+    </div>
+
+</body>
+
+
+<script src="{{ url_for('static', filename='js/verificarCPF.js') }}"></script>
+
+</html>

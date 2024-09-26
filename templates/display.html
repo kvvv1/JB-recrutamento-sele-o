@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de TV</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff; /* Cor de fundo leve para contraste com o texto */
+            font-family: 'Poppins', sans-serif;
+            color: #333; /* Cor padrão do texto para legibilidade */
+        }
+        .container {
+            max-width: 100%;
+            padding: 20px;
+        }
+        .current-call {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            background-color: #fff; /* Cor de fundo da área de chamada atual */
+            border: 2.5px solid #AB1A18; /* Cor da borda para contraste */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            color: black; /* Cor do texto na área de chamada atual */
+        }
+        .current-call .ticket-info, .current-call .guiche-info {
+            flex: 1;
+            position: relative;
+        }
+        .current-call .header {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #AB1A18; /* Cor do cabeçalho "Senha Atual" e "Guichê" */
+        }
+        .current-call .ticket-number {
+            font-size: 5em;
+            font-weight: bold;
+            color: black; /* Cor do número da senha */
+            word-break: break-all;
+        }
+        .current-call .guiche-info {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: black; /* Cor do texto da informação de guichê */
+            margin-top: 10px;
+        }
+        .current-call .name {
+            font-size: 4em;
+            font-weight: bold;
+            color: black; /* Cor do nome do cliente */
+        }
+        .current-call .current-time {
+            font-size: 1.5em;
+            font-weight: normal;
+            color: black; /* Cor do horário atual */
+            margin-top: 10px;
+        }
+        .logo-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 15%;
+            opacity: 0.8; /* Opacidade ajustada para o logo de fundo */
+        }
+        .previous-calls {
+            padding: 20px;
+            background-color: #ffffff; /* Fundo branco para contraste com as chamadas anteriores */
+            border: 2.5px solid #AB1A18; /* Cor da borda das chamadas anteriores */
+            border-radius: 10px;
+            overflow-y: auto;
+        }
+        .previous-calls .header {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #AB1A18; /* Cor do cabeçalho "Chamadas Recentes" */
+            text-align: center;
+        }
+        .call-info-container {
+            width: 100%;
+        }
+        .call-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-bottom: 1px solid #dcdcdc; /* Linha de separação das chamadas */
+        }
+        .call-info .name {
+            font-size: 1.5em;
+            font-weight: bold;
+            flex: 2;
+            color: #173145; /* Cor do nome nas chamadas recentes */
+        }
+        .call-info .ticket-number,
+        .call-info .guiche-info,
+        .call-info .call-time {
+            font-weight: bold;
+            flex: 1;
+            text-align: left;
+        }
+        .call-info .ticket-number {
+            color: #AB1A18; /* Cor do número da senha nas chamadas recentes */
+        }
+        .call-info .guiche-info {
+            color: #173145; /* Cor da informação do guichê nas chamadas recentes */
+        }
+        .call-info .call-time {
+            color: #6c757d; /* Cor do horário nas chamadas recentes */
+        }
+        .footer {
+            background-color: #343a40; /* Cor de fundo do rodapé */
+            color: white; /* Cor do texto do rodapé */
+            text-align: center;
+            padding: 20px 0;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="current-call">
+            <!-- Logo centralizada entre "Senha Atual" e "Guichê" -->
+            <img src="/static/images/logo2.png" alt="Logo" class="logo-center">
+            
+            <div class="ticket-info">
+                <div class="header">SENHA ATUAL</div>
+                <div class="ticket-number" id="current-ticket-number">N/A</div>
+                <div class="name" id="current-name">N/A</div>
+                <div class="current-time" id="current-ticket-time">N/A</div>
+            </div>
+            <div class="guiche-info">
+                <div class="header">GUICHÊ</div>
+                <div id="current-guiche">N/A</div>
+            </div>
+        </div>
+
+        <div class="previous-calls">
+            <div class="header">Chamadas Recentes</div>
+            <div class="call-info-container">
+                {% for ticket in called_tickets %}
+                <div class="call-info">
+                    <div class="name">{{ ticket.name | first_and_second_name }}</div>
+                    <div class="ticket-number">SENHA: {{ ticket.ticket_number }}</div>
+                    <div class="guiche-info">GUICHÊ: {{ ticket.guiche }}</div>
+                    <div class="call-time">{{ ticket.called_at }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Horário de Brasília: <span id="current-time"></span>
+    </div>
+
+    <audio id="alert-sound" src="../static/css/sounds/alert.mp3" preload="auto"></audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        function updateTime() {
+            var now = new Date();
+            var options = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' };
+            var timeString = now.toLocaleTimeString('pt-BR', options);
+            document.getElementById('current-time').textContent = timeString;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('update_display', function (data) {
+    document.getElementById('current-ticket-number').textContent = data.current_ticket_number;
+    document.getElementById('current-guiche').textContent = data.current_guiche;
+    document.getElementById('current-name').textContent = data.current_name;
+    document.getElementById('current-ticket-time').textContent = data.current_time || 'N/A';  // Atualiza o horário de chamado
+
+    // Atualiza as chamadas recentes
+    var recentCallsContainer = document.querySelector('.previous-calls .call-info-container');
+    recentCallsContainer.innerHTML = '';  // Limpa as entradas anteriores
+
+    data.called_tickets.forEach(function (ticket) {
+        var callInfo = document.createElement('div');
+        callInfo.className = 'call-info';
+        callInfo.innerHTML = `
+            <div class="name">${ticket.name}</div>
+            <div class="ticket-number">SENHA: ${ticket.ticket_number}</div>
+            <div class="guiche-info">GUICHÊ: ${ticket.guiche}</div>
+            <div class="call-time">${ticket.called_at}</div>
+        `;
+        recentCallsContainer.appendChild(callInfo);
+    });
+
+    if (data.play_audio) {
+        var audio = document.getElementById('alert-sound');
+        audio.play().then(function () {
+            var announcement = "Chamando " + data.current_name +
+                ", senha " + data.current_ticket_number +
+                ", para o guichê " + data.current_guiche + ".";
+            readOutLoud(announcement);
+        }).catch(function (error) {
+            console.error("Erro ao reproduzir o som de alerta:", error);
+            var announcement = "Chamando " + data.current_name +
+                ", senha " + data.current_ticket_number +
+                ", para o guichê " + data.current_guiche + ".";
+            readOutLoud(announcement);
+        });
+    }
+});
+
+
+        function readOutLoud(text) {
+            var msg = new SpeechSynthesisUtterance(text);
+            msg.rate = 0.8;  // Ajuste para falar mais devagar
+            window.speechSynthesis.speak(msg);
+        }
+    </script>
+</body>
+</html>

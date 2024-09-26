@@ -1,0 +1,671 @@
+{% extends 'base.html' %}
+
+{% block title %}Banco R&S{% endblock %}
+
+{% block content %}
+
+<style>
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 250px;
+        z-index: 1050;
+        padding: 10px 15px;
+        background-color: #AB1A18;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: left 0.3s ease;
+    }
+
+    .back-button:hover {
+        background-color: #8E1615;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background-color: #AB1A18;
+        border-color: #AB1A18;
+    }
+
+    .btn-primary:hover {
+        background-color: #8E1615;
+        border-color: #8E1615;
+    }
+
+    .btn-criar {
+        position: relative;
+        /* Relativo à posição onde está inserido no fluxo da página */
+        float: right;
+        /* Faz com que o botão vá para o canto direito do contêiner em que está */
+        margin-bottom: 20px;
+        /* Espaçamento abaixo do botão para não ficar muito grudado na tabela */
+        padding: 10px 20px;
+        background-color: #AB1A18;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .btn-criar:hover {
+        background-color: #8E1615;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-3px);
+    }
+
+    .btn-criar i {
+        margin-right: 5px;
+    }
+
+
+    .no-results {
+        text-align: center;
+        color: #AB1A18;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+</style>
+
+<a href="{{ url_for('sistema_rs') }}" class="back-button">
+    <i class="fas fa-arrow-left"></i>
+    Voltar
+</a>
+
+
+{% if msg %}
+<div class="alert alert-warning">{{ msg }}</div>
+{% endif %}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Banco de Recrutamento e Seleção</h2>
+
+    <!-- Filtros de Pesquisa -->
+    <!-- Filtros de Pesquisa -->
+    <form method="GET" action="{{ url_for('banco_rs') }}">
+        <div class="row mb-4">
+            <!-- Filtro por Nome Completo -->
+            <div class="col-md-4">
+                <label for="nome">Nome Completo</label>
+                <input type="text" class="form-control" id="nome" name="nome"
+                    value="{{ request.args.get('nome', '') }}">
+            </div>
+
+            <!-- Filtro por CPF -->
+            <div class="col-md-4">
+                <label for="cpf">CPF</label>
+                <input type="text" class="form-control" id="cpf" name="cpf" value="{{ request.args.get('cpf', '') }}">
+            </div>
+
+            <!-- Filtro por Gênero -->
+            <div class="col-md-4">
+                <label for="genero">Genêro </label>
+                <select class="form-control" id="genero" name="genero">
+                    <option value="" selected>Todos</option>
+                    <option value="Homem" {% if request.args.get('genero')=='Masculino' %}selected{% endif %}>
+                        Masculino</option>
+                    <option value="Mulher" {% if request.args.get('genero')=='Feminino' %}selected{% endif %}>Feminino
+                    </option>
+                </select>
+            </div>
+
+            <!-- Filtro por Estado Civil -->
+            <div class="col-md-4">
+                <label for="estado_civil">Estado Civil</label>
+                <select class="form-control" id="estado_civil" name="estado_civil">
+                    <option value="" selected>Todos</option>
+                    <option value="Solteiro" {% if request.args.get('estado_civil')=='Solteiro' %}selected{% endif %}>
+                        Solteiro</option>
+                    <option value="Casado" {% if request.args.get('estado_civil')=='Casado' %}selected{% endif %}>Casado
+                    </option>
+                    <option value="Divorciado" {% if request.args.get('estado_civil')=='Divorciado' %}selected{% endif
+                        %}>Divorciado</option>
+                    <option value="Viúvo" {% if request.args.get('estado_civil')=='Viúvo' %}selected{% endif %}>Viúvo
+                    </option>
+                </select>
+            </div>
+
+            <!-- Filtro por Data de Nascimento -->
+            <div class="col-md-4">
+                <label for="data_nasc_inicio">Data de Nascimento - Início</label>
+                <input type="date" class="form-control" id="data_nasc_inicio" name="data_nasc_inicio"
+                    value="{{ request.args.get('data_nasc_inicio') }}">
+            </div>
+            <div class="col-md-4">
+                <label for="data_nasc_fim">Data de Nascimento - Fim</label>
+                <input type="date" class="form-control" id="data_nasc_fim" name="data_nasc_fim"
+                    value="{{ request.args.get('data_nasc_fim') }}">
+            </div>
+
+            <!-- Filtro por Idade -->
+            <div class="col-md-4">
+                <label for="idade_min">Idade Mínima</label>
+                <input type="number" class="form-control" id="idade_min" name="idade_min"
+                    value="{{ request.args.get('idade_min') }}">
+            </div>
+            <div class="col-md-4">
+                <label for="idade_max">Idade Máxima</label>
+                <input type="number" class="form-control" id="idade_max" name="idade_max"
+                    value="{{ request.args.get('idade_max') }}">
+            </div>
+
+            <!-- Filtro por Fumante -->
+            <div class="col-md-4">
+                <label for="fumante">Fumante</label>
+                <select class="form-control" id="fumante" name="fumante">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim" {% if request.args.get('fumante')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('fumante')=='Não' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Bebida -->
+            <div class="col-md-4">
+                <label for="bebida">Bebida</label>
+                <select class="form-control" id="bebida" name="bebida">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim" {% if request.args.get('bebida')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('bebida')=='Não' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Alergia -->
+            <div class="col-md-4">
+                <label for="alergia">Alergia</label>
+                <select class="form-control" id="alergia" name="alergia">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim" {% if request.args.get('alergia')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('alergia')=='Não' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Medicamento de Uso Constante -->
+            <div class="col-md-4">
+                <label for="medicamento">Medicamento de Uso Constante</label>
+                <select class="form-control" id="medicamento" name="medicamento">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim" {% if request.args.get('medicamento')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('medicamento')=='Não' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+
+            <!-- Filtro por PCD -->
+            <div class="col-md-4">
+                <label for="pcd">PCD (Pessoa com Deficiência)</label>
+                <select class="form-control" id="pcd" name="pcd">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim" {% if request.args.get('pcd')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('pcd')=='Não' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Tatuagem -->
+            <div class="col-md-4">
+                <label for="tatuagem">Tatuagem</label>
+                <select class="form-control" id="tatuagem" name="tatuagem">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim, Visível" {% if request.args.get('tatuagem')=='Sim, Visível' %}selected{% endif
+                        %}>Sim, Visível</option>
+                    <option value="Sim" {% if request.args.get('tatuagem')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('tatuagem')=='Não' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Regiões de Preferência -->
+            <div class="col-md-4">
+                <label for="regioes_preferencia">Regiões de Preferência</label>
+                <select class="form-control" id="regioes_preferencia" name="regioes_preferencia">
+                    <option value="" selected>Todas</option>
+                    <option value="Região Barreiro" {% if request.args.get('regioes_preferencia')=='Região Barreiro'
+                        %}selected{% endif %}>Região Barreiro</option>
+                    <option value="Região Centro Sul" {% if request.args.get('regioes_preferencia')=='Região Centro Sul'
+                        %}selected{% endif %}>Região Centro Sul</option>
+                    <option value="Região Leste" {% if request.args.get('regioes_preferencia')=='Região Leste'
+                        %}selected{% endif %}>Região Leste</option>
+                    <option value="Região Nordeste" {% if request.args.get('regioes_preferencia')=='Região Nordeste'
+                        %}selected{% endif %}>Região Nordeste</option>
+                    <option value="Região Noroeste" {% if request.args.get('regioes_preferencia')=='Região Noroeste'
+                        %}selected{% endif %}>Região Noroeste</option>
+                    <option value="Região Norte" {% if request.args.get('regioes_preferencia')=='Região Norte'
+                        %}selected{% endif %}>Região Norte</option>
+                    <option value="Região Oeste" {% if request.args.get('regioes_preferencia')=='Região Oeste'
+                        %}selected{% endif %}>Região Oeste</option>
+                    <option value="Região Pampulha" {% if request.args.get('regioes_preferencia')=='Região Pampulha'
+                        %}selected{% endif %}>Região Pampulha</option>
+                    <option value="Região Venda Nova" {% if request.args.get('regioes_preferencia')=='Região Venda Nova'
+                        %}selected{% endif %}>Região Venda Nova</option>
+                </select>
+
+            </div>
+
+            <!-- Filtro por Disponibilidade de Horário -->
+            <div class="col-md-4">
+                <label for="disponibilidade_horario">Disponibilidade de Horário</label>
+                <select class="form-control" id="disponibilidade_horario" name="disponibilidade_horario">
+                    <option value="" selected>Todos</option>
+                    <option value="44h (Horário Comercial)" {% if
+                        request.args.get('disponibilidade_horario')=='44h (Horário Comercial)' %}selected{% endif %}>44h
+                        (Horário Comercial)</option>
+                    <option value="12x36 Dia" {% if request.args.get('disponibilidade_horario')=='12x36 Dia'
+                        %}selected{% endif %}>12x36 Dia</option>
+                    <option value="12x36 Noite" {% if request.args.get('disponibilidade_horario')=='12x36 Noite'
+                        %}selected{% endif %}>12x36 Noite</option>
+                    <option value="Feirista" {% if request.args.get('disponibilidade_horario')=='Feirista' %}selected{%
+                        endif %}>Feirista</option>
+                </select>
+            </div>
+            <!-- Filtro por Cargo Indicado -->
+            <div class="col-md-4">
+                <label for="cargo_indicado">Cargo Indicado</label>
+                <select class="form-control" id="cargo_indicado" name="cargo_indicado">
+                    <option value="" selected>Todos</option>
+                    <option value="Portaria" {% if request.args.get('cargo_indicado')=='Portaria' %}selected{% endif %}>
+                        Portaria</option>
+                    <option value="Manutenção" {% if request.args.get('cargo_indicado')=='Manutenção' %}selected{% endif
+                        %}>Manutenção</option>
+                    <option value="Administrativo" {% if request.args.get('cargo_indicado')=='Administrativo'
+                        %}selected{% endif %}>Administrativo</option>
+                    <option value="Jovem Aprendiz Limpeza" {% if
+                        request.args.get('cargo_indicado')=='Jovem Aprendiz Limpeza' %}selected{% endif %}>Jovem
+                        Aprendiz Limpeza</option>
+                    <option value="Jovem Aprendiz Administrativo" {% if
+                        request.args.get('cargo_indicado')=='Jovem Aprendiz Administrativo' %}selected{% endif %}>Jovem
+                        Aprendiz Administrativo</option>
+                    <option value="Manobrista" {% if request.args.get('cargo_indicado')=='Manobrista' %}selected{% endif
+                        %}>Manobrista</option>
+                    <option value="Recepcionista" {% if request.args.get('cargo_indicado')=='Recepcionista' %}selected{%
+                        endif %}>Recepcionista</option>
+                    <option value="ASG" {% if request.args.get('cargo_indicado')=='ASG' %}selected{% endif %}>ASG
+                    </option>
+                </select>
+            </div>
+
+
+            <!-- Filtro por Avaliação RH -->
+            <div class="col-md-4">
+                <label for="avaliacao_rh">Avaliação RH</label>
+                <select class="form-control" id="avaliacao_rh" name="avaliacao_rh">
+                    <option value="" selected>Todos</option>
+                    <option value="Aprovado" {% if request.args.get('avaliacao_rh')=='Aprovado' %}selected{% endif %}>
+                        Aprovado</option>
+                    <option value="Reprovado" {% if request.args.get('avaliacao_rh')=='Reprovado' %}selected{% endif %}>
+                        Reprovado</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Avaliação Gerência -->
+            <div class="col-md-4">
+                <label for="avaliacao_gerencia">Avaliação Gestor</label>
+                <select class="form-control" id="avaliacao_gerencia" name="avaliacao_gerencia">
+                    <option value="" selected>Todos</option>
+                    <option value="Aprovado" {% if request.args.get('avaliacao_gerencia')=='Aprovado' %}selected{% endif
+                        %}>Aprovado</option>
+                    <option value="Reprovado" {% if request.args.get('avaliacao_gerencia')=='Reprovado' %}selected{%
+                        endif %}>Reprovado</option>
+                    <option value="Em Conversa" {% if request.args.get('avaliacao_gerencia')=='Em Conversa' %}selected{%
+                        endif %}>Em Conversa</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Botões de Filtrar e Limpar -->
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{{ url_for('banco_rs') }}" class="btn btn-secondary">Limpar Filtros</a>
+        </div>
+    </form>
+    <!-- Linha horizontal -->
+    <hr>
+
+    <!-- Exibição dos filtros selecionados -->
+    <div class="mt-3">
+        <h5>Filtros Selecionados:</h5>
+        <ul>
+            {% if request.args.get('nome') %}
+            <li><strong>Nome Completo:</strong> {{ request.args.get('nome') }}</li>
+            {% endif %}
+            {% if request.args.get('cpf') %}
+            <li><strong>CPF:</strong> {{ request.args.get('cpf') }}</li>
+            {% endif %}
+            {% if request.args.get('genero') %}
+            <li><strong>Genêro:</strong> {{ request.args.get('genero') }}</li>
+            {% endif %}
+            {% if request.args.get('estado_civil') %}
+            <li><strong>Estado Civil:</strong> {{ request.args.get('estado_civil') }}</li>
+            {% endif %}
+            {% if request.args.get('data_nasc_inicio') %}
+            <li><strong>Data de Nascimento (Início):</strong> {{ request.args.get('data_nasc_inicio') }}</li>
+            {% endif %}
+            {% if request.args.get('data_nasc_fim') %}
+            <li><strong>Data de Nascimento (Fim):</strong> {{ request.args.get('data_nasc_fim') }}</li>
+            {% endif %}
+            {% if request.args.get('idade_min') %}
+            <li><strong>Idade Mínima:</strong> {{ request.args.get('idade_min') }}</li>
+            {% endif %}
+            {% if request.args.get('idade_max') %}
+            <li><strong>Idade Máxima:</strong> {{ request.args.get('idade_max') }}</li>
+            {% endif %}
+            {% if request.args.get('fumante') %}
+            <li><strong>Fumante:</strong> {{ request.args.get('fumante') }}</li>
+            {% endif %}
+            {% if request.args.get('bebida') %}
+            <li><strong>Bebida:</strong> {{ request.args.get('bebida') }}</li>
+            {% endif %}
+            {% if request.args.get('alergia') %}
+            <li><strong>Alergia:</strong> {{ request.args.get('alergia') }}</li>
+            {% endif %}
+            {% if request.args.get('medicamento') %}
+            <li><strong>Medicamento de Uso Constante:</strong> {{ request.args.get('medicamento') }}</li>
+            {% endif %}
+            {% if request.args.get('pcd') %}
+            <li><strong>PCD:</strong> {{ request.args.get('pcd') }}</li>
+            {% endif %}
+            {% if request.args.get('tatuagem') %}
+            <li><strong>Tatuagem:</strong> {{ request.args.get('tatuagem') }}</li>
+            {% endif %}
+            {% if request.args.get('regioes_preferencia') %}
+            <li><strong>Regiões de Preferência:</strong> {{ request.args.get('regioes_preferencia') }}</li>
+            {% endif %}
+            {% if request.args.get('disponibilidade_horario') %}
+            <li><strong>Disponibilidade de Horário:</strong> {{ request.args.get('disponibilidade_horario') }}</li>
+            {% endif %}
+            {% if request.args.get('cargo_indicado') %}
+            <li><strong>Cargo Indicado:</strong> {{ request.args.get('cargo_indicado') }}</li>
+            {% endif %}
+            {% if request.args.get('avaliacao_rh') %}
+            <li><strong>Avaliação RH:</strong> {{ request.args.get('avaliacao_rh') }}</li>
+            {% endif %}
+            {% if request.args.get('avaliacao_gerencia') %}
+            <li><strong>Avaliação Gerência:</strong> {{ request.args.get('avaliacao_gerencia') }}</li>
+            {% endif %}
+        </ul>
+    </div>
+
+</div>
+
+
+
+
+
+<!-- Modal para criar ficha -->
+<div class="modal fade" id="createFichaModal" tabindex="-1" aria-labelledby="createFichaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFichaModalLabel">Criar Ficha Manualmente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('create_ficha_manual') }}">
+                    <div class="mb-3">
+                        <label for="nomeCompleto" class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" id="nomeCompleto" name="nome_completo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cpf" class="form-label">CPF</label>
+                        <input type="text" class="form-control" id="cpf" name="cpf" required oninput="mascaraCPF(this)">
+                    </div>
+                    <div class="mb-3">
+                        <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                        <input type="date" class="form-control" id="data_nascimento" name="data_nasc">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Criar Ficha</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    // Função para aplicar máscara de CPF no campo de input
+    function mascaraCPF(cpfInput) {
+        cpfInput.value = cpfInput.value
+            .replace(/\D/g, '')                    // Remove caracteres não numéricos
+            .replace(/(\d{3})(\d)/, '$1.$2')      // Adiciona ponto após os três primeiros dígitos
+            .replace(/(\d{3})(\d)/, '$1.$2')      // Adiciona ponto após os seis primeiros dígitos
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2') // Adiciona o traço antes dos dois últimos dígitos
+            .replace(/(-\d{2})\d+?$/, '$1');      // Limita o CPF a 11 dígitos
+    }
+
+    // Aplica a máscara quando o usuário digita no campo de CPF
+    document.getElementById('cpf').addEventListener('input', function () {
+        mascaraCPF(this);
+    });
+</script>
+
+
+
+
+<!-- Botão + Criar Ficha -->
+<div class="d-flex justify-content-end mb-4 mt-4">
+    <button type="button" class="btn btn-primary btn-criar" data-bs-toggle="modal" data-bs-target="#createFichaModal">
+        + CRIAR FICHA
+    </button>
+</div>
+
+<!-- Botão para abrir o modal -->
+<div class="d-flex justify-content-end mb-4 mt-4">
+    <button type="button" class="btn btn-success" id="openPdfModalButton" style="display: none;" data-bs-toggle="modal"
+        data-bs-target="#pdfModal">
+        Gerar PDF com Selecionados
+    </button>
+</div>
+
+<!-- Tabela de Resultados -->
+<div class="table-responsive mt-4">
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" id="selectAll" /> <!-- Checkbox para selecionar todos -->
+                </th>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Data de Nascimento</th>
+                <th>Data de Submissão</th>
+                <th>Situação</th> <!-- Nova coluna para situação -->
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="candidato-table">
+            {% if candidatos|length > 0 %}
+            {% for candidato in candidatos %}
+            <tr>
+                <td>
+                    <input type="checkbox" class="select-checkbox" value="{{ candidato.cpf }}" />
+                </td>
+                <td>{{ candidato.nome_completo }}</td>
+                <td>{{ candidato.cpf }}</td>
+                <td>{{ candidato.data_nasc or 'Não informado' }}</td> <!-- Verificando se data_nasc está preenchido -->
+                <td>{{ candidato.created_at.strftime('%d/%m/%Y') if candidato.created_at else 'Não disponível' }}</td>
+                <td>{{ candidato.situacao }}</td> <!-- Exibindo a situação -->
+                <td>
+                    <a href="{{ url_for('view_form', cpf=candidato.cpf) }}" class="btn btn-primary" target="_blank">
+                        Visualizar
+                    </a>
+                    <a href="{{ url_for('export_pdf', cpf=candidato.cpf) }}" class="btn btn-danger btn-sm"
+                        target="_blank">
+                        PDF
+                    </a>
+                    <a href="{{ url_for('export_excel', cpf=candidato.cpf) }}" class="btn btn-success btn-sm"
+                        target="_blank">
+                        EXCEL
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center">Nenhum candidato encontrado com os filtros aplicados.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+
+
+<!-- Modal para confirmar a geração do PDF -->
+<div class="modal fade" id="pdfModal" tabindex="-1" aria-labelledby="pdfModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pdfModalLabel">Gerar PDF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Você selecionou os candidatos. Deseja gerar um PDF com os nomes e CPFs selecionados?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="generatePdfButton">Gerar PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Verificação da paginação no template -->
+{% if pagination.total_pages > 1 %}
+<nav aria-label="Navegação de página">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('banco_rs', page=pagination.prev_num) }}">&laquo;</a>
+        </li>
+        {% endif %}
+
+        {% for page_num in range(1, pagination.total_pages + 1) %}
+        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('banco_rs', page=page_num) }}">{{ page_num }}</a>
+        </li>
+        {% endfor %}
+
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('banco_rs', page=pagination.next_num) }}">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+
+
+</div>
+
+<script src="{{ url_for('static', filename='js/mascaras.js') }}"></script>
+<script src="{{ url_for('static', filename='js/generatePdf.js') }}"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+
+<script>
+
+    document.getElementById('createFichaForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const nomeCompleto = document.getElementById('nomeCompleto').value;
+        const cpf = document.getElementById('cpf').value;
+
+        fetch('/create_ficha_manual', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nome_completo: nomeCompleto,
+                cpf: cpf
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // Se a resposta não for OK (status 400), retorna a mensagem de erro
+                    return response.json().then(data => { throw new Error(data.message); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redireciona para o formulário criado se o CPF for novo
+                    window.location.href = `/view_form/${data.cpf}`;
+                }
+            })
+            .catch(error => {
+                // Exibe um alerta se o CPF já existir
+                alert(error.message);
+            });
+    });
+
+
+    // Inicializa o socket.io
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/');
+
+    // Escuta evento de nova ficha
+    socket.on('new_ficha', function (data) {
+        const tabela = document.getElementById('candidato-table');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${data.nome_completo}</td>
+            <td>${data.cpf}</td>
+            <td>${data.created_at}</td>
+            <td>
+                <a href="/view_form/${data.cpf}" class="btn btn-primary">Visualizar/Editar</a>
+                <a href="/export_pdf/${data.cpf}" class="btn btn-danger btn-sm">Exportar PDF</a>
+                <a href="/export_excel/${data.cpf}" class="btn btn-success btn-sm">Exportar Excel</a>
+            </td>
+        `;
+        tabela.appendChild(newRow);
+    });
+
+    document.getElementById('createFichaForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const nomeCompleto = document.getElementById('nomeCompleto').value;
+        const cpf = document.getElementById('cpf').value;
+
+        fetch('/create_ficha_manual', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nome_completo: nomeCompleto,
+                cpf: cpf
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // Se a resposta não for OK (status 400 ou 500)
+                    return response.json().then(data => { throw new Error(data.message); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redireciona para a página do formulário criado
+                    window.location.href = `/view_form/${data.cpf}`;
+                }
+            })
+            .catch(error => {
+                // Exibe o erro caso o CPF já exista ou outro erro
+                alert(error.message);
+            });
+    });
+
+</script>
+
+
+{% endblock %}

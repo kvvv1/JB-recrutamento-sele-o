@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistema RS{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Botão de Voltar */
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 250px;
+        z-index: 1050;
+        padding: 10px 15px;
+        background-color: #AB1A18;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: left 0.3s ease;
+    }
+
+    .back-button:hover {
+        background-color: #8E1615;
+        color: white;
+        text-decoration: none;
+    }
+
+    .back-button i {
+        margin-right: 5px;
+    }
+
+    /* Botão para Banco R&S */
+    .btn-banco-rs {
+        position: absolute;
+        top: 20px;
+        left: 380px;
+        z-index: 1050;
+        background-color: #AB1A18;
+        color: white;
+        border-radius: 5px;
+        padding: 10px 15px;
+        font-size: 16px;
+        text-align: center;
+        text-decoration: none;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-banco-rs:hover {
+        background-color: #8E1615;
+        color: white;
+    }
+
+    /* Título principal */
+    h2 {
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+        color: #343a40;
+    }
+
+    /* Estilização de colunas */
+    h4 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #343a40;
+    }
+
+    .container {
+        padding-top: 20px;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-text {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+
+    .card {
+        min-height: 300px;
+    }
+
+    @media (max-width: 768px) {
+        .back-button {
+            left: 20px;
+        }
+
+        .btn-banco-rs {
+            left: 130px;
+        }
+    }
+</style>
+
+<!-- Botão de Voltar -->
+<a href="{{ url_for('sistema_rs') }}" class="back-button">
+    <i class="fas fa-arrow-left"></i>
+    Voltar
+</a>
+<!-- Botão para acessar o Banco R&S -->
+<a href="{{ url_for('banco_rs') }}" class="btn-banco-rs">
+    Acessar Banco R&S
+</a>
+
+<div class="container mt-4">
+    <h2 class="text-center">Gestão de Candidatos</h2>
+
+    <div class="row">
+        <!-- Gestão de Admissão -->
+        <div class="col-md-3 admission-candidates">
+            <h4 class="text-center">Pré-Cadastro</h4>
+            <div class="row">
+                {% for ticket in admission_candidates %}
+                <div class="col-md-12 mb-3" id="ticket-{{ ticket.id }}">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ ticket.name }}</h5>
+                            <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
+                            <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
+                            <p class="card-text">Categoria: {{ ticket.category }}</p>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-primary">Visualizar/Editar</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Gestão de Demissão -->
+        <div class="col-md-3 dismissal-candidates">
+            <h4 class="text-center">Demissão</h4>
+            <div class="row">
+                {% for ticket in dismissal_candidates %}
+                <div class="col-md-12 mb-3" id="ticket-{{ ticket.id }}">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ ticket.name }}</h5>
+                            <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
+                            <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
+                            <p class="card-text">Categoria: {{ ticket.category }}</p>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-primary">Visualizar/Editar</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Gestão de Entrevistas -->
+        <div class="col-md-3 interview-candidates">
+            <h4 class="text-center">Entrevista</h4>
+            <div class="row">
+                {% for ticket in interview_candidates %}
+                <div class="col-md-12 mb-3" id="ticket-{{ ticket.id }}">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ ticket.name }}</h5>
+                            <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
+                            <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
+                            <p class="card-text">Categoria: {{ ticket.category }}</p>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-success">Preencher Ficha</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Gestão de Agendados -->
+        <div class="col-md-3 scheduled-candidates">
+            <h4 class="text-center">Agendados</h4>
+            <div class="row">
+                {% for ticket in scheduled_candidates %}
+                <div class="col-md-12 mb-3" id="ticket-{{ ticket.id }}">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ ticket.name }}</h5>
+                            <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
+                            <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
+                            <p class="card-text">Categoria: {{ ticket.category }}</p>
+                            <p class="card-text">Recrutador: {{ ticket.recruiter }}</p>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-primary">Visualizar/Editar</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SocketIO para atualização em tempo real -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+    // Função para adicionar um ticket na categoria correta
+    function addTicket(ticket) {
+        var cardHtml = `
+            <div class="col-md-12 mb-3" id="ticket-${ticket.id}">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">${ticket.name}</h5>
+                        <p class="card-text">Senha: ${ticket.ticket_number}</p>
+                        <p class="card-text">Chegada: ${ticket.created_at}</p>
+                        <p class="card-text">Categoria: ${ticket.category}</p>
+                        <a href="/view_form/${ticket.cpf}" class="btn btn-primary">Visualizar/Editar</a>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (ticket.category === "Admissão") {
+            document.querySelector('.admission-candidates .row').innerHTML += cardHtml;
+        } else if (ticket.category === "Demissão") {
+            document.querySelector('.dismissal-candidates .row').innerHTML += cardHtml;
+        } else if (ticket.category === "Entrevista") {
+            document.querySelector('.interview-candidates .row').innerHTML += cardHtml;
+        } else if (ticket.category === "Agendado") {
+            document.querySelector('.scheduled-candidates .row').innerHTML += cardHtml;
+        }
+    }
+
+    // Recebe eventos do servidor para adicionar novos tickets
+    socket.on('new_ticket', function(ticket) {
+        addTicket(ticket);
+    });
+
+    // Remove o ticket da página quando ele é concluído
+    socket.on('remove_ticket', function(ticketId) {
+        var ticketElement = document.getElementById('ticket-' + ticketId);
+        if (ticketElement) {
+            ticketElement.remove();
+        }
+    });
+</script>
+
+{% endblock %}

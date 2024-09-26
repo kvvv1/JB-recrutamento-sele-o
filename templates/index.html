@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Senhas RH</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+        }
+        h1 {
+            margin-top: 30px;
+        }
+        .btn-custom {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+        .btn-custom:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mt-5">Retire sua Senha</h1>
+        <form action="{{ url_for('create_ticket') }}" method="POST" class="mt-4">
+            <div class="form-group">
+                <label for="name">Nome:</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="category">Categoria:</label>
+                <select name="category" class="form-control">
+                    <option value="Admissão">Admissão</option>
+                    <option value="Demissão">Demissão</option>
+                    <option value="Entrevista">Entrevista</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-custom btn-block">Pegar Senha</button>
+        </form>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('display') }}" class="btn btn-secondary mt-2">Ver Fila</a>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary mt-2">Painel Administrativo</a>
+        </div>
+    </div>
+</body>
+</html>

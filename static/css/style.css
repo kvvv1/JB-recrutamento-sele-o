@@ -1,0 +1,89 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+    color: #1C1C1C; /* Cor do texto */
+}
+
+h1, h2, h3, h4 {
+    color: #8B0000; /* Cor dos cabeçalhos */
+}
+
+a, button {
+    text-decoration: none;
+    color: #007bff;
+    margin: 10px;
+    padding: 10px 20px;
+    background-color: #1C1C1C; /* Cor de fundo dos botões */
+    border: none;
+    border-radius: 5px;
+    color: white; /* Cor do texto dos botões */
+    cursor: pointer;
+}
+
+a:hover, button:hover {
+    text-decoration: underline;
+    background-color: #8B0000; /* Cor de fundo dos botões ao passar o mouse */
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    margin: 5px;
+    border-radius: 5px;
+    text-align: left; /* Alinhamento do texto */
+}
+
+form {
+    margin-bottom: 20px;
+    display: inline-block; /* Centralizar formulário */
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin: 20px 0;
+}
+
+.chart-title {
+    text-align: center;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    color: #8B0000; /* Cor do título do gráfico */
+}
+
+.header-logo {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.header-logo img {
+    max-height: 100px;
+}
+
+.stat {
+    text-align: center;
+    margin: 10px 0;
+    color: #8B0000; /* Cor das estatísticas */
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #D3D3D3;
+}
+
+.table-striped > tbody > tr:hover {
+    background-color: #f2f2f2;
+}
+
+.history-table {
+    max-height: 400px;
+    overflow-y: auto;
+}

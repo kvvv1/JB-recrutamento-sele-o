@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-4">Gestão de Candidatos</h1>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Candidatos Aprovados (Alocado)
+                </div>
+                <div class="card-body">
+                    {% for candidato in candidatos_alocados %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ candidato.name }}</h5>
+                            <p class="card-text">CPF: {{ candidato.cpf }}</p>
+                            <p class="card-text">Situação Atual: Aprovado (Alocado)</p>
+                            <form action="{{ url_for('manage_candidates') }}" method="POST">
+                                <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
+                                <div class="form-group">
+                                    <label for="nova_situacao">Mudar Situação:</label>
+                                    <select class="form-control" id="nova_situacao" name="nova_situacao">
+                                        <option value="reprovado">Reprovado</option>
+                                        <option value="aprovado_apoio">Aprovado (Apoio)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="motivo_reprovacao">Motivo da Reprovação (se aplicável):</label>
+                                    <textarea class="form-control" id="motivo_reprovacao" name="motivo_reprovacao" rows="3"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Atualizar Situação</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Candidatos Aprovados (Apoio)
+                </div>
+                <div class="card-body">
+                    {% for candidato in candidatos_apoio %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ candidato.name }}</h5>
+                            <p class="card-text">CPF: {{ candidato.cpf }}</p>
+                            <p class="card-text">Situação Atual: Aprovado (Apoio)</p>
+                            <form action="{{ url_for('manage_candidates') }}" method="POST">
+                                <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
+                                <div class="form-group">
+                                    <label for="nova_situacao">Mudar Situação:</label>
+                                    <select class="form-control" id="nova_situacao" name="nova_situacao">
+                                        <option value="reprovado">Reprovado</option>
+                                        <option value="aprovado_alocado">Aprovado (Alocado)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="motivo_reprovacao">Motivo da Reprovação (se aplicável):</label>
+                                    <textarea class="form-control" id="motivo_reprovacao" name="motivo_reprovacao" rows="3"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Atualizar Situação</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Candidatos Reprovados
+                </div>
+                <div class="card-body">
+                    {% for candidato in candidatos_reprovados %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ candidato.name }}</h5>
+                            <p class="card-text">CPF: {{ candidato.cpf }}</p>
+                            <p class="card-text">Situação Atual: Reprovado</p>
+                            <p class="card-text">Motivo: {{ candidato.motivo_reprovacao }}</p>
+                            <form action="{{ url_for('manage_candidates') }}" method="POST">
+                                <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
+                                <div class="form-group">
+                                    <label for="nova_situacao">Mudar Situação:</label>
+                                    <select class="form-control" id="nova_situacao" name="nova_situacao">
+                                        <option value="aprovado_alocado">Aprovado (Alocado)</option>
+                                        <option value="aprovado_apoio">Aprovado (Apoio)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Atualizar Situação</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

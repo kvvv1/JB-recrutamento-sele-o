@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Upload Currículo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Upload de Currículo</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Informações do Teste</h3>
+        <p>Esta página testa o fluxo de upload de currículo para identificar problemas no frontend.</p>
+        <p><strong>CPF de teste:</strong> <span id="cpf-teste">123.456.789-00</span></p>
+    </div>
+
+    <div class="test-section">
+        <h3>📁 Upload de Arquivo</h3>
+        <input type="file" id="curriculo" accept=".pdf,.doc,.docx,.txt">
+        <button onclick="testarUpload()">Testar Upload</button>
+        <div id="upload-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔍 Logs de Depuração</h3>
+        <div id="debug-logs"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Resultado do Teste</h3>
+        <div id="test-result"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('debug-logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logEntry.className = type;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function testarUpload() {
+            const fileInput = document.getElementById('curriculo');
+            const file = fileInput.files[0];
+            const uploadStatus = document.getElementById('upload-status');
+            const testResult = document.getElementById('test-result');
+
+            // Limpa logs anteriores
+            document.getElementById('debug-logs').innerHTML = '';
+            testResult.innerHTML = '';
+
+            if (!file) {
+                log('❌ Nenhum arquivo selecionado', 'error');
+                uploadStatus.innerHTML = '<div class="error">Por favor, selecione um arquivo primeiro.</div>';
+                return;
+            }
+
+            log(`📁 Arquivo selecionado: ${file.name} (${file.size} bytes)`, 'info');
+            log(`📋 Tipo do arquivo: ${file.type}`, 'info');
+
+            // Validação do tamanho do arquivo (10MB)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                log(`❌ Arquivo muito grande: ${file.size} bytes (máximo: ${maxSize} bytes)`, 'error');
+                uploadStatus.innerHTML = '<div class="error">Arquivo muito grande. Tamanho máximo: 10MB</div>';
+                return;
+            }
+
+            // Validação do tipo de arquivo
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+            if (!allowedTypes.includes(file.type)) {
+                log(`❌ Tipo de arquivo não permitido: ${file.type}`, 'error');
+                uploadStatus.innerHTML = '<div class="error">Tipo de arquivo não suportado. Use PDF, DOC, DOCX ou TXT.</div>';
+                return;
+            }
+
+            log('✅ Validações passaram com sucesso', 'success');
+
+            // Cria FormData
+            const formData = new FormData();
+            formData.append('curriculo', file);
+            
+            // Adiciona o CPF para atualizar o banco de dados
+            const cpf = document.getElementById('cpf-teste').textContent.replace(/[.-]/g, '');
+            formData.append('cpf', cpf);
+            
+            log(`🔑 CPF adicionado ao FormData: ${cpf}`, 'info');
+
+            // Log do FormData
+            log('📦 Conteúdo do FormData:', 'info');
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    log(`   ${key}: ${value.name} (${value.size} bytes)`, 'info');
+                } else {
+                    log(`   ${key}: ${value}`, 'info');
+                }
+            }
+
+            uploadStatus.innerHTML = '<div class="info">Enviando arquivo...</div>';
+
+            // Simula o upload
+            log('🚀 Iniciando upload para /upload_curriculo...', 'info');
+
+            fetch('/upload_curriculo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                log(`📡 Resposta recebida: ${response.status} ${response.statusText}`, 'info');
+                log(`📋 Headers: ${JSON.stringify([...response.headers.entries()])}`, 'info');
+                return response.json();
+            })
+            .then(result => {
+                log(`📊 Resultado do upload: ${JSON.stringify(result, null, 2)}`, 'success');
+                
+                if (result.success) {
+                    uploadStatus.innerHTML = '<div class="success">✅ Currículo enviado com sucesso!</div>';
+                    testResult.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Teste Passou!</h4>
+                            <p><strong>Arquivo:</strong> ${result.filename}</p>
+                            <p><strong>Mensagem:</strong> ${result.message}</p>
+                            <p><strong>CPF enviado:</strong> ${cpf}</p>
+                        </div>
+                    `;
+                } else {
+                    uploadStatus.innerHTML = `<div class="error">❌ Erro: ${result.message}</div>`;
+                    testResult.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Teste Falhou!</h4>
+                            <p><strong>Erro:</strong> ${result.message}</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                log(`❌ Erro no upload: ${error.message}`, 'error');
+                uploadStatus.innerHTML = '<div class="error">❌ Erro ao enviar o currículo. Verifique o console.</div>';
+                testResult.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Teste Falhou!</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p>Verifique o console do navegador para mais detalhes.</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Log inicial
+        log('🚀 Página de teste carregada', 'info');
+        log('📋 CPF de teste configurado', 'info');
+        log('📁 Aguardando seleção de arquivo...', 'info');
+    </script>
+</body>
+</html>
+

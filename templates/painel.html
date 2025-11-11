@@ -9,6 +9,9 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="icon" href="https://jbconservadora.com.br/wp-content/uploads/2022/04/cropped-LOGO-JB-32x32.png"
+        type="image/png">
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -327,6 +330,46 @@
         .toggle-details i.fa-angle-up {
             transform: rotate(180deg);
         }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        .h3-espera {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .h3-chamado {
+            color: #d4a003;
+            font-weight: bold;
+        }
+
+        .h3-concluido {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .filter-badge {
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 20px;
+            background-color: #e9ecef;
+            color: #333;
+            user-select: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .filter-badge.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+
+        .filter-badge:hover {
+            opacity: 0.8;
+        }
     </style>
 </head>
 
@@ -432,6 +475,7 @@
                     <option value="wilson.monteiro">Wilson</option>
                     <option value="vivian.wanderley">Vivian</option>
                     <option value="grasielle.mapa">Grasielle</option>
+                    <option value="rafaella.capanema">Rafaella</option>
                 </select>
             </div>
             <br>
@@ -441,6 +485,7 @@
             </div>
             <br>
             <button type="submit" class="btn btn-custom">Verificar CPF</button>
+            <div id="alert-box" class="alert alert-warning" style="display: none;"></div>
         </form>
 
         <div id="process-info" class="alert alert-warning alert-dismissible fade show" role="alert"
@@ -457,12 +502,17 @@
             <div class="form-group">
                 <label for="name">Nome Completo:</label>
                 <input type="text" name="name" id="name" class="form-control" required
-                    value="{{ form_data['name'] or '' }}">
+                    style="text-transform: uppercase;" value="{{ form_data['name'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="data_nasc">Data de Nascimento:</label>
+                <input type="date" name="data_nasc" id="data_nasc" class="form-control" required>
             </div>
             <div class="form-group">
                 <label for="cep">CEP:</label>
                 <div class="input-group">
-                    <input type="text" name="cep" id="cep" class="form-control" required value="{{ form_data['cep'] }}">
+                    <input type="text" name="cep" id="cep" class="form-control" required
+                        style="text-transform: uppercase;" value="{{ form_data['cep'] }}">
                     <span class="input-group-text" onclick="buscarEndereco()">
                         <i class="fas fa-search"></i>
                     </span>
@@ -470,33 +520,33 @@
             </div>
             <div class="form-group">
                 <label for="rua">Rua:</label>
-                <input type="text" name="rua" id="rua" class="form-control" required
+                <input type="text" name="rua" id="rua" class="form-control" required style="text-transform: uppercase;"
                     value="{{ form_data['rua'] or '' }}">
             </div>
             <div class="form-group">
                 <label for="numero">Número:</label>
                 <input type="text" name="numero" id="numero" class="form-control" required
-                    value="{{ form_data['numero'] or '' }}">
+                    style="text-transform: uppercase;" value="{{ form_data['numero'] or '' }}">
             </div>
             <div class="form-group">
                 <label for="complemento">Complemento:</label>
                 <input type="text" name="complemento" id="complemento" class="form-control"
-                    value="{{ form_data['complemento'] or '' }}">
+                    style="text-transform: uppercase;" value="{{ form_data['complemento'] or '' }}">
             </div>
             <div class="form-group">
                 <label for="bairro">Bairro:</label>
                 <input type="text" name="bairro" id="bairro" class="form-control" required
-                    value="{{ form_data['bairro'] or '' }}">
+                    style="text-transform: uppercase;" value="{{ form_data['bairro'] or '' }}">
             </div>
             <div class="form-group">
                 <label for="cidade">Cidade:</label>
                 <input type="text" name="cidade" id="cidade" class="form-control" required
-                    value="{{ form_data['cidade'] or '' }}">
+                    style="text-transform: uppercase;" value="{{ form_data['cidade'] or '' }}">
             </div>
             <div class="form-group">
                 <label for="telefones">Telefones:</label>
                 <input type="text" name="telefones" id="telefones" class="form-control" required
-                    value="{{ form_data['telefones'] or '' }}">
+                    style="text-transform: uppercase;" value="{{ form_data['telefones'] or '' }}">
             </div>
             <div class="form-group">
                 <label for="priority">Prioridade:</label>
@@ -506,6 +556,7 @@
                         Idosos)</option>
                 </select>
             </div>
+
             <input type="hidden" name="category" id="ticket-category">
             <input type="hidden" name="recruiter" id="ticket-recruiter">
             <input type="hidden" name="cpf" id="ticket-cpf">
@@ -514,12 +565,13 @@
             <button type="submit" class="btn btn-custom">Pegar Senha</button>
         </form>
 
+
         <div class="row">
             <div class="col-md-4">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
                         <h5 class="card-title">Tickets em Espera</h5>
-                        <p class="card-text">{{ counts['Admissão'] + counts['Demissão'] + counts['Entrevista'] }}</p>
+                        <p class="card-text">{{ waiting_tickets|length }}</p>
                     </div>
                 </div>
             </div>
@@ -541,8 +593,26 @@
             </div>
         </div>
 
-        <h2 class="mt-5">Últimos Tickets</h2>
+        <br>
+        <br>
+
+        <div class="mb-3">
+            <label><strong>Filtrar por Categoria:</strong></label><br>
+            <div id="category-filters" class="d-flex flex-wrap gap-2">
+                <span class="badge filter-badge active" data-category="Admissão">Admissão</span>
+                <span class="badge filter-badge active" data-category="Demissão">Demissão</span>
+                <span class="badge filter-badge active" data-category="Entrevista">Entrevista</span>
+                <span class="badge filter-badge active" data-category="Agendado">Agendado</span>
+                <span class="badge filter-badge active" data-category="Treinamento">Treinamento</span>
+                <span class="badge filter-badge active" data-category="Documentação">Documentação</span>
+                <span class="badge filter-badge active" data-category="Outros">Outros</span>
+            </div>
+        </div>
+
+
         <div class="table-responsive">
+            <!-- Tickets EM ESPERA -->
+            <h3 class="h3-espera">Em Espera</h3>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -553,11 +623,18 @@
                         <th>Guichê</th>
                         <th>Última Atualização</th>
                         <th>Ações</th>
+                        <th></th> <!-- Coluna para o ícone de seta -->
                     </tr>
                 </thead>
-                <tbody id="ticket-list">
-                    {% for ticket in waiting_tickets %}
+                <tbody id="ticket-list-waiting">
+                    {% if waiting_tickets|length == 0 %}
+                    <!-- MENSAGEM CENTRALIZADA QUANDO NÃO HÁ TICKETS EM ESPERA -->
                     <tr>
+                        <td colspan="7" style="text-align: center; font-weight: bold;">Nenhum ticket em espera</td>
+                    </tr>
+                    {% else %}
+                    {% for ticket in waiting_tickets %}
+                    <tr data-id="{{ ticket.id }}">
                         <td>{{ ticket.ticket_number }}</td>
                         <td>{{ ticket.name }}</td>
                         <td>{{ ticket.category }}</td>
@@ -566,152 +643,61 @@
                         <td>{{ ticket.created_at | format_brazilian_date }}</td>
                         <td>
                             <div class="btn-container">
+                                {% if ticket.id is defined %}
                                 <!-- Formulário de seleção do guichê e envio para TV -->
-                                <form action="{{ url_for('send_tv', id=ticket.id) }}" method="POST" class="d-inline"
-                                    onsubmit="sendToTV(event, '{{ ticket.id }}')">
+                                <form action="{{ url_for('send_tv', id=ticket.id or 0) }}" method="POST"
+                                    class="d-inline" onsubmit="sendToTV(event, '{{ ticket.id or 0 }}')">
                                     <div class="form-group d-flex align-items-center">
                                         <select name="guiche" id="guiche-select-{{ ticket.id }}"
                                             class="form-control form-control-sm me-2" style="width:auto;" required>
+                                            <option value="" disabled selected>Guichê</option>
                                             <option value="1" {% if ticket.guiche=='1' %}selected{% endif %}>1</option>
                                             <option value="2" {% if ticket.guiche=='2' %}selected{% endif %}>2</option>
                                             <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3</option>
                                             <option value="4" {% if ticket.guiche=='4' %}selected{% endif %}>4</option>
                                             <option value="5" {% if ticket.guiche=='5' %}selected{% endif %}>5</option>
+                                            <option value="6" {% if ticket.guiche=='6' %}selected{% endif %}>6</option>
                                         </select>
                                         <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
                                     </div>
                                 </form>
+                                {% else %}
+                                <span>Erro: ID do ticket não encontrado.</span>
+                                {% endif %}
 
-                                <!-- Botões Chamar e Concluir, inicialmente escondidos até que o ticket seja enviado à TV -->
                                 <div id="actions-{{ ticket.id }}" class="visible-actions">
-                                    <form action="{{ url_for('call_with_alert', id=ticket.id) }}" method="POST"
-                                        class="d-inline" onsubmit="callTicket(event, '{{ ticket.id }}')">
+                                    {% if ticket.id %}
+                                    <form class="d-inline" onsubmit="callTicket(event, '{{ ticket.id }}')">
                                         <input type="hidden" name="guiche" id="guiche-input-call-{{ ticket.id }}"
                                             value="{{ ticket.guiche }}">
                                         <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
                                     </form>
-                                    <form action="{{ url_for('conclude_ticket', id=ticket.id) }}" method="POST"
-                                        class="d-inline">
-                                        <button type="submit" class="btn btn-success btn-sm me-2"
-                                            onclick="validateAction(event, '{{ ticket.id }}')">Concluir</button>
-                                    </form>
+                                    {% else %}
+                                    <span>Erro: ID do ticket não encontrado.</span>
+                                    {% endif %}
+
+                                    {% if ticket.id %}
+                                    <button class="btn btn-success btn-sm me-2 btn-conclude" data-id="{{ ticket.id }}">
+                                        Concluir
+                                    </button>
+                                    {% else %}
+                                    <span>Erro: ID do ticket não encontrado.</span>
+                                    {% endif %}
+
+                                    <!-- NOVO BOTÃO PARA ADMISSÃO -->
+                                    {% if ticket.category == 'Admissão' %}
+                                    <button class="btn btn-warning btn-sm me-2 btn-send-dp" data-id="{{ ticket.id }}">
+                                        Enviar para DP
+                                    </button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <!-- Ícone de ver detalhes -->
-                            <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">
+                            <!-- Botão com ícone de seta para expandir/colapsar os detalhes -->
+                            <button class="btn btn-info btn-sm toggle-details" data-id="{{ ticket.id }}">
                                 <i class="fas fa-angle-down"></i>
                             </button>
-                        </td>
-                    </tr>
-                    <tr id="details-{{ ticket.id }}" class="ticket-details">
-                        <td colspan="7">
-                            <div class="details-container">
-                                <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
-                                <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
-                                    ticket.called_at else 'Não chamado' }}</p>
-                                <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
-                                    ticket.concluded_at else 'Não concluído' }}</p>
-                                {% if ticket.category == 'Agendado' %}
-                                <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
-                                {% endif %}
-                                {% if ticket.category == 'Outros' %}
-                                <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
-                                {% endif %}
-                                <button class="btn btn-warning btn-sm"
-                                    onclick="openEditForm('{{ ticket.id }}')">Editar</button>
-
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    {% for ticket in called_tickets %}
-                    <tr>
-                        <td>{{ ticket.ticket_number }}</td>
-                        <td>{{ ticket.name }}</td>
-                        <td>{{ ticket.category }}</td>
-                        <td class="status status-chamado">CHAMADO</td>
-                        <td id="guiche-{{ ticket.id }}">{{ ticket.guiche or 'Nenhum' }}</td>
-                        <td>{{ ticket.called_at | format_brazilian_date }}</td>
-                        <td>
-                            <div class="btn-container">
-                                <!-- Formulário de seleção do guichê e envio para TV -->
-                                <form action="{{ url_for('send_tv', id=ticket.id) }}" method="POST" class="d-inline"
-                                    onsubmit="sendToTV(event, '{{ ticket.id }}')">
-                                    <div class="form-group d-flex align-items-center">
-                                        <select name="guiche" id="guiche-select-{{ ticket.id }}"
-                                            class="form-control form-control-sm me-2" style="width:auto;" required>
-                                            <option value="1" {% if ticket.guiche=='1' %}selected{% endif %}>1</option>
-                                            <option value="2" {% if ticket.guiche=='2' %}selected{% endif %}>2</option>
-                                            <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3</option>
-                                            <option value="4" {% if ticket.guiche=='4' %}selected{% endif %}>4</option>
-                                            <option value="5" {% if ticket.guiche=='5' %}selected{% endif %}>5</option>
-                                        </select>
-                                        <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
-                                    </div>
-                                </form>
-
-                                <!-- Botões Chamar e Concluir, inicialmente escondidos até que o ticket seja enviado à TV -->
-                                <div id="actions-{{ ticket.id }}" class="visible-actions">
-                                    <form action="{{ url_for('call_with_alert', id=ticket.id) }}" method="POST"
-                                        class="d-inline" onsubmit="callTicket(event, '{{ ticket.id }}')">
-                                        <input type="hidden" name="guiche" id="guiche-input-call-{{ ticket.id }}"
-                                            value="{{ ticket.guiche }}">
-                                        <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
-                                    </form>
-                                    <form action="{{ url_for('conclude_ticket', id=ticket.id) }}" method="POST"
-                                        class="d-inline">
-                                        <button type="submit" class="btn btn-success btn-sm me-2"
-                                            onclick="validateAction(event, '{{ ticket.id }}')">Concluir</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <!-- Ícone de ver detalhes -->
-                            <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">
-                                <i class="fas fa-angle-down"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr id="details-{{ ticket.id }}" class="ticket-details">
-                        <td colspan="7">
-                            <div class="details-container">
-                                <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
-                                <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
-                                    ticket.called_at else 'Não chamado' }}</p>
-                                <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
-                                    ticket.concluded_at else 'Não concluído' }}</p>
-                                {% if ticket.category == 'Agendado' %}
-                                <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
-                                {% endif %}
-                                {% if ticket.category == 'Outros' %}
-                                <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
-                                {% endif %}
-                                <button class="btn btn-warning btn-sm"
-                                    onclick="openEditForm('{{ ticket.id }}')">Editar</button>
-
-
-
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    {% for ticket in concluded_tickets %}
-                    <tr>
-                        <td>{{ ticket.ticket_number }}</td>
-                        <td>{{ ticket.name }}</td>
-                        <td>{{ ticket.category }}</td>
-                        <td class="status status-concluido">CONCLUÍDO</td>
-                        <td>{{ ticket.guiche }}</td>
-                        <td>{{ ticket.concluded_at | format_brazilian_date }}</td>
-                        <td>
-                            <!-- Texto Ver Detalhes -->
-                            <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">Ver
-                                Detalhes</button>
                         </td>
                     </tr>
                     <tr id="details-{{ ticket.id }}" class="ticket-details">
@@ -727,151 +713,405 @@
                             {% if ticket.category == 'Outros' %}
                             <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
                             {% endif %}
-
                             <button class="btn btn-warning btn-sm"
                                 onclick="openEditForm('{{ ticket.id }}')">Editar</button>
-
-
-
-
-
                         </td>
                     </tr>
                     {% endfor %}
+                    {% endif %}
+
                 </tbody>
             </table>
-            <!-- Modal de Edição -->
-            <div class="modal fade" id="editTicketModal" tabindex="-1" aria-labelledby="editTicketModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="editTicketModalLabel">Editar Ticket</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <!-- Formulário de Edição -->
-                            <form id="edit-ticket-form" action="{{ url_for('update_ticket') }}" method="POST">
-                                <!-- Campo oculto para o ID do ticket -->
-                                <input type="hidden" name="ticket_id" id="edit-ticket-id">
-
-                                <!-- Nome Completo -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-name">Nome Completo:</label>
-                                    <input type="text" name="name" id="edit-name" class="form-control" required>
-                                </div>
-
-                                <!-- Categoria -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-category">Categoria:</label>
-                                    <select name="category" id="edit-category" class="form-control" required
-                                        onchange="toggleFields(); toggleRecruiterSelect();">
-                                        <option value="Admissão">Admissão</option>
-                                        <option value="Demissão">Demissão</option>
-                                        <option value="Entrevista">Entrevista</option>
-                                        <option value="Agendado">Agendado</option>
-                                        <option value="Treinamento">Treinamento</option>
-                                        <option value="Documentação">Documentação</option>
-                                        <option value="Outros">Outros</option>
-                                    </select>
-                                </div>
-
-                                <!-- Campo de especificação (visível apenas para "Outros") -->
-                                <div class="form-group mb-3" id="edit-especifique-group" style="display: none;">
-                                    <label for="edit-especificacao">Especifique:</label>
-                                    <input type="text" name="especificacao" id="edit-especificacao"
-                                        class="form-control">
-                                </div>
-
-                                <!-- Recrutador (visível apenas para "Agendado") -->
-                                <div class="form-group mb-3" id="edit-recruiter-select" style="display: none;">
-                                    <label for="recruiter">Recrutador:</label>
-                                    <select name="recruiter" id="edit-recruiter" class="form-control">
-                                        <option value="samira.barbosa">Samira</option>
-                                        <option value="nara.rodrigues">Nara</option>
-                                        <option value="wilson.monteiro">Wilson</option>
-                                        <option value="vivian.wanderley">Vivian</option>
-                                        <option value="grasielle.mapa">Grasielle</option>
-                                    </select>
-                                </div>
-
-                                <!-- CPF -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-cpf">CPF:</label>
-                                    <input type="text" name="cpf" id="edit-cpf" class="form-control" required>
-                                </div>
-
-                                <!-- CEP -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-cep">CEP:</label>
-                                    <div class="input-group">
-                                        <input type="text" name="cep" id="edit-cep" class="form-control" required>
-                                        <span class="input-group-text" onclick="buscarEndereco()">
-                                            <i class="fas fa-search"></i>
-                                        </span>
+            <br>
+            <br>
+            <!-- Tickets CHAMADO -->
+            <h3 class="h3-chamado">Em atendimento</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Status</th>
+                        <th>Guichê</th>
+                        <th>Última Atualização</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="ticket-list-called">
+                    {% if called_tickets|length == 0 %}
+                    <!-- MENSAGEM CENTRALIZADA QUANDO NÃO HÁ TICKETS CHAMADOS -->
+                    <tr>
+                        <td colspan="7" style="text-align: center; font-weight: bold;">Nenhum ticket chamado</td>
+                    </tr>
+                    {% else %}
+                    {% for ticket in called_tickets %}
+                    <tr data-id="{{ ticket.id }}">
+                        <td>{{ ticket.ticket_number }}</td>
+                        <td>{{ ticket.name }}</td>
+                        <td>{{ ticket.category }}</td>
+                        <td class="status status-chamado">CHAMADO</td>
+                        <td id="guiche-{{ ticket.id }}">{{ ticket.guiche or 'Nenhum' }}</td>
+                        <td>{{ ticket.called_at }}</td>
+                        <td>
+                            <div class="btn-container">
+                                {% if ticket.id is defined and ticket.id != 0 %}
+                                <form action="{{ url_for('send_tv', id=ticket.id or 0) }}" method="POST"
+                                    class="d-inline" onsubmit="sendToTV(event, '{{ ticket.id or 0 }}')">
+                                    <div class="form-group d-flex align-items-center">
+                                        <select name="guiche" id="guiche-select-{{ ticket.id }}"
+                                            class="form-control form-control-sm me-2" style="width:auto;" required>
+                                            <option value="" disabled selected>Guichê</option>
+                                            <option value="1" {% if ticket.guiche=='1' %}selected{% endif %}>1</option>
+                                            <option value="2" {% if ticket.guiche=='2' %}selected{% endif %}>2</option>
+                                            <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3</option>
+                                            <option value="4" {% if ticket.guiche=='4' %}selected{% endif %}>4</option>
+                                            <option value="5" {% if ticket.guiche=='5' %}selected{% endif %}>5</option>
+                                            <option value="6" {% if ticket.guiche=='6' %}selected{% endif %}>6</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
                                     </div>
-                                </div>
+                                </form>
+                                {% else %}
+                                <span>Erro: ID do ticket não encontrado.</span>
+                                {% endif %}
 
-                                <!-- Rua -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-rua">Rua:</label>
-                                    <input type="text" name="rua" id="edit-rua" class="form-control" required>
-                                </div>
+                                <div id="actions-{{ ticket.id }}" class="visible-actions">
+                                    {% if ticket.id %}
+                                    <form class="d-inline" onsubmit="callTicket(event, '{{ ticket.id }}')">
+                                        <input type="hidden" name="guiche" id="guiche-input-call-{{ ticket.id }}"
+                                            value="{{ ticket.guiche }}">
+                                        <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+                                    </form>
 
-                                <!-- Número -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-numero">Número:</label>
-                                    <input type="text" name="numero" id="edit-numero" class="form-control" required>
-                                </div>
 
-                                <!-- Complemento -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-complemento">Complemento:</label>
-                                    <input type="text" name="complemento" id="edit-complemento" class="form-control">
-                                </div>
 
-                                <!-- Bairro -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-bairro">Bairro:</label>
-                                    <input type="text" name="bairro" id="edit-bairro" class="form-control" required>
-                                </div>
 
-                                <!-- Cidade -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-cidade">Cidade:</label>
-                                    <input type="text" name="cidade" id="edit-cidade" class="form-control" required>
-                                </div>
+                                    {% else %}
+                                    <span>Erro: ID do ticket não encontrado.</span>
+                                    {% endif %}
 
-                                <!-- Telefones -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-telefones">Telefones:</label>
-                                    <input type="text" name="telefones" id="edit-telefones" class="form-control"
-                                        required>
-                                </div>
+                                    {% if ticket.id %}
+                                    <button class="btn btn-success btn-sm me-2 btn-conclude" data-id="{{ ticket.id }}">
+                                        Concluir
+                                    </button>
 
-                                <!-- Prioridade -->
-                                <div class="form-group mb-3">
-                                    <label for="edit-priority">Prioridade:</label>
-                                    <select name="priority" id="edit-priority" class="form-control" required>
-                                        <option value="0">Normal</option>
-                                        <option value="1">Prioritário (Gestantes, Idosos)</option>
-                                    </select>
-                                </div>
 
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary"
-                                        data-bs-dismiss="modal">Fechar</button>
-                                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
+                        <td>
+                            <!-- Botão com ícone de seta para expandir/colapsar os detalhes -->
+                            <button class="btn btn-info btn-sm toggle-details" data-id="{{ ticket.id }}">
+                                <i class="fas fa-angle-down"></i>
+                            </button>
+                        </td>
+                        {% else %}
+                        <span>Erro: ID do ticket não encontrado.</span>
+                        {% endif %}
 
         </div>
     </div>
+    </td>
+    </tr>
+    <tr id="details-{{ ticket.id }}" class="ticket-details">
+        <td colspan="7">
+            <div class="details-container">
+                <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
+                <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
+                    ticket.called_at else 'Não chamado' }}</p>
+                <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
+                    ticket.concluded_at else 'Não concluído' }}</p>
+                {% if ticket.category == 'Agendado' %}
+                <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
+                {% endif %}
+                {% if ticket.category == 'Outros' %}
+                <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
+                {% endif %}
+                <button class="btn btn-warning btn-sm" onclick="openEditForm('{{ ticket.id }}')">Editar</button>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+    {% endif %}
+
+    </tbody>
+    </table>
+    <br>
+    <br>
+    <!-- Tickets CONCLUÍDO -->
+    <h3 class="h3-concluido">Concluído</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th>Status</th>
+                <th>Guichê</th>
+                <th>Última Atualização</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="ticket-list-concluded">
+            {% if concluded_tickets|length == 0 %}
+            <!-- MENSAGEM CENTRALIZADA QUANDO NÃO HÁ TICKETS CONCLUÍDOS -->
+            <tr>
+                <td colspan="7" style="text-align: center; font-weight: bold;">Nenhum ticket concluído</td>
+            </tr>
+            {% else %}
+            {% for ticket in concluded_tickets %}
+            <tr data-id="{{ ticket.id }}">
+                <td>{{ ticket.ticket_number }}</td>
+                <td>{{ ticket.name }}</td>
+                <td>{{ ticket.category }}</td>
+                <td class="status status-concluido">CONCLUÍDO</td>
+                <td>{{ ticket.guiche }}</td>
+                <td>{{ ticket.concluded_at | format_brazilian_date }}</td>
+                <td>
+                    <button class="btn btn-info btn-sm btn-details toggle-details" data-id="{{ ticket.id }}">Ver
+                        Detalhes</button>
+                </td>
+            </tr>
+            <tr id="details-{{ ticket.id }}" class="ticket-details">
+                <td colspan="7">
+                    <p><strong>Criado em:</strong> {{ ticket.created_at | format_brazilian_date }}</p>
+                    <p><strong>Chamado em:</strong> {{ ticket.called_at | format_brazilian_date if
+                        ticket.called_at else 'Não chamado' }}</p>
+                    <p><strong>Concluído em:</strong> {{ ticket.concluded_at | format_brazilian_date if
+                        ticket.concluded_at else 'Não concluído' }}</p>
+                    {% if ticket.category == 'Agendado' %}
+                    <p><strong>Agendado com:</strong> {{ ticket.agendado_com or 'N/A' }}</p>
+                    {% endif %}
+                    {% if ticket.category == 'Outros' %}
+                    <p><strong>Especificação:</strong> {{ ticket.especificacao }}</p>
+                    {% endif %}
+                    <button class="btn btn-warning btn-sm" onclick="openEditForm('{{ ticket.id }}')">Editar</button>
+                </td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+
+        </tbody>
+    </table>
+    <!-- Modal de Edição -->
+    <div class="modal fade" id="editTicketModal" tabindex="-1" aria-labelledby="editTicketModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTicketModalLabel">Editar Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Formulário de Edição -->
+                    <form id="edit-ticket-form" action="{{ url_for('update_ticket') }}" method="POST">
+                        <!-- Campo oculto para o ID do ticket -->
+                        <input type="hidden" name="ticket_id" id="edit-ticket-id">
+
+                        <!-- Nome Completo -->
+                        <div class="form-group mb-3">
+                            <label for="edit-name">Nome Completo:</label>
+                            <input type="text" name="name" id="edit-name" class="form-control" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="data_nasc">Data de Nascimento:</label>
+                            <input type="date" id="edit-data_nasc" name="data_nasc" class="form-control"
+                                value="{{ form_data.data_nasc }}" required>
+                        </div>
+
+                        <!-- Categoria -->
+                        <div class="form-group mb-3">
+                            <label for="edit-category">Categoria:</label>
+                            <select name="category" id="edit-category" class="form-control" required
+                                onchange="toggleFields(); toggleRecruiterSelect();">
+                                <option value="Admissão">Admissão</option>
+                                <option value="Demissão">Demissão</option>
+                                <option value="Entrevista">Entrevista</option>
+                                <option value="Agendado">Agendado</option>
+                                <option value="Treinamento">Treinamento</option>
+                                <option value="Documentação">Documentação</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo de especificação (visível apenas para "Outros") -->
+                        <div class="form-group mb-3" id="edit-especifique-group" style="display: none;">
+                            <label for="edit-especificacao">Especifique:</label>
+                            <input type="text" name="especificacao" id="edit-especificacao" class="form-control">
+                        </div>
+
+                        <!-- Recrutador (visível apenas para "Agendado") -->
+                        <div class="form-group mb-3" id="edit-recruiter-select" style="display: none;">
+                            <label for="recruiter">Recrutador:</label>
+                            <select name="recruiter" id="edit-recruiter" class="form-control">
+                                <option value="samira.barbosa">Samira</option>
+                                <option value="nara.rodrigues">Nara</option>
+                                <option value="wilson.monteiro">Wilson</option>
+                                <option value="vivian.wanderley">Vivian</option>
+                                <option value="grasielle.mapa">Grasielle</option>
+                                <option value="rafaella.capanema">Rafaella</option>
+                            </select>
+                        </div>
+
+                        <!-- CPF -->
+                        <div class="form-group mb-3">
+                            <label for="edit-cpf">CPF:</label>
+                            <input type="text" name="cpf" id="edit-cpf" class="form-control" required>
+                        </div>
+
+                        <!-- CEP -->
+                        <div class="form-group mb-3">
+                            <label for="edit-cep">CEP:</label>
+                            <div class="input-group">
+                                <input type="text" name="cep" id="edit-cep" class="form-control" required>
+                                <span class="input-group-text" onclick="buscarEndereco()">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Rua -->
+                        <div class="form-group mb-3">
+                            <label for="edit-rua">Rua:</label>
+                            <input type="text" name="rua" id="edit-rua" class="form-control" required>
+                        </div>
+
+                        <!-- Número -->
+                        <div class="form-group mb-3">
+                            <label for="edit-numero">Número:</label>
+                            <input type="text" name="numero" id="edit-numero" class="form-control" required>
+                        </div>
+
+                        <!-- Complemento -->
+                        <div class="form-group mb-3">
+                            <label for="edit-complemento">Complemento:</label>
+                            <input type="text" name="complemento" id="edit-complemento" class="form-control">
+                        </div>
+
+                        <!-- Bairro -->
+                        <div class="form-group mb-3">
+                            <label for="edit-bairro">Bairro:</label>
+                            <input type="text" name="bairro" id="edit-bairro" class="form-control" required>
+                        </div>
+
+                        <!-- Cidade -->
+                        <div class="form-group mb-3">
+                            <label for="edit-cidade">Cidade:</label>
+                            <input type="text" name="cidade" id="edit-cidade" class="form-control" required>
+                        </div>
+
+                        <!-- Telefones -->
+                        <div class="form-group mb-3">
+                            <label for="edit-telefones">Telefones:</label>
+                            <input type="text" name="telefones" id="edit-telefones" class="form-control" required>
+                        </div>
+
+                        <!-- Prioridade -->
+                        <div class="form-group mb-3">
+                            <label for="edit-priority">Prioridade:</label>
+                            <select name="priority" id="edit-priority" class="form-control" required>
+                                <option value="0">Normal</option>
+                                <option value="1">Prioritário (Gestantes, Idosos)</option>
+                            </select>
+                        </div>
+
+
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/dp_integration.js') }}"></script>
+    <script>
+        const badges = document.querySelectorAll('.filter-badge');
+
+        // Lê do LocalStorage ao carregar e ativa só as categorias salvas
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = JSON.parse(localStorage.getItem('selectedCategories'));
+            if (saved && Array.isArray(saved)) {
+                badges.forEach(badge => {
+                    const cat = badge.getAttribute('data-category').trim();
+                    if (saved.includes(cat)) {
+                        badge.classList.add('active');
+                    } else {
+                        badge.classList.remove('active');
+                    }
+                });
+            }
+            filterTicketsByCategory();
+        });
+
+        badges.forEach(badge => {
+            badge.addEventListener('click', () => {
+                badge.classList.toggle('active');
+                saveCategoriesToStorage();
+                filterTicketsByCategory();
+            });
+        });
+
+        function saveCategoriesToStorage() {
+            const activeCategories = Array.from(document.querySelectorAll('.filter-badge.active'))
+                .map(badge => badge.getAttribute('data-category').trim());
+            localStorage.setItem('selectedCategories', JSON.stringify(activeCategories));
+        }
+
+        function filterTicketsByCategory() {
+            const activeCategories = Array.from(document.querySelectorAll('.filter-badge.active'))
+                .map(badge => badge.getAttribute('data-category').trim());
+
+            const tables = [
+                document.getElementById('ticket-list-waiting'),
+                document.getElementById('ticket-list-called'),
+                document.getElementById('ticket-list-concluded')
+            ];
+
+            tables.forEach(table => {
+                if (!table) return; // previne erro se algum id não existir
+                const rows = table.querySelectorAll('tr[data-id]');
+
+                rows.forEach(row => {
+                    const categoryCell = row.querySelector('td:nth-child(3)');
+                    const category = categoryCell ? categoryCell.innerText.trim() : '';
+
+                    const detailsRow = document.getElementById(`details-${row.getAttribute('data-id')}`);
+
+                    if (activeCategories.includes(category)) {
+                        row.style.display = '';
+                        if (detailsRow) detailsRow.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                        if (detailsRow) detailsRow.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+
+
+
+        function formatBrazilianDate(dateString) {
+            if (!dateString) return "Não informado";
+
+            let date = new Date(dateString);
+
+            if (isNaN(date)) return "Data Inválida";
+
+            return date.toLocaleString("pt-BR", {
+                dateStyle: "short",
+                timeStyle: "medium"
+            });
+        }
+
+    </script>
 
     <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
     <script src="{{ url_for('static', filename='js/verify_cpf.js') }}"></script>
@@ -883,29 +1123,35 @@
 
 
         function sendToTV(event, ticketId) {
-            event.preventDefault(); // Impede o envio tradicional do formulário
+            event.preventDefault();
 
-            var guiche = document.getElementById('guiche-select-' + ticketId).value; // Obtém o guichê selecionado
+            var guiche = document.getElementById('guiche-select-' + ticketId).value;
+            if (!guiche) {
+                alert("Por favor, selecione um guichê.");
+                return;
+            }
 
-            // Envia a requisição via AJAX
             fetch(`/send_tv/${ticketId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: new URLSearchParams({
-                    'guiche': guiche
+                    'guiche': guiche,
+                    'stage': 'RH'   // <<< Adicione esta linha!
                 })
-            }).then(response => {
-                if (response.ok) {
-                    // Atualiza a coluna correspondente ao guichê no DOM (tabela)
-                    document.getElementById('guiche-display-' + ticketId).innerText = guiche;
-                    alert('Enviado para o guichê ' + guiche);
-                } else {
-                    alert('Erro ao enviar para a TV.');
-                }
             })
+                .then(response => response.ok ? response.text() : Promise.reject('Erro'))
+                .then(data => {
+                    console.log('Response Data:', data);
+                    socket.emit('update_guiche', { ticket_id: ticketId, guiche: guiche });
+                    alert('Ticket enviado com sucesso para a TV');
+                })
+                .catch(error => {
+                    alert('Erro ao enviar o ticket para a TV: ' + error.message);
+                });
         }
+
 
         document.querySelectorAll('.btn-edit').forEach(button => {
             button.addEventListener('click', function () {
@@ -919,6 +1165,9 @@
             fetch(`/get_ticket/${ticketId}`)
                 .then(response => response.json())
                 .then(data => {
+
+                    console.log("Data de nascimento:", data.data_nasc);
+
                     // Preenche os campos do modal com os dados do ticket
                     document.getElementById('edit-ticket-id').value = data.id;
                     document.getElementById('edit-name').value = data.name;
@@ -932,6 +1181,22 @@
                     document.getElementById('edit-cidade').value = data.cidade;
                     document.getElementById('edit-telefones').value = data.telefones;
                     document.getElementById('edit-priority').value = data.priority;
+
+                    // Tratamento especial para a data de nascimento
+                    if (data.data_nasc) {
+                        // Converte a data para o formato YYYY-MM-DD esperado pelo input type="date"
+                        const dataObj = new Date(data.data_nasc);
+                        const ano = dataObj.getFullYear();
+                        // getMonth() retorna 0-11, por isso adiciona 1
+                        const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+                        const dia = String(dataObj.getDate()).padStart(2, '0');
+                        const dataFormatada = `${ano}-${mes}-${dia}`;
+
+                        console.log("Data formatada para o input:", dataFormatada);
+                        document.getElementById('edit-data_nasc').value = dataFormatada;
+                    } else {
+                        document.getElementById('edit-data_nasc').value = '';
+                    }
 
                     // Preenche o recrutador e especificação, se necessário
                     const recruiterSelect = document.getElementById('edit-recruiter');
@@ -966,6 +1231,512 @@
                     console.error('Erro ao buscar ticket:', error);
                 });
         }
+
+        function callTicket(event, ticketId) {
+            event.preventDefault(); // 🚀 Evita o reload do formulário
+
+            const guiche = document.getElementById(`guiche-input-call-${ticketId}`).value;
+
+            fetch(`/call_with_alert/${ticketId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ guiche: guiche })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log("Ticket chamado com sucesso:", data.ticket);
+
+                        // 📌 Formatar a data corretamente
+                        function formatDateWithCurrentDate(timeString) {
+                            if (!timeString) return "Não informado"; // Verifica se a string é válida
+
+                            try {
+                                // Obtém a data atual
+                                let now = new Date();
+                                let day = String(now.getDate()).padStart(2, '0');
+                                let month = String(now.getMonth() + 1).padStart(2, '0'); // Mês começa em 0
+                                let year = now.getFullYear();
+
+                                // Extraindo somente a hora, minuto e segundo do timeString
+                                let timeParts = timeString.match(/(\d{2}):(\d{2}):(\d{2})/);
+                                if (!timeParts) return "Hora inválida";
+
+                                let hours = timeParts[1];
+                                let minutes = timeParts[2];
+                                let seconds = timeParts[3];
+
+                                return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+                            } catch (error) {
+                                console.error("Erro ao formatar a hora:", error);
+                                return "Erro de Data";
+                            }
+                        }
+
+                        // 📌 Garantir que os valores estejam sempre preenchidos
+                        let category = data.ticket.category ? data.ticket.category : "Sem Categoria";
+                        let guiche = data.ticket.guiche ? data.ticket.guiche : "Nenhum";
+
+                        // 📌 Atualizar a interface movendo o ticket para "Em Atendimento"
+                        updateTicketToCalled({
+                            id: data.ticket.id,
+                            ticket_number: data.ticket.ticket_number,
+                            name: data.ticket.name,
+                            category: category,
+                            status: "CHAMADO",
+                            guiche: guiche,
+                            called_at: new Date().toLocaleDateString("pt-BR") + ", " + data.ticket.called_at
+                        });
+
+                    } else {
+                        alert("Erro ao chamar o ticket: " + (data.message || "Erro desconhecido."));
+                    }
+                })
+                .catch(error => console.error("Erro ao chamar o ticket:", error));
+        }
+
+        function updateTicketToCalled(ticket) {
+            console.log("🔄 Atualizando ticket chamado via socket:", ticket);
+
+            if (!ticket.id) {
+                console.error("⚠️ Erro: Ticket ID não encontrado!", ticket);
+                return;
+            }
+
+            // 🔹 Remover da lista "Em Espera"
+            let waitingRow = document.querySelector(`#ticket-list-waiting tr[data-id="${ticket.id}"]`);
+            let detailsRow = document.querySelector(`#details-${ticket.id}`); // Captura a linha de detalhes
+
+            if (waitingRow) {
+                console.log(`✅ Removendo ticket ${ticket.id} da lista de espera.`);
+                waitingRow.remove();
+            } else {
+                console.warn(`⚠️ Ticket ${ticket.id} NÃO encontrado na lista de espera.`);
+            }
+
+            if (detailsRow) {
+                detailsRow.remove(); // Remove os detalhes junto com o ticket
+            }
+
+            // 🔹 Remover duplicata na lista "Em Atendimento"
+            let existingRow = document.querySelector(`#ticket-list-called tr[data-id="${ticket.id}"]`);
+            if (existingRow) {
+                console.log(`✅ Removendo duplicata do ticket ${ticket.id} na lista de atendimento.`);
+                existingRow.remove();
+            }
+
+            // 🔹 Criar a nova linha com os mesmos elementos da versão HTTP
+            let calledTable = document.getElementById("ticket-list-called");
+            let newRow = document.createElement("tr");
+            newRow.setAttribute("data-id", ticket.id);
+            newRow.innerHTML = `
+        <td>${ticket.ticket_number}</td>
+        <td>${ticket.name || "Sem Nome"}</td>
+        <td>${ticket.category || "Sem Categoria"}</td>
+        <td class="status status-chamado">CHAMADO</td>
+        <td id="guiche-${ticket.id}">${ticket.guiche || "Nenhum"}</td>
+        <td>${ticket.called_at || "Não informado"}</td>
+        <td>
+            <div class="btn-container">
+                ${ticket.id ? `
+                    <!-- Formulário de TV -->
+                    <form action="/send_tv/${ticket.id}" method="POST" class="d-inline" onsubmit="sendToTV(event, '${ticket.id}')">
+                        <div class="form-group d-flex align-items-center">
+                            <select name="guiche" id="guiche-select-${ticket.id}" class="form-control form-control-sm me-2" style="width:auto;" required>
+                                <option value="" disabled ${!ticket.guiche ? "selected" : ""}>Guichê</option>
+                                <option value="1" ${ticket.guiche == '1' ? "selected" : ""}>1</option>
+                                <option value="2" ${ticket.guiche == '2' ? "selected" : ""}>2</option>
+                                <option value="3" ${ticket.guiche == '3' ? "selected" : ""}>3</option>
+                                <option value="4" ${ticket.guiche == '4' ? "selected" : ""}>4</option>
+                                <option value="5" ${ticket.guiche == '5' ? "selected" : ""}>5</option>
+                                <option value="6" ${ticket.guiche == '6' ? "selected" : ""}>6</option>
+                            </select>
+                            <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
+                        </div>
+                    </form>
+
+                    <!-- Ações -->
+                    <div id="actions-${ticket.id}" class="visible-actions">
+                        <form class="d-inline" onsubmit="callTicket(event, '${ticket.id}')">
+                            <input type="hidden" name="guiche" id="guiche-input-call-${ticket.id}" value="${ticket.guiche}">
+                            <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+                        </form>
+                        <button class="btn btn-success btn-sm me-2 btn-conclude" data-id="${ticket.id}">Concluir</button>
+                    </div>
+                ` : `<span>Erro: ID do ticket não encontrado.</span>`}
+            </div>
+        </td>
+        <td>
+            <button class="btn btn-info btn-sm toggle-details" data-id="${ticket.id}">
+                <i class="fas fa-angle-down"></i> 
+            </button>
+        </td>
+    `;
+
+            calledTable.appendChild(newRow);
+
+            // 🔹 Criar linha de detalhes e movê-la junto com o ticket
+            let newDetailsRow = document.createElement("tr");
+            newDetailsRow.setAttribute("id", `details-${ticket.id}`);
+            newDetailsRow.classList.add("ticket-details");
+            newDetailsRow.innerHTML = `
+        <td colspan="7">
+            <p><strong>Criado em:</strong> ${ticket.created_at || 'Não informado'}</p>
+            <p><strong>Chamado em:</strong> ${ticket.called_at || 'Não chamado'}</p>
+            <p><strong>Concluído em:</strong> ${ticket.concluded_at || 'Não concluído'}</p>
+            ${ticket.category === 'Agendado' ? `<p><strong>Agendado com:</strong> ${ticket.agendado_com || 'N/A'}</p>` : ""}
+            ${ticket.category === 'Outros' ? `<p><strong>Especificação:</strong> ${ticket.especificacao || 'N/A'}</p>` : ""}
+            <button class="btn btn-warning btn-sm" onclick="openEditForm('${ticket.id}')">Editar</button>
+        </td>
+    `;
+
+            calledTable.appendChild(newDetailsRow);
+
+            // 🔹 Adicionar evento ao botão de detalhes
+            newRow.querySelector(".toggle-details").addEventListener("click", function () {
+                newDetailsRow.classList.toggle("visible");
+            });
+
+            // 🔹 Adicionar evento ao botão "Concluir"
+            newRow.querySelector(".btn-conclude").addEventListener("click", function () {
+                concludeTicket(ticket.id);
+            });
+        }
+
+        // 📌 WebSocket escuta o evento e chama a função corrigida
+        socket.on('update_ticket_called', function (ticket) {
+            console.log("✅ Ticket chamado recebido via WebSocket:", ticket);
+            updateTicketToCalled(ticket);
+        });
+
+
+
+        function moveTicketToConcluded(ticket) {
+            console.log("✅ Movendo ticket para Concluídos:", ticket);
+
+            if (!ticket.id || !ticket.ticket_number || !ticket.name) {
+                console.error("⚠️ Ticket com informações incompletas:", ticket);
+                return;
+            }
+
+            // 🛠️ Remover da lista "Em Atendimento"
+            let calledRow = document.querySelector(`#ticket-list-called tr[data-id="${ticket.id}"]`);
+            let detailsRow = document.querySelector(`#details-${ticket.id}`); // Captura a linha de detalhes
+
+            if (calledRow) {
+                calledRow.remove();
+            } else {
+                console.warn(`⚠️ Ticket ${ticket.id} NÃO encontrado na lista de atendimento`);
+            }
+
+            if (detailsRow) {
+                detailsRow.remove(); // Remove a linha de detalhes junto com o ticket
+            }
+
+            // 📌 Remover duplicatas da lista "Concluídos"
+            let existingRow = document.querySelector(`#ticket-list-concluded tr[data-id="${ticket.id}"]`);
+            if (existingRow) {
+                existingRow.remove();
+            }
+
+            // 📌 Criar nova linha na tabela "Concluídos"
+            let concludedTable = document.getElementById("ticket-list-concluded");
+            let newRow = document.createElement("tr");
+            newRow.setAttribute("data-id", ticket.id);
+            newRow.innerHTML = `
+        <td>${ticket.ticket_number}</td>
+        <td>${ticket.name}</td>
+        <td>${ticket.category || "Sem Categoria"}</td>
+        <td class="status status-concluido">CONCLUÍDO</td>
+        <td>${ticket.guiche || "Nenhum"}</td>
+        <td>${formatBrazilianDate(ticket.concluded_at)}</td>
+        <td>
+            <button class="btn btn-info btn-sm toggle-details" data-id="${ticket.id}">
+                Ver Detalhes
+            </button>
+        </td>
+    `;
+            concludedTable.appendChild(newRow);
+
+            // 🔹 Criar linha de detalhes abaixo do ticket
+            let newDetailsRow = document.createElement("tr");
+            newDetailsRow.setAttribute("id", `details-${ticket.id}`);
+            newDetailsRow.classList.add("ticket-details");
+            newDetailsRow.innerHTML = `
+        <td colspan="7">
+            <p><strong>Criado em:</strong> ${ticket.created_at || 'Não informado'}</p>
+            <p><strong>Chamado em:</strong> ${ticket.called_at || 'Não chamado'}</p>
+            <p><strong>Concluído em:</strong> ${ticket.concluded_at || 'Não concluído'}</p>
+            ${ticket.category === 'Agendado' ? `<p><strong>Agendado com:</strong> ${ticket.agendado_com || 'N/A'}</p>` : ""}
+            ${ticket.category === 'Outros' ? `<p><strong>Especificação:</strong> ${ticket.especificacao || 'N/A'}</p>` : ""}
+            <button class="btn btn-warning btn-sm" onclick="openEditForm('${ticket.id}')">Editar</button>
+        </td>
+    `;
+            concludedTable.appendChild(newDetailsRow);
+
+            // 🔹 Adicionar evento ao botão de detalhes
+            newRow.querySelector(".toggle-details").addEventListener("click", function () {
+                newDetailsRow.classList.toggle("visible");
+            });
+        }
+
+        // 📌 WebSocket escuta o evento e chama a função corrigida
+        socket.on('update_ticket_concluded', function (ticket) {
+            console.log("✅ Ticket concluído recebido via WebSocket:", ticket);
+            moveTicketToConcluded(ticket);
+        });
+
+        // 📌 Definição da função `formatBrazilianDate` (corrigindo erro de função não definida)
+        function formatBrazilianDate(dateString) {
+            if (!dateString) return "Não informado";
+
+            let date = new Date(dateString);
+            if (isNaN(date.getTime())) return "Data inválida";
+
+            return date.toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }) + " " + date.toLocaleTimeString("pt-BR");
+        }
+
+        // 📌 WebSocket agora recebe `guiche` corretamente e chama `moveTicketToConcluded`
+        socket.on('update_ticket_concluded', function (ticket) {
+            console.log("✅ Ticket concluído recebido:", ticket);
+            moveTicketToConcluded(ticket);
+        });
+
+
+        function concludeTicket(ticketId) {
+            fetch(`/conclude_ticket/${ticketId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.ticket) {
+                        moveTicketToConcluded(data.ticket);
+                    } else {
+                        alert("Erro ao concluir o ticket: " + (data.message || "Erro desconhecido"));
+                    }
+                })
+                .catch(error => console.error("Erro ao concluir o ticket:", error));
+        }
+
+
+        // 📌 Evento para Concluir Ticket
+        document.querySelectorAll('.btn-conclude').forEach(button => {
+            button.addEventListener('click', function (event) {
+                event.preventDefault(); // 🛑 Evita o comportamento padrão do botão
+
+                let ticketId = this.getAttribute('data-id');
+
+                fetch(`/conclude_ticket/${ticketId}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.ticket) {
+                            moveTicketToConcluded(data.ticket); // Move para a tabela de "Concluídos"
+                        } else {
+                            alert("Erro ao concluir o ticket: " + (data.message || "Erro desconhecido"));
+                        }
+                    })
+                    .catch(error => console.error("Erro ao concluir o ticket:", error));
+            });
+        });
+
+
+
+
+
+        function updateTicketToConcluded(ticket) {
+            let ticketRow = document.querySelector(`tr[data-id='${ticket.id}']`);
+            if (ticketRow) {
+                ticketRow.innerHTML = `
+            <td>${ticket.ticket_number}</td>
+            <td>${ticket.name}</td>
+            <td class="status status-concluido">CONCLUÍDO</td>
+            <td>${ticket.concluded_at}</td>
+        `;
+            }
+        }
+
+
+        socket.on('update_ticket_concluded', function (ticket) {
+            console.log("Recebido evento de conclusão:", ticket);
+
+            // 🛠️ Remover da lista "Em Atendimento"
+            let calledRow = document.querySelector(`#ticket-list-called tr[data-id="${ticket.id}"]`);
+            if (calledRow) {
+                console.log(`🛑 Removendo ticket ${ticket.id} da lista de atendimento`);
+                calledRow.remove();
+            } else {
+                console.warn(`⚠️ Ticket ${ticket.id} NÃO encontrado na lista de atendimento`);
+            }
+
+            // 📌 Formatar a data corretamente antes de exibir
+            function formatDate(dateString) {
+                if (!dateString || dateString === "Invalid Date") return "N/A";
+                let date = new Date(dateString);
+                return isNaN(date.getTime()) ? "Data Inválida" : date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "medium" });
+            }
+
+            // 🛠️ Remover duplicatas da lista "Concluídos"
+            let existingRow = document.querySelector(`#ticket-list-concluded tr[data-id="${ticket.id}"]`);
+            if (existingRow) {
+                console.log(`🛑 Removendo duplicata do ticket ${ticket.id} na lista de Concluídos`);
+                existingRow.remove();
+            }
+
+            // 📌 Adicionar nova linha na tabela "Concluídos"
+            let concludedTable = document.getElementById('ticket-list-concluded');
+            if (concludedTable) {
+                let newRow = document.createElement("tr");
+                newRow.setAttribute("data-id", ticket.id);
+                newRow.innerHTML = `
+            <td>${ticket.ticket_number}</td>
+            <td>${ticket.name}</td>
+            <td>${ticket.category}</td>
+            <td class="status status-concluido"><strong>CONCLUÍDO</strong></td>
+            <td>${formatDate(ticket.concluded_at)}</td>
+        `;
+                concludedTable.appendChild(newRow);
+            }
+        });
+
+
+        function updateTicketLists(ticket) {
+            // Remove o ticket da lista "Em Espera" caso ele ainda esteja nela
+            let waitingRow = document.querySelector(`#ticket-list-waiting tr[data-id="${ticket.id}"]`);
+            if (waitingRow) waitingRow.remove();
+
+            // Remove o ticket da lista "Chamado" caso já tenha sido adicionado antes (evita duplicação)
+            let calledRow = document.querySelector(`#ticket-list-called tr[data-id="${ticket.id}"]`);
+            if (calledRow) calledRow.remove();
+
+            // Adiciona o ticket atualizado na lista "Chamado"
+            let calledTable = document.getElementById('ticket-list-called');
+            let newRow = document.createElement("tr");
+            newRow.setAttribute('data-id', ticket.id);
+            newRow.innerHTML = `
+        <td>${ticket.ticket_number}</td>
+        <td>${ticket.name}</td>
+        <td>${ticket.category}</td>
+        <td class="status status-chamado">CHAMADO</td>
+        <td>${ticket.guiche || 'Nenhum'}</td>
+        <td>${ticket.called_at}</td>
+        <td>
+            <div class="btn-container">
+                <!-- Botão TV -->
+                <form action="/send_tv/${ticket.id}" method="POST" class="d-inline" onsubmit="sendToTV(event, '${ticket.id}')">
+                    <select name="guiche" id="guiche-select-${ticket.id}" class="form-control form-control-sm me-2" style="width:auto;" required>
+                        <option value="" disabled selected>Guichê</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                    </select>
+                    <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
+                </form>
+
+                <!-- Botão Chamar -->
+                <form action="/call_with_alert/${ticket.id}" method="POST" class="d-inline" onsubmit="callTicket(event, '${ticket.id}')">
+                    <input type="hidden" name="guiche" id="guiche-input-call-${ticket.id}" value="${ticket.guiche}">
+                    <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+                </form>
+
+                <!-- Botão Concluir -->
+                <form action="/conclude_ticket/${ticket.id}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-sm me-2" onclick="validateAction(event, '${ticket.id}')">Concluir</button>
+                </form>
+            </div>
+        </td>
+        <td>
+            <!-- Botão com ícone de seta para expandir/colapsar os detalhes -->
+            <button class="btn btn-info btn-sm toggle-details" data-id="${ticket.id}">
+                <i class="fas fa-angle-down"></i>
+            </button>
+        </td>
+    `;
+            calledTable.appendChild(newRow);
+
+            // Adiciona evento ao botão "Concluir"
+            newRow.querySelector(".btn-conclude").addEventListener("click", function () {
+                concludeTicket(ticket.id);
+            });
+
+            // Adiciona um evento de clique ao botão de detalhes para alternar a exibição
+            const detailsButton = newRow.querySelector('.toggle-details');
+            detailsButton.addEventListener('click', () => {
+                const detailsRow = document.getElementById(`details-${ticket.id}`);
+                if (detailsRow) {
+                    detailsRow.classList.toggle('visible');
+                }
+            });
+
+            // Adiciona a linha de detalhes (caso seja necessária)
+            const detailsRow = document.createElement('tr');
+            detailsRow.id = `details-${ticket.id}`;
+            detailsRow.classList.add('ticket-details');
+            detailsRow.innerHTML = `
+        <td colspan="7">
+            <p><strong>Criado em:</strong> ${ticket.created_at || 'N/A'}</p>
+            <p><strong>Chamado em:</strong> ${ticket.called_at || 'N/A'}</p>
+            <p><strong>Concluído em:</strong> ${ticket.concluded_at || 'Não concluído'}</p>
+        </td>
+    `;
+            calledTable.appendChild(detailsRow);
+        }
+
+
+        // Helper para pegar cookies (CSRF token)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+
+
+        function verifyCPF(cpf, category) {
+            fetch('/verify_cpf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ cpf: cpf, category: category }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        // Exibe o aviso, se houver
+                        if (data.warning) {
+                            const alertBox = document.getElementById('alert-box');
+                            alertBox.innerHTML = `<strong>${data.warning}</strong>`;
+                            alertBox.style.display = 'block';
+                        }
+                    } else {
+                        console.log(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar CPF:', error);
+                });
+        }
+
 
 
         function toggleEditFields() {
@@ -1170,6 +1941,8 @@
                         <option value="3">3</option>
                         <option value="4">4</option>
                         <option value="5">5</option>
+                        <option value="6">6</option>
+
                     </select>
                     <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
                 </div>
@@ -1266,34 +2039,6 @@
         }
 
 
-        function callTicket(event, ticketId) {
-            event.preventDefault();
-            var form = event.target;
-            var guicheInput = document.getElementById(`guiche-input-call-${ticketId}`).value;
-
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({ guiche: guicheInput })
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erro ao chamar o ticket');
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    if (data) {
-                        // Se houver dados, você pode processá-los aqui
-                        // Atualize a interface ou faça outra ação conforme necessário
-                    }
-                })
-                .catch(error => {
-                    alert(error.message); // Mostra o erro ao usuário
-                });
-        }
 
 
         function toggleSidebar() {
@@ -1376,9 +2121,146 @@
         });
 
         document.getElementById('ticket-form').addEventListener('submit', function (event) {
-            document.getElementById('loading-ticket').style.display = 'flex';
+            event.preventDefault(); // 🚀 Evita o recarregamento da página
+
+            let formData = new FormData(this); // Captura os dados do formulário
+
+            document.getElementById('loading-ticket').style.display = 'flex'; // Exibe "Aguarde..."
+
+            fetch('/create_ticket', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading-ticket').style.display = 'none'; // Esconde "Aguarde..."
+
+                    if (data.success) {
+                        console.log("🆕 Novo ticket criado:", data.ticket);
+
+                        // 📌 Adiciona o novo ticket dinamicamente na tabela "Em Espera"
+                        addTicketToWaitingList(data.ticket);
+
+                        // 🧹 Reseta os formulários após o envio bem-sucedido
+                        document.getElementById('ticket-form').reset();
+                        document.getElementById('ticket-form').style.display = 'none';
+                        document.getElementById('cpf-form').reset();
+                    } else {
+                        alert("Erro ao criar ticket: " + (data.message || "Erro desconhecido."));
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao enviar ticket:", error);
+                    document.getElementById('loading-ticket').style.display = 'none';
+                });
         });
 
+        function addTicketToWaitingList(ticket) {
+            console.log("🆕 Adicionando ticket à lista de espera:", ticket);
+
+            let waitingTable = document.getElementById("ticket-list-waiting");
+
+            let newRow = document.createElement("tr");
+            newRow.setAttribute("data-id", ticket.id);
+            newRow.innerHTML = `
+        <td>${ticket.ticket_number}</td>
+        <td>${ticket.name || "Sem Nome"}</td>
+        <td>${ticket.category || "Sem Categoria"}</td>
+        <td class="status status-espera">EM ESPERA</td>
+        <td id="guiche-${ticket.id}">${ticket.guiche || "Nenhum"}</td>
+        <td>${formatBrazilianDate(ticket.created_at) || "Não informado"}</td>
+        <td>
+            <div class="btn-container">
+                <form action="/send_tv/${ticket.id}" method="POST" class="d-inline" onsubmit="sendToTV(event, '${ticket.id}')">
+                    <div class="form-group d-flex align-items-center">
+                        <select name="guiche" id="guiche-select-${ticket.id}" class="form-control form-control-sm me-2" required>
+                            <option value="" disabled ${!ticket.guiche ? "selected" : ""}>Guichê</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                        </select>
+                        <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
+                    </div>
+                </form>
+                <div id="actions-${ticket.id}" class="visible-actions">
+                    <form class="d-inline" onsubmit="callTicket(event, '${ticket.id}')">
+                        <input type="hidden" name="guiche" id="guiche-input-call-${ticket.id}" value="${ticket.guiche}">
+                        <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+                    </form>
+                   <button class="btn btn-success btn-sm me-2 btn-conclude" data-id="${ticket.id}">Concluir</button>
+                    ${ticket.category === "Admissão" ? `<button class="btn btn-warning btn-sm me-2 btn-send-dp" data-id="${ticket.id}">Enviar para DP</button>` : ""}
+                </div>
+            </div>
+        </td>
+        <td>
+            <button class="btn btn-info btn-sm toggle-details" data-id="${ticket.id}">
+                <i class="fas fa-angle-down"></i>
+            </button>
+        </td>
+    `;
+
+            waitingTable.appendChild(newRow);
+
+            // Criar linha de detalhes abaixo do ticket
+            let detailsRow = document.createElement("tr");
+            detailsRow.setAttribute("id", `details-${ticket.id}`);
+            detailsRow.classList.add("ticket-details");
+            detailsRow.innerHTML = `
+        <td colspan="7">
+            <p><strong>Criado em:</strong> ${formatBrazilianDate(ticket.created_at) || "Não informado"}</p>
+            <p><strong>Chamado em:</strong> ${formatBrazilianDate(ticket.called_at) || "Não chamado"}</p>
+            <p><strong>Concluído em:</strong> ${formatBrazilianDate(ticket.concluded_at) || "Não concluído"}</p>
+            ${ticket.category === 'Agendado' ? `<p><strong>Agendado com:</strong> ${ticket.agendado_com || 'N/A'}</p>` : ''}
+            ${ticket.category === 'Outros' ? `<p><strong>Especificação:</strong> ${ticket.especificacao}</p>` : ''}
+            <button class="btn btn-warning btn-sm" onclick="openEditForm('${ticket.id}')">Editar</button>
+        </td>
+    `;
+
+            waitingTable.appendChild(detailsRow);
+
+            // Adicionar evento para expandir detalhes
+            newRow.querySelector(".toggle-details").addEventListener("click", function () {
+                detailsRow.classList.toggle("visible");
+            });
+
+            console.log(`✅ Ticket ${ticket.id} adicionado à lista de espera.`);
+        }
+
+        // Função AJAX
+        function sendToDP(ticketId) {
+            if (!confirm("Deseja realmente enviar este ticket para o Departamento Pessoal?")) return;
+
+            fetch(`/send_to_dp/${ticketId}`, {
+                method: "POST"
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Ticket enviado para o DP com sucesso!");
+                        // Remove o ticket da lista
+                        let waitingRow = document.querySelector(`#ticket-list-waiting tr[data-id="${ticketId}"]`);
+                        let detailsRow = document.querySelector(`#details-${ticketId}`);
+                        if (waitingRow) waitingRow.remove();
+                        if (detailsRow) detailsRow.remove();
+                    } else {
+                        alert("Erro ao enviar para o DP: " + (data.message || "Erro desconhecido."));
+                    }
+                })
+                .catch(error => {
+                    alert("Erro ao enviar para o DP: " + error);
+                });
+        }
+
+        // Delegação (vale para qualquer botão criado dinamicamente)
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('btn-send-dp')) {
+                let ticketId = e.target.getAttribute('data-id');
+                sendToDP(ticketId);
+            }
+        });
         function updateHiddenInput(ticketId) {
             var selectElement = document.getElementById(`guiche-select-${ticketId}`);
             var hiddenInput = document.getElementById(`guiche-input-${ticketId}`);

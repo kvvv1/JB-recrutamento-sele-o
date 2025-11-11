@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel DP - TV</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="icon" href="https://jbconservadora.com.br/wp-content/uploads/2022/04/cropped-LOGO-JB-32x32.png"
+        type="image/png">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 8px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .logo {
+            max-width: 100px;
+            margin-right: 20px;
+        }
+
+        .current-time {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-top: 5px;
+            color: #000000;
+        }
+
+        .column-header {
+            background-color: #343a40;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        .waiting-header {
+            background-color: #007bff;
+        }
+
+        .processing-header {
+            background-color: #ffc107;
+        }
+
+        .completed-header {
+            background-color: #28a745;
+        }
+
+        .ticket-container {
+            height: calc(100vh - 240px);
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border-radius: 0 0 10px 10px;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .ticket {
+            padding: 15px;
+            margin: 10px;
+            border-left: 5px solid;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .ticket-waiting {
+            border-left-color: #007bff;
+        }
+
+        .ticket-processing {
+            border-left-color: #ffc107;
+            animation: pulse 2s infinite;
+        }
+
+        .ticket-completed {
+            border-left-color: #28a745;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+            }
+        }
+
+        .ticket-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .ticket-waiting .ticket-number {
+            color: #007bff;
+        }
+
+        .ticket-processing .ticket-number {
+            color: #ffc107;
+        }
+
+        .ticket-completed .ticket-number {
+            color: #28a745;
+        }
+
+        .ticket-info {
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        .ticket-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .status-waiting {
+            background-color: #e6f2ff;
+            color: #007bff;
+        }
+
+        .status-processing {
+            background-color: #fff8e6;
+            color: #ffc107;
+        }
+
+        .status-completed {
+            background-color: #e6ffe6;
+            color: #28a745;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 1rem;
+        }
+
+        .auto-refresh-message {
+            font-size: 0.9rem;
+            color: #6c757d;
+            position: fixed;
+            bottom: 50px;
+            right: 20px;
+        }
+
+        /* Scrollbar personalizada */
+        .ticket-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .ticket-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .ticket-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .ticket-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .empty-message {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .wait-timer {
+            display: inline-block;
+            min-width: 65px;
+            background: #e8ffe8;
+            color: #218838;
+            font-weight: bold;
+            font-size: 0.95rem;
+            border-radius: 20px;
+            padding: 3px 12px;
+            text-align: center;
+            margin-right: 6px;
+            transition: background 0.3s, color 0.3s;
+            border: 1.5px solid #218838;
+        }
+
+        .wait-timer.timer-yellow {
+            background: #fff9e6;
+            color: #c79800;
+            border-color: #c79800;
+        }
+
+        .wait-timer.timer-red {
+            background: #ffeaea;
+            color: #b21f1f;
+            border-color: #b21f1f;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <img src="/static/images/logo2.png" alt="Logo" class="logo">
+                <h2>Painel Departamento Pessoal</h2>
+            </div>
+            <div class="current-time" id="current-time">
+                <i class="far fa-clock"></i> <span id="time-display"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Coluna 1: Em Espera -->
+            <div class="col-md-4">
+                <h2 class="column-header waiting-header">
+                    <i class="fas fa-hourglass-start me-2"></i>Em Espera
+                </h2>
+                <div class="ticket-container">
+                    {% if pending_tickets %}
+                    {% for ticket in pending_tickets %}
+                    <div class="ticket ticket-waiting">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="ticket-number">{{ ticket.ticket_number }}</div>
+                            <span class="ticket-status status-waiting">Em Espera</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="wait-timer" 
+                            id="wait-timer-{{ ticket.id }}"
+                            data-start="{{ ticket.dp_start_time|format_brazilian_date }}">
+                          00:00
+                      </span>
+                      
+                        </div>
+                        <div class="ticket-info">
+                            <p class="mb-1"><strong>Nome:</strong> {{ ticket.name }}</p>
+                            <p class="mb-1"><strong>CPF:</strong> {{ ticket.cpf }}</p>
+                            <strong>Enviado em:</strong> {{ ticket.dp_start_time | format_brazilian_date }}<br>
+                        </div>
+                    </div>
+
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-message">
+                        <i class="fas fa-info-circle me-2"></i>Nenhum ticket em espera no momento.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Coluna 2: Em Atendimento -->
+            <div class="col-md-4">
+                <h2 class="column-header processing-header">
+                    <i class="fas fa-user-clock me-2"></i>Em Atendimento
+                </h2>
+                <div class="ticket-container">
+                    {% if in_progress_tickets %}
+                    {% for ticket in in_progress_tickets %}
+                    <div class="ticket ticket-processing">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="ticket-number">{{ ticket.ticket_number }}</div>
+                            <span class="ticket-status status-processing">Em Atendimento</span>
+                        </div>
+                        <div class="ticket-info">
+                            <p class="mb-1"><strong>Nome:</strong> {{ ticket.name }}</p>
+                            <p class="mb-1"><strong>CPF:</strong> {{ ticket.cpf }}</p>
+                            <p class="mb-1"><strong>Iniciado em:</strong> {{ ticket.dp_process_start_time }}</p>
+                            <p class="mb-0"><strong>Operador:</strong> {{ ticket.dp_process_by or 'Não informado' }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-message">
+                        <i class="fas fa-info-circle me-2"></i>Nenhum ticket em atendimento no momento.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+
+            <!-- Coluna 3: Concluído -->
+            <div class="col-md-4">
+                <h2 class="column-header completed-header">
+                    <i class="fas fa-check-circle me-2"></i>Concluído
+                </h2>
+                <div class="ticket-container">
+                    {% if completed_tickets %}
+                    {% for ticket in completed_tickets %}
+                    <div class="ticket ticket-completed">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="ticket-number">{{ ticket.ticket_number }}</div>
+                            <span class="ticket-status status-completed">Concluído</span>
+                        </div>
+                        <div class="ticket-info">
+                            <p class="mb-1"><strong>Nome:</strong> {{ ticket.name }}</p>
+                            <p class="mb-1"><strong>CPF:</strong> {{ ticket.cpf }}</p>
+                            <p class="mb-1"><strong>Concluído em:</strong> {{ ticket.dp_completed_time }}</p>
+                            <p class="mb-0"><strong>Operador:</strong> {{ ticket.dp_process_by or 'Não informado' }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-message">
+                        <i class="fas fa-info-circle me-2"></i>Nenhum ticket concluído hoje.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auto-refresh-message">
+        <i class="fas fa-sync-alt"></i> Atualização automática a cada 30 segundos
+    </div>
+
+    <div class="footer">
+        JB Conservadora - Sistema de Gerenciamento DP - {{ current_date }}
+    </div>
+
+    <audio id="sound-espera" src="/static/sounds/espera_dp.mp3" preload="auto"></audio>
+    <audio id="sound-alerta" src="/static/sounds/alerta_30min.mp3" preload="auto"></audio>
+
+    <!-- Modal para liberar áudio -->
+    <div class="modal fade" id="liberarAudioModal" tabindex="-1" aria-labelledby="liberarAudioModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white rounded-top-4">
+                    <h5 class="modal-title" id="liberarAudioModalLabel">
+                        <i class="fas fa-bell me-2"></i>Liberar Som do Painel
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <p>
+                        Para receber avisos sonoros de novos tickets ou esperas longas,<br>
+                        clique no botão abaixo para liberar o áudio do navegador.
+                    </p>
+                    <button type="button" class="btn btn-success btn-lg mt-2" id="btn-liberar-audio">
+                        <i class="fas fa-volume-up me-2"></i>Liberar Áudio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Atualiza o relógio a cada segundo
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            document.getElementById('time-display').textContent = timeString;
+        }
+
+        let audioLiberado = false;
+
+        function liberarAudio() {
+            audioLiberado = true;
+
+            // Play para liberar contexto (pode ser só um dos dois se quiser)
+            document.getElementById('sound-espera').play().catch(() => { });
+            setTimeout(() => {
+                document.getElementById('sound-espera').pause();
+                document.getElementById('sound-espera').currentTime = 0;
+            }, 200);
+
+            // Fecha o modal
+            const modalEl = document.getElementById('liberarAudioModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+
+        // Função para calcular o tempo decorrido em mm:ss/hh:mm:ss
+        function formatElapsedTime(startTime) {
+            const start = parseBrazilianDate(startTime);
+            const now = new Date();
+            let diff = Math.floor((now - start) / 1000);
+
+            const hours = Math.floor(diff / 3600);
+            diff = diff % 3600;
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+
+            return (hours > 0 ? String(hours).padStart(2, '0') + ':' : '') +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+        }
+
+        function playEspera() {
+            if (!audioLiberado) return;
+            const audio = document.getElementById('sound-espera');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(() => { });
+            }
+        }
+        function playAlerta30min() {
+            if (!audioLiberado) return;
+            const audio = document.getElementById('sound-alerta');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(() => { });
+            }
+        }
+
+        function updateTimers() {
+            document.querySelectorAll('.wait-timer').forEach(function (timer) {
+                const start = timer.getAttribute('data-start');
+                if (!start) return;
+
+                const startDate = parseBrazilianDate(start);
+                if (!startDate || isNaN(startDate.getTime())) {
+                    timer.textContent = '00:00';
+                    timer.classList.remove('timer-yellow', 'timer-red');
+                    return;
+                }
+
+                timer.textContent = formatElapsedTime(start);
+
+                const elapsed = (new Date() - startDate) / 60000;
+
+                timer.classList.remove('timer-yellow', 'timer-red');
+                if (elapsed < 15 && elapsed >= 0) {
+                    // Verde
+                } else if (elapsed < 30 && elapsed >= 15) {
+                    timer.classList.add('timer-yellow');
+                } else if (elapsed >= 30 && !isNaN(elapsed)) {
+                    timer.classList.add('timer-red');
+                    if (timer.getAttribute('data-alerted') !== 'true') {
+                        playAlerta30min();
+                        timer.setAttribute('data-alerted', 'true');
+                    }
+                }
+            });
+        }
+
+
+
+        // Função para renderizar cada coluna dinamicamente
+        function renderTickets(tickets, containerSelector, statusClass, statusLabel) {
+            const container = document.querySelector(containerSelector);
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!tickets || !tickets.length) {
+                container.innerHTML = `<div class="empty-message">
+                    <i class="fas fa-info-circle me-2"></i>Nenhum ticket ${statusLabel} no momento.
+                </div>`;
+                return;
+            }
+
+            tickets.forEach(ticket => {
+                const ticketHtml = `
+                <div class="ticket ${statusClass}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="ticket-number">${ticket.ticket_number}</div>
+                        <span class="ticket-status status-${statusClass.replace('ticket-', '')}">${statusLabel}</span>
+                    </div>
+                    <div class="mb-1">
+                        ${statusClass === 'ticket-waiting' ? `
+                        <span class="wait-timer" id="wait-timer-${ticket.id}"
+                            data-start="${ticket.dp_start_time}">
+                            00:00
+                        </span>` : ""}
+                    </div>
+                    <div class="ticket-info">
+                        <p class="mb-1"><strong>Nome:</strong> ${ticket.name}</p>
+                        <p class="mb-1"><strong>CPF:</strong> ${ticket.cpf}</p>
+                        ${statusClass === 'ticket-waiting'
+                        ? `<strong>Enviado em:</strong> ${ticket.dp_start_time}<br>`
+                        : statusClass === 'ticket-processing'
+                            ? `<p class="mb-1"><strong>Iniciado em:</strong> ${ticket.dp_process_start_time}</p>
+                                   <p class="mb-0"><strong>Operador:</strong> ${ticket.dp_process_by || 'Não informado'}</p>`
+                            : `<p class="mb-1"><strong>Concluído em:</strong> ${ticket.dp_completed_time}</p>
+                                   <p class="mb-0"><strong>Operador:</strong> ${ticket.dp_process_by || 'Não informado'}</p>`
+                    }
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', ticketHtml);
+            });
+        }
+
+        // Atualiza todo o painel dinamicamente
+        function atualizarPainel() {
+            fetch('/api/tickets_dp')
+                .then(response => response.json())
+                .then(data => {
+                    renderTickets(data.pending_tickets, ".col-md-4:nth-child(1) .ticket-container", "ticket-waiting", "Em Espera");
+                    renderTickets(data.in_progress_tickets, ".col-md-4:nth-child(2) .ticket-container", "ticket-processing", "Em Atendimento");
+                    renderTickets(data.completed_tickets, ".col-md-4:nth-child(3) .ticket-container", "ticket-completed", "Concluído");
+                    updateTimers();
+                })
+                .catch(err => {
+                    console.error("Erro ao atualizar painel:", err);
+                });
+        }
+
+        // Conexão do socket
+        let socket;
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Abrir o modal ao carregar a página
+            const audioModal = new bootstrap.Modal(document.getElementById('liberarAudioModal'), {
+                backdrop: 'static', // não fecha ao clicar fora
+                keyboard: false     // não fecha com ESC
+            });
+            audioModal.show();
+
+            // Listener para botão
+            document.getElementById('btn-liberar-audio').addEventListener('click', liberarAudio);
+            // Inicializa o relógio
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Atualiza os timers periodicamente
+            updateTimers();
+            setInterval(updateTimers, 1000);
+
+            // Conecta ao Socket.IO para atualizações em tempo real
+            socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            socket.on('dp_ticket_update', function (data) {
+                atualizarPainel();
+            });
+
+            socket.on('new_dp_ticket', function (data) {
+                playEspera();
+                atualizarPainel();
+            });
+        });
+
+        // Função para converter data brasileira para objeto Date JS
+        function parseBrazilianDate(dateString) {
+            // Ex: "09/06/2025 10:40:47" ou "09/06/2025 10:40:47.000"
+            if (!dateString) return null;
+            let [datePart, timePart] = dateString.split(' ');
+            if (!datePart || !timePart) return null;
+
+            let [day, month, year] = datePart.split('/');
+            let [hour, minute, second] = timePart.split(':');
+            // Tratar possível milissegundos
+            if (second && second.includes('.')) {
+                second = second.split('.')[0];
+            }
+            return new Date(
+                parseInt(year),
+                parseInt(month) - 1, // JS months are 0-based
+                parseInt(day),
+                parseInt(hour),
+                parseInt(minute),
+                parseInt(second)
+            );
+        }
+    </script>
+
+
+
+</body>
+
+</html>

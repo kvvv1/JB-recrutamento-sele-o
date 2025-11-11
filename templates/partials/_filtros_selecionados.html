@@ -1,0 +1,149 @@
+<h5>Filtros Selecionados:</h5>
+<ul>
+    {% if request.args.get('nome') %}
+    <li>
+        <strong>Nome Completo:</strong> {{ request.args.get('nome') }}
+        <a href="#" class="remove-filter" data-filter="nome">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('cpf') %}
+    <li>
+        <strong>CPF:</strong> {{ request.args.get('cpf') }}
+        <a href="#" class="remove-filter" data-filter="cpf">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('genero') %}
+    <li>
+        <strong>Genêro:</strong> {{ request.args.get('genero') }}
+        <a href="#" class="remove-filter" data-filter="genero">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('estado_civil') %}
+    <li>
+        <strong>Estado Civil:</strong> {{ request.args.get('estado_civil') }}
+        <a href="#" class="remove-filter" data-filter="estado_civil">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('data_nasc_inicio') %}
+    <li>
+        <strong>Data de Nascimento (Início):</strong> {{ request.args.get('data_nasc_inicio') }}
+        <a href="#" class="remove-filter" data-filter="data_nasc_inicio">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('data_nasc_fim') %}
+    <li>
+        <strong>Data de Nascimento (Fim):</strong> {{ request.args.get('data_nasc_fim') }}
+        <a href="#" class="remove-filter" data-filter="data_nasc_fim">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('idade_min') %}
+    <li>
+        <strong>Idade Mínima:</strong> {{ request.args.get('idade_min') }}
+        <a href="#" class="remove-filter" data-filter="idade_min">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('idade_max') %}
+    <li>
+        <strong>Idade Máxima:</strong> {{ request.args.get('idade_max') }}
+        <a href="#" class="remove-filter" data-filter="idade_max">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('fumante') %}
+    <li>
+        <strong>Fumante:</strong> {{ request.args.get('fumante') }}
+        <a href="#" class="remove-filter" data-filter="fumante">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('bebida') %}
+    <li>
+        <strong>Bebida:</strong> {{ request.args.get('bebida') }}
+        <a href="#" class="remove-filter" data-filter="bebida">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('alergia') %}
+    <li>
+        <strong>Alergia:</strong> {{ request.args.get('alergia') }}
+        <a href="#" class="remove-filter" data-filter="alergia">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('medicamento') %}
+    <li>
+        <strong>Medicamento de Uso Constante:</strong> {{ request.args.get('medicamento') }}
+        <a href="#" class="remove-filter" data-filter="medicamento">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('pcd') %}
+    <li>
+        <strong>PCD:</strong> {{ request.args.get('pcd') }}
+        <a href="#" class="remove-filter" data-filter="pcd">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('tatuagem') %}
+    <li>
+        <strong>Tatuagem:</strong> {{ request.args.get('tatuagem') }}
+        <a href="#" class="remove-filter" data-filter="tatuagem">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.getlist('regioes_preferencia') %}
+    <li>
+        <strong>Regiões de Preferência:</strong>
+        {{ ', '.join(request.args.getlist('regioes_preferencia')) }}
+        <a href="#" class="remove-filter" data-filter="regioes_preferencia">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.getlist('disponibilidade_horario') %}
+    <li>
+        <strong>Disponibilidade de Horário:</strong>
+        {{ ', '.join(request.args.getlist('disponibilidade_horario')) }}
+        <a href="#" class="remove-filter" data-filter="disponibilidade_horario">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('cargo_indicado') %}
+    <li>
+        <strong>Cargo Indicado:</strong> {{ request.args.get('cargo_indicado') }}
+        <a href="#" class="remove-filter" data-filter="cargo_indicado">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('avaliacao_rh') %}
+    <li>
+        <strong>Avaliação RH:</strong> {{ request.args.get('avaliacao_rh') }}
+        <a href="#" class="remove-filter" data-filter="avaliacao_rh">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('avaliacao_gerencia') %}
+    <li>
+        <strong>Avaliação Gerência:</strong> {{ request.args.get('avaliacao_gerencia') }}
+        <a href="#" class="remove-filter" data-filter="avaliacao_gerencia">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('avaliacao_geral') %}
+    <li>
+        <strong>Avaliação Geral:</strong> {{ request.args.get('avaliacao_geral') }}
+        <a href="#" class="remove-filter" data-filter="avaliacao_geral">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('estado') %}
+    <li>
+        <strong>Estado:</strong> {{ request.args.get('estado') }}
+        <a href="#" class="remove-filter" data-filter="estado">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('cidade') %}
+    <li>
+        <strong>Cidade:</strong> {{ request.args.get('cidade') }}
+        <a href="#" class="remove-filter" data-filter="cidade">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('sindicancia') %}
+    <li>
+        <strong>Sindicância:</strong> {{ request.args.get('sindicancia') }}
+        <a href="#" class="remove-filter" data-filter="sindicancia">✖</a>
+    </li>
+    {% endif %}
+    {% if request.args.get('recrutador') %}
+    <li>
+        <strong>Recrutador:</strong> {{ request.args.get('recrutador') }}
+        <a href="#" class="remove-filter" data-filter="recrutador">✖</a>
+    </li>
+    {% endif %}
+</ul>

@@ -1,0 +1,138 @@
+<style>
+    .btn-warning i {
+        font-size: 1.2em;
+        /* Tamanho do ícone */
+    }
+
+    #resultados {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .table {
+        width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+    }
+
+    td,
+    th {
+        white-space: normal !important;
+        word-break: break-word;
+    }
+
+    #content {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .table {
+        table-layout: auto;
+    }
+
+    td:nth-child(3) {
+        /* 3ª coluna: Cargo Indicado */
+        white-space: normal !important;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 150px;
+        /* Defina um tamanho máximo adequado */
+    }
+</style>
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="selectAll" /></th>
+            <th>Nome</th>
+            <th>Cargo Indicado</th>
+            <th>Data de Submissão</th>
+            <th>Recrutador</th>
+            <th>Situação</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody id="candidato-table">
+        {% if candidatos|length > 0 %}
+        {% for candidato in candidatos %}
+        <tr class="main-row">
+            <td><input type="checkbox" class="select-checkbox" value="{{ candidato.cpf }}" /></td>
+            <td>{{ candidato.nome_completo }}</td>
+            <td>{{ candidato.cargo_indicado or 'Não informado' }}</td>
+            <td>{{ candidato.created_at }}</td>
+            <td>{{ candidato.recrutador or 'Não definido' }}</td>
+            <td>{{ candidato.situacao }}</td>
+            <td>
+
+                <button class="btn btn-warning btn-sm" onclick="openEditForm('{{ candidato.cpf }}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+
+
+                <a href="{{ url_for('view_form', cpf=candidato.cpf) }}" class="btn btn-primary"
+                    target="_blank">Visualizar</a>
+                <a href="{{ url_for('export_pdf', cpf=candidato.cpf) }}" class="btn btn-danger btn-sm"
+                    target="_blank">PDF</a>
+                <a href="{{ url_for('export_excel', cpf=candidato.cpf) }}" class="btn btn-success btn-sm"
+                    target="_blank">EXCEL</a>
+            </td>
+        </tr>
+
+        {% endfor %}
+        {% else %}
+        <tr>
+            <td colspan="7" class="text-center">Nenhum candidato encontrado com os filtros aplicados.</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<div class="pagination-options mt-3">
+    <!-- Select para número de itens por página -->
+    <label for="itemsPerPage">Fichas por página:</label>
+    <select id="itemsPerPage" class="form-control d-inline-block w-auto">
+        <option value="10" {% if request.args.get('items_per_page')=='10' %}selected{% endif %}>10</option>
+        <option value="20" {% if request.args.get('items_per_page')=='20' %}selected{% endif %}>20</option>
+        <option value="50" {% if request.args.get('items_per_page')=='50' %}selected{% endif %}>50</option>
+        <option value="100" {% if request.args.get('items_per_page')=='100' %}selected{% endif %}>100</option>
+    </select>
+</div>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const openPdfModalButton = document.getElementById('openPdfModalButton');
+        const checkboxes = document.querySelectorAll('.select-checkbox');
+        const itemsPerPageSelect = document.getElementById('itemsPerPage');
+
+        function toggleGeneratePdfButton() {
+            const selectedCheckboxes = document.querySelectorAll('.select-checkbox:checked');
+            openPdfModalButton.style.display = selectedCheckboxes.length > 0 ? 'block' : 'none';
+        }
+
+        selectAllCheckbox?.addEventListener('change', function () {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            toggleGeneratePdfButton();
+        });
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', toggleGeneratePdfButton);
+        });
+
+        toggleGeneratePdfButton(); // Verifica o estado ao carregar a tabela
+
+        document.getElementById('itemsPerPage').addEventListener('change', function () {
+            const params = new URLSearchParams(window.location.search);
+            params.set('items_per_page', this.value);
+            params.set('page', 1); // Redefine para a primeira página ao alterar itens por página
+            window.location.search = params.toString();
+        });
+
+    });
+</script>

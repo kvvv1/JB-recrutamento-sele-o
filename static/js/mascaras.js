@@ -39,6 +39,7 @@ function aplicarMascaraTelefones(telefones) {
 function inicializarMascaras() {
     var cpfInput = document.getElementById('cpf');
     var telefoneInput = document.getElementById('telefone');
+    var telefoneRecadoInput = document.getElementById('telefone_recado');
     var telefonesInput = document.getElementById('telefones');
 
 
@@ -52,6 +53,12 @@ function inicializarMascaras() {
     if (telefoneInput) {
         telefoneInput.addEventListener('input', function() {
             aplicarMascaraTelefone(telefoneInput);
+        });
+    }
+
+    if (telefoneRecadoInput) {
+        telefoneRecadoInput.addEventListener('input', function() {
+            aplicarMascaraTelefone(telefoneRecadoInput);
         });
     }
 

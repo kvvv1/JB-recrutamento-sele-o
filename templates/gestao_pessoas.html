@@ -132,7 +132,16 @@
                             <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
                             <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
                             <p class="card-text">Categoria: {{ ticket.category }}</p>
-                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-primary">Visualizar/Editar</a>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}"
+                            class="btn btn-primary me-2">Visualizar/Editar</a>
+                            {% if ticket.show_conclude_button %}
+                            <form class="conclude-ticket-inline-form" data-ticket-id="{{ ticket.id }}"
+                                style="display:inline;">
+                                <button type="button" class="btn btn-warning conclude-ticket-inline-btn">Concluir</button>
+                            </form>
+                            {% endif %}
+
+
                         </div>
                     </div>
                 </div>
@@ -152,7 +161,17 @@
                             <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
                             <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
                             <p class="card-text">Categoria: {{ ticket.category }}</p>
-                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-primary">Visualizar/Editar</a>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}"
+                            class="btn btn-primary me-2">Visualizar/Editar</a>
+                            {% if ticket.show_conclude_button %}
+                            <form class="conclude-ticket-inline-form" data-ticket-id="{{ ticket.id }}"
+                                style="display:inline;">
+                                <button type="button"
+                                    class="btn btn-warning conclude-ticket-inline-btn">Concluir</button>
+                            </form>
+                            {% endif %}
+
+
                         </div>
                     </div>
                 </div>
@@ -172,7 +191,17 @@
                             <p class="card-text">Senha: {{ ticket.ticket_number }}</p>
                             <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
                             <p class="card-text">Categoria: {{ ticket.category }}</p>
-                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-success">Preencher Ficha</a>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}"
+                            class="btn btn-primary me-2">Visualizar/Editar</a>
+                            {% if ticket.show_conclude_button %}
+                            <form class="conclude-ticket-inline-form" data-ticket-id="{{ ticket.id }}"
+                                style="display:inline;">
+                                <button type="button"
+                                    class="btn btn-warning conclude-ticket-inline-btn">Concluir</button>
+                            </form>
+                            {% endif %}
+
+
                         </div>
                     </div>
                 </div>
@@ -193,7 +222,17 @@
                             <p class="card-text">Chegada: {{ ticket.created_at | format_brazilian_date }}</p>
                             <p class="card-text">Categoria: {{ ticket.category }}</p>
                             <p class="card-text">Recrutador: {{ ticket.recruiter }}</p>
-                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}" class="btn btn-primary">Visualizar/Editar</a>
+                            <a href="{{ url_for('view_form', cpf=ticket.cpf) }}"
+                            class="btn btn-primary me-2">Visualizar/Editar</a>
+                            {% if ticket.show_conclude_button %}
+                            <form class="conclude-ticket-inline-form" data-ticket-id="{{ ticket.id }}"
+                                style="display:inline;">
+                                <button type="button"
+                                    class="btn btn-warning conclude-ticket-inline-btn">Concluir</button>
+                            </form>
+                            {% endif %}
+
+
                         </div>
                     </div>
                 </div>
@@ -236,17 +275,54 @@
     }
 
     // Recebe eventos do servidor para adicionar novos tickets
-    socket.on('new_ticket', function(ticket) {
+    socket.on('new_ticket', function (ticket) {
         addTicket(ticket);
     });
 
     // Remove o ticket da página quando ele é concluído
-    socket.on('remove_ticket', function(ticketId) {
+    socket.on('remove_ticket', function (ticketId) {
         var ticketElement = document.getElementById('ticket-' + ticketId);
         if (ticketElement) {
             ticketElement.remove();
         }
     });
+
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Evento para os botões de concluir inline
+        const inlineButtons = document.querySelectorAll('.conclude-ticket-inline-btn');
+        inlineButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const form = this.closest('.conclude-ticket-inline-form');
+                const ticketId = form.getAttribute('data-ticket-id');
+
+                // Envia a requisição POST para concluir o ticket inline
+                fetch(`/conclude_ticket_inline/${ticketId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove o card do ticket concluído
+                        const ticketElement = document.getElementById(`ticket-${data.ticket_id}`);
+                        if (ticketElement) {
+                            ticketElement.remove();
+                        }
+                    } else {
+                        alert('Erro ao concluir o ticket inline!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao concluir o ticket inline!');
+                });
+            });
+        });
+    });
+
 </script>
 
 {% endblock %}

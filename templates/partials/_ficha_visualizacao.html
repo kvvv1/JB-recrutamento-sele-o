@@ -1,0 +1,69 @@
+<div class="container my-3">
+    <h4>Ficha de Inscrição - Visualização Rápida</h4>
+
+    <!-- Informações Básicas -->
+    <div class="form-section">
+        <h5>Informações Básicas</h5>
+        <p><strong>Nome Completo:</strong> {{ candidato.nome_completo }}</p>
+        <p><strong>Recrutador:</strong> {{ candidato.recrutador or 'Não definido' }}</p>
+        <p><strong>Data de Submissão:</strong> 
+            {{ candidato['created_at'].strftime('%d/%m/%Y') if candidato['created_at'] else 'Não disponível' }}
+        </p>
+             
+        <p><strong>Situação:</strong> {{ candidato.situacao }}</p>
+    </div>
+
+    <!-- Dados Pessoais -->
+    <div class="form-section">
+        <h5>Dados Pessoais</h5>
+        <p><strong>Estado Civil:</strong> {{ candidato.estado_civil or 'Não informado' }}</p>
+        <p><strong>CEP:</strong> {{ candidato.cep or 'Não informado' }}</p>
+        <p><strong>Endereço:</strong> {{ candidato.endereco or 'Não informado' }}</p>
+        <p><strong>Bairro:</strong> {{ candidato.bairro or 'Não informado' }}</p>
+        <p><strong>Cidade:</strong> {{ candidato.cidade or 'Não informado' }}</p>
+        <p><strong>Telefone:</strong> {{ candidato.telefone or 'Não informado' }}</p>
+        <p><strong>Data de Nascimento:</strong> {{ candidato.data_nasc or 'Não informado' }}</p>
+        <p><strong>Escolaridade:</strong> {{ candidato.escolaridade or 'Não informado' }}</p>
+    </div>
+
+    <!-- Cargo e Regiões de Interesse -->
+    <div class="form-section">
+        <h5>Interesse Profissional</h5>
+        <p><strong>Cargos Indicados:</strong> {{ candidato.cargo_indicado | join(', ') }}</p>
+        <p><strong>Regiões de Preferência:</strong> {{ candidato.regioes_preferencia | join(', ') }}</p>
+    </div>
+
+<!-- Histórico de Empregos -->
+<div class="form-section">
+    <h5>Histórico de Empregos</h5>
+    {% for i in range(1, 4) %}
+    <h6>Emprego {{ i }}</h6>
+    <p><strong>Empresa:</strong> {{ candidato|getattr('empresa' ~ i) }}</p>
+    <p><strong>Função:</strong> {{ candidato|getattr('funcao' ~ i) }}</p>
+    <p><strong>Tempo de Permanência:</strong>
+        {{ candidato|getattr('tempo_permanencia' ~ i ~ '_anos') or 0 }} anos,
+        {{ candidato|getattr('tempo_permanencia' ~ i ~ '_meses') or 0 }} meses
+    </p>
+    <p><strong>Motivo da Saída:</strong> {{ candidato|getattr('motivo_saida' ~ i) }}</p>
+    <p><strong>Salário:</strong> {{ candidato|getattr('salario' ~ i) }}</p>
+    <p><strong>Atividades:</strong> {{ candidato|getattr('atividades_empresa' ~ i) }}</p>
+    {% endfor %}
+</div>
+
+
+    <!-- Observações -->
+    <div class="form-section">
+        <h5>Observações</h5>
+        <p>{{ candidato.observacoes or 'Nenhuma observação registrada.' }}</p>
+    </div>
+
+    <!-- Avaliações -->
+    <div class="form-section">
+        <h5>Avaliações</h5>
+        <p><strong>Avaliação RH:</strong> {{ candidato.avaliacao_rh or 'Não avaliado' }}</p>
+        <p><strong>Sindicância:</strong> {{ candidato.sindicancia or 'Não avaliado' }}</p>
+        <p><strong>Avaliação Gestor:</strong> {{ candidato.avaliacao_gerencia or 'Não avaliado' }}</p>
+        <p><strong>Assinatura Gerência:</strong> {{ candidato.assinatura_gerencia or 'Não assinada' }}</p>
+        <p><strong>Admitido:</strong> {{ candidato.admitido or 'Não informado' }}</p>
+    </div>
+</div>

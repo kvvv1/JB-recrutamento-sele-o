@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistema de Recuperação de Fichas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Sistema de Recuperação de Fichas</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Recuperação de Fichas</h3>
+        </div>
+        <div class="card-body">
+            <p class="lead">Este sistema permite recuperar fichas que não foram salvas corretamente no banco de dados.</p>
+            
+            <div class="row mb-3">
+                <div class="col">
+                    <form method="post" action="{{ url_for('admin_recovery') }}">
+                        <input type="hidden" name="action" value="recover_all">
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('Tem certeza que deseja processar todos os arquivos pendentes? Esta operação pode demorar.')">
+                            <i class="fas fa-sync-alt"></i> Processar Todos os Pendentes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Arquivos de Erro -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">Arquivos de Erro ({{ error_files|length }})</h3>
+                </div>
+                <div class="card-body">
+                    {% if error_files %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>CPF</th>
+                                        <th>Tipo de Erro</th>
+                                        <th>Data/Hora</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in error_files %}
+                                        <tr>
+                                            <td>{{ file.cpf }}</td>
+                                            <td>{{ file.tipo_erro }}</td>
+                                            <td>{{ file.timestamp }}</td>
+                                            <td>
+                                                <form method="post" action="{{ url_for('admin_recovery') }}">
+                                                    <input type="hidden" name="action" value="recover_error">
+                                                    <input type="hidden" name="file" value="{{ file.filename }}">
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-redo"></i> Recuperar
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">Não há arquivos de erro pendentes.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Arquivos de Backup -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">Arquivos de Backup ({{ backup_files|length }})</h3>
+                </div>
+                <div class="card-body">
+                    {% if backup_files %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>CPF</th>
+                                        <th>Data/Hora</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in backup_files %}
+                                        <tr>
+                                            <td>{{ file.cpf }}</td>
+                                            <td>{{ file.timestamp }}</td>
+                                            <td>
+                                                <form method="post" action="{{ url_for('admin_recovery') }}">
+                                                    <input type="hidden" name="action" value="recover_backup">
+                                                    <input type="hidden" name="file" value="{{ file.filename }}">
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-redo"></i> Recuperar
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">Não há arquivos de backup pendentes.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <p class="text-muted">
+            <small><strong>Nota:</strong> Os arquivos processados com sucesso são automaticamente marcados como processados e não aparecerão mais nesta lista.</small>
+        </p>
+    </div>
+</div>
+{% endblock %} 

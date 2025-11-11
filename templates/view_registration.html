@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/optimized.css') }}">
+{% endblock %}
+
 {% block title %}
 Sistema RS - Atualizar Ficha
 {% endblock %}
@@ -7,6 +11,12 @@ Sistema RS - Atualizar Ficha
 {% block content %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Alerta de problema no auto-salvamento -->
+<div class="alert alert-warning" style="display: none;" role="alert">
+    <strong>ATENÇÃO:</strong> Estamos com problemas para salvar automaticamente. Salve manualmente!
+</div>
+
 <style>
     .header-info {
         display: flex;
@@ -392,6 +402,200 @@ Sistema RS - Atualizar Ficha
         color: white;
         text-decoration: none;
     }
+
+    /* Estilo do pop-up */
+    #auto-save-popup {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #4CAF50;
+        /* Verde para sucesso */
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 14px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+        z-index: 1000;
+        /* Certifica que fica acima dos outros elementos */
+    }
+
+    #auto-save-popup.error {
+        background-color: #f44336;
+        /* Vermelho para erro */
+    }
+
+    /* Estilo para o modal do currículo */
+    #curriculoModal .modal-dialog {
+        max-width: 80vw;
+        /* 80% da largura da viewport */
+        height: 90vh;
+        /* 90% da altura da viewport */
+        margin: 30px auto;
+    }
+
+    #curriculoModal .modal-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #curriculoModal .modal-body {
+        flex: 1;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+    }
+
+    #curriculoModal #curriculoIframe {
+        width: calc(210mm * 0.9);
+        /* 90% do tamanho A4 */
+        height: calc(297mm * 0.9);
+        /* 90% do tamanho A4 */
+        border: none;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+
+    @media (max-width: 768px) {
+        #curriculoModal .modal-dialog {
+            max-width: 95vw;
+            margin: 10px;
+        }
+
+        #curriculoModal #curriculoIframe {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .form-group {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        padding-right: 30px;
+        /* Espaço para o indicador */
+    }
+
+    .save-status {
+        animation: fadeInOut 0.3s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+        0% {
+            opacity: 0;
+        }
+
+        50% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0;
+        }
+    }
+
+    #auto-save-popup {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 14px;
+        z-index: 9999;
+        transition: all 0.3s ease;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    #auto-save-popup.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    #auto-save-popup.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    #auto-save-popup.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Estilos para campos em salvamento */
+    .saving {
+        background-color: #fff3cd !important;
+        border-color: #ffeeba !important;
+    }
+
+    /* Estilos para campos salvos com sucesso */
+    .saved {
+        background-color: #d4edda !important;
+        border-color: #c3e6cb !important;
+        transition: background-color 0.5s ease;
+    }
+
+    /* Estilos para campos com erro */
+    .error {
+        background-color: #f8d7da !important;
+        border-color: #f5c6cb !important;
+    }
+
+    .form-check {
+        position: relative;
+        padding-right: 30px;
+        /* Espaço para o indicador */
+        margin-bottom: 0.5rem;
+    }
+
+    /* Ajuste específico para grupos de checkbox/radio */
+    .checkbox-group .form-check,
+    .checkbox-regioes .form-check {
+        padding-right: 30px;
+    }
+
+    /* Indicador de status para checkbox/radio */
+    .form-check .save-status {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        background: white;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        z-index: 2;
+    }
+
+    /* Estados do indicador */
+    .form-check .save-status.saving {
+        border-color: #ffd700;
+        background-color: #fff3cd;
+    }
+
+    .form-check .save-status.saved {
+        border-color: #4CAF50;
+        background-color: #e8f5e9;
+    }
+
+    .form-check .save-status.error {
+        border-color: #f44336;
+        background-color: #ffebee;
+    }
 </style>
 
 <!--<a href="javascript:history.back()" class="back-button">
@@ -401,43 +605,112 @@ Sistema RS - Atualizar Ficha
 
 
 <div class="container my-5">
-    <h1 class="mb-4">Ficha de Inscrição</h1>
 
     <div class="header-info">
-        <div class="info-item">
-            <i class="fas fa-user"></i>
-            <span id="recrutador">
-                Recrutador: {{ form_data.recrutador if form_data.recrutador and form_data.recrutador != 'None' else "Não
-                Definido" }}
+
+        <!-- Exibição do recrutador -->
+        <div class="info-item d-flex align-items-center">
+            <i class="fas fa-user me-2"></i>
+            <span id="recrutador" class="fw-bold">
+                Recrutador:
             </span>
-            {% if not form_data.recrutador or form_data.recrutador == 'None' %}
-            <button type="button" class="btn btn-primary btn-sm ms-2" data-bs-toggle="modal"
-                data-bs-target="#setRecruiterModal" id="setRecruiterButton">
-                Definir Recrutador
-            </button>
-            {% endif %}
+
+            <!-- Select para o recrutador - sempre visível -->
+            <select id="recrutador-select" class="form-control form-control-sm mx-2" name="recrutador"
+                style="width: auto;">
+                <option value="" {% if not form_data.recrutador or form_data.recrutador=='None' %}selected{% endif %}>
+                    Escolha o recrutador</option>
+                <option value="Samira Barbosa" {% if form_data.recrutador=='Samira Barbosa' %}selected{% endif %}>Samira
+                    Barbosa</option>
+                <option value="Nara Rodrigues" {% if form_data.recrutador=='Nara Rodrigues' %}selected{% endif %}>Nara
+                    Rodrigues</option>
+                <option value="Wilson Monteiro" {% if form_data.recrutador=='Wilson Monteiro' %}selected{% endif %}>
+                    Wilson Monteiro</option>
+                <option value="Rafaella Capanema" {% if form_data.recrutador=='Rafaella Capanema' %}selected{% endif %}>
+                    Rafaella Capanema</option>
+                <option value="Grasielle Mapa" {% if form_data.recrutador=='Grasielle Mapa' %}selected{% endif %}>
+                    Grasielle Mapa</option>
+                <option value="Guilherme Vieira" {% if form_data.recrutador=='Guilherme Vieira' %}selected{% endif %}>
+                    Guilherme Vieira</option>
+            </select>
+        </div>
+
+        <!-- Script para validar seleção de recrutador -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const recrutadorSelect = document.getElementById('recrutador-select');
+                const registrationForm = document.getElementById('registrationForm');
+
+                // Salva o valor atual para restaurar caso necessário
+                let valorOriginal = recrutadorSelect.value;
+
+                registrationForm.addEventListener('submit', function (event) {
+                    if (recrutadorSelect.value === "") {
+                        event.preventDefault();
+                        alert('Por favor, selecione um recrutador antes de salvar.');
+                        return false;
+                    }
+                });
+
+                // Quando o select for alterado, atualize o valor salvo e force um evento de mudança
+                recrutadorSelect.addEventListener('change', function () {
+                    if (recrutadorSelect.value !== "") {
+                        valorOriginal = recrutadorSelect.value;
+
+                        // Força o salvamento automático quando o recrutador for alterado
+                        const recrutadorValue = recrutadorSelect.value;
+                        console.log("Recrutador selecionado: " + recrutadorValue);
+
+                        // Usa AJAX para salvar imediatamente o recrutador
+                        fetch('/set_recruiter', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: `cpf=${document.getElementById('cpf').value}&recrutador=${recrutadorValue}`
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log("Recrutador salvo:", data);
+                                if (data.success) {
+                                    // Notifica o usuário que o recrutador foi salvo
+                                    const autoSavePopup = document.getElementById('auto-save-popup');
+                                    if (autoSavePopup) {
+                                        autoSavePopup.textContent = 'Recrutador salvo com sucesso!';
+                                        autoSavePopup.classList.add('success');
+                                        autoSavePopup.classList.add('show');
+                                        setTimeout(() => {
+                                            autoSavePopup.classList.remove('show');
+                                        }, 3000);
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Erro ao salvar recrutador:", error);
+                            });
+                    }
+                });
+
+                // Ao perder o foco, se estiver vazio, restaure para o valor original
+                recrutadorSelect.addEventListener('blur', function () {
+                    if (recrutadorSelect.value === "" && valorOriginal !== "") {
+                        recrutadorSelect.value = valorOriginal;
+                    }
+                });
+
+                // Executa change uma vez para garantir que o recrutador atual seja salvo
+                if (recrutadorSelect.value !== "") {
+                    // Simula um evento de mudança para salvar o recrutador atual
+                    const event = new Event('change');
+                    recrutadorSelect.dispatchEvent(event);
+                }
+            });
+        </script>
+
+        <!-- Modal removido pois não é mais necessário -->
 
 
-        </div>
-        <!-- Modal -->
-        <div class="modal fade" id="setRecruiterModal" tabindex="-1" aria-labelledby="setRecruiterModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog recruiter-modal modal-sm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="setRecruiterModalLabel">Definir Recrutador</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <p>Você tem certeza que deseja se tornar o recrutador desta ficha?</p>
-                    </div>
-                    <div class="modal-footer d-flex justify-content-center">
-                        <button type="button" class="btn btn-primary btn-sm" id="confirmSetRecruiter">Confirmar</button>
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
 
 
@@ -467,7 +740,9 @@ Sistema RS - Atualizar Ficha
 
         <div class="info-item">
             <i class="fas fa-info-circle"></i>
-            <span id="form-status">{{ form_data.get('situacao', 'Não Avaliado') }}</span>
+            <span id="form-status" class="badge badge-info">
+                {{ form_data.get('situacao', 'Não Avaliado') }}
+            </span>
         </div>
         <input type="hidden" name="situacao" id="situacao" value="{{ form_data.get('situacao', 'Não Avaliado') }}">
 
@@ -498,822 +773,167 @@ Sistema RS - Atualizar Ficha
     </div>
 
 
-
-
-    <form action="{{ url_for('submit_form') if not form_data.id else url_for('update_form', cpf=form_data.cpf) }}"
-        method="POST" enctype="multipart/form-data">
-        <input type="hidden" id="registro_id" name="registro_id" value="{{ form_data.id }}">
-
-        <!-- Upload de Currículo -->
-        <div class="form-group">
-            <label for="curriculo">Currículo:</label>
-            <input type="file" class="form-control" id="curriculo" name="curriculo">
-        </div>
-
-
-
-
-        <!-- Seção de Dados Pessoais -->
-        <div class="form-section">
-            <h4>Dados Pessoais</h4>
-            <div class="row">
-                <!-- Primeira Coluna -->
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="name">Nome Completo:</label>
-                        <input type="text" class="form-control" id="name" name="name"
-                            value="{{ form_data.nome_completo }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="estado_civil">Estado Civil:</label>
-                        <select class="form-control" id="estado_civil" name="estado_civil">
-                            <option value="" disabled selected></option>
-                            <option value="Solteiro" {% if form_data.estado_civil=='Solteiro' %}selected{% endif %}>
-                                Solteiro</option>
-                            <option value="Casado" {% if form_data.estado_civil=='Casado' %}selected{% endif %}>Casado
-                            </option>
-                            <option value="Divorciado" {% if form_data.estado_civil=='Divorciado' %}selected{% endif %}>
-                                Divorciado</option>
-                            <option value="Viúvo" {% if form_data.estado_civil=='Viúvo' %}selected{% endif %}>Viúvo
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="cep">CEP:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="cep" name="cep" value="{{ form_data.cep }}">
-                            <button class="btn btn-outline-secondary" type="button" id="buscarCep">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="endereco">Endereço:</label>
-                        <input type="text" class="form-control" id="endereco" name="endereco"
-                            value="{{ form_data.endereco }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="numero">Número:</label>
-                        <input type="text" class="form-control" id="numero" name="numero"
-                            value="{{ form_data.numero }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="complemento">Complemento:</label>
-                        <input type="text" class="form-control" id="complemento" name="complemento"
-                            value="{{ form_data.complemento }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="bairro">Bairro:</label>
-                        <input type="text" class="form-control" id="bairro" name="bairro"
-                            value="{{ form_data.bairro }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="cidade">Cidade:</label>
-                        <input type="text" class="form-control" id="cidade" name="cidade"
-                            value="{{ form_data.cidade }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="telefone">Telefone:</label>
-                        <input type="text" class="form-control" id="telefone" name="telefone"
-                            value="{{ form_data.telefone }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="estado_nasc">Estado e Cidade de Nascimento:</label>
-                        <select class="form-control" id="estado_nasc" name="estado_nasc"
-                            onchange="carregarCidades(this.value)">
-                            <option value="" selected disabled>Selecione o Estado</option>
-                            <option value="AC" {% if form_data.estado_nasc=='AC' %}selected{% endif %}>Acre</option>
-                            <option value="AL" {% if form_data.estado_nasc=='AL' %}selected{% endif %}>Alagoas</option>
-                            <option value="AP" {% if form_data.estado_nasc=='AP' %}selected{% endif %}>Amapá</option>
-                            <option value="AM" {% if form_data.estado_nasc=='AM' %}selected{% endif %}>Amazonas</option>
-                            <option value="BA" {% if form_data.estado_nasc=='BA' %}selected{% endif %}>Bahia</option>
-                            <option value="CE" {% if form_data.estado_nasc=='CE' %}selected{% endif %}>Ceará</option>
-                            <option value="DF" {% if form_data.estado_nasc=='DF' %}selected{% endif %}>Distrito Federal
-                            </option>
-                            <option value="ES" {% if form_data.estado_nasc=='ES' %}selected{% endif %}>Espírito Santo
-                            </option>
-                            <option value="GO" {% if form_data.estado_nasc=='GO' %}selected{% endif %}>Goiás</option>
-                            <option value="MA" {% if form_data.estado_nasc=='MA' %}selected{% endif %}>Maranhão</option>
-                            <option value="MT" {% if form_data.estado_nasc=='MT' %}selected{% endif %}>Mato Grosso
-                            </option>
-                            <option value="MS" {% if form_data.estado_nasc=='MS' %}selected{% endif %}>Mato Grosso do
-                                Sul</option>
-                            <option value="MG" {% if form_data.estado_nasc=='MG' %}selected{% endif %}>Minas Gerais
-                            </option>
-                            <option value="PA" {% if form_data.estado_nasc=='PA' %}selected{% endif %}>Pará</option>
-                            <option value="PB" {% if form_data.estado_nasc=='PB' %}selected{% endif %}>Paraíba</option>
-                            <option value="PR" {% if form_data.estado_nasc=='PR' %}selected{% endif %}>Paraná</option>
-                            <option value="PE" {% if form_data.estado_nasc=='PE' %}selected{% endif %}>Pernambuco
-                            </option>
-                            <option value="PI" {% if form_data.estado_nasc=='PI' %}selected{% endif %}>Piauí</option>
-                            <option value="RJ" {% if form_data.estado_nasc=='RJ' %}selected{% endif %}>Rio de Janeiro
-                            </option>
-                            <option value="RN" {% if form_data.estado_nasc=='RN' %}selected{% endif %}>Rio Grande do
-                                Norte</option>
-                            <option value="RS" {% if form_data.estado_nasc=='RS' %}selected{% endif %}>Rio Grande do Sul
-                            </option>
-                            <option value="RO" {% if form_data.estado_nasc=='RO' %}selected{% endif %}>Rondônia</option>
-                            <option value="RR" {% if form_data.estado_nasc=='RR' %}selected{% endif %}>Roraima</option>
-                            <option value="SC" {% if form_data.estado_nasc=='SC' %}selected{% endif %}>Santa Catarina
-                            </option>
-                            <option value="SP" {% if form_data.estado_nasc=='SP' %}selected{% endif %}>São Paulo
-                            </option>
-                            <option value="SE" {% if form_data.estado_nasc=='SE' %}selected{% endif %}>Sergipe</option>
-                            <option value="TO" {% if form_data.estado_nasc=='TO' %}selected{% endif %}>Tocantins
-                            </option>
-                        </select>
-                        <select class="form-control mt-2" id="cidade_nasc" name="cidade_nasc">
-                            <option value="" disabled>Selecione a cidade</option>
-                            {% if form_data.cidade_nasc %}
-                            <option value="{{ form_data.cidade_nasc }}" selected>{{ form_data.cidade_nasc }}</option>
-                            {% endif %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="data_nasc">Data de Nascimento:</label>
-                        <input type="date" class="form-control" id="data_nasc" name="data_nasc"
-                            value="{{ form_data.data_nasc }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="idade">Idade:</label>
-                        <input type="number" class="form-control" id="idade" name="idade" value="{{ form_data.idade }}"
-                            readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="escolaridade">Escolaridade:</label>
-                        <select class="form-control" id="escolaridade" name="escolaridade">
-                            <option value="" disabled selected>Selecione a escolaridade</option>
-                            <option value="Fundamental Incompleto" {% if
-                                form_data.escolaridade=='Fundamental Incompleto' %}selected{% endif %}>Fundamental
-                                Incompleto</option>
-                            <option value="Fundamental Completo" {% if form_data.escolaridade=='Fundamental Completo'
-                                %}selected{% endif %}>Fundamental Completo</option>
-                            <option value="Médio Incompleto" {% if form_data.escolaridade=='Médio Incompleto'
-                                %}selected{% endif %}>Médio Incompleto</option>
-                            <option value="Médio Completo" {% if form_data.escolaridade=='Médio Completo' %}selected{%
-                                endif %}>Médio Completo</option>
-                            <option value="Técnico Incompleto" {% if form_data.escolaridade=='Técnico Incompleto'
-                                %}selected{% endif %}>Técnico Incompleto</option>
-                            <option value="Técnico Completo" {% if form_data.escolaridade=='Técnico Completo'
-                                %}selected{% endif %}>Técnico Completo</option>
-                            <option value="Superior Incompleto" {% if form_data.escolaridade=='Superior Incompleto'
-                                %}selected{% endif %}>Superior Incompleto</option>
-                            <option value="Superior Completo" {% if form_data.escolaridade=='Superior Completo'
-                                %}selected{% endif %}>Superior Completo</option>
-                            <option value="Pós-graduação" {% if form_data.escolaridade=='Pós-graduação' %}selected{%
-                                endif %}>Pós-graduação</option>
-                            <option value="Mestrado" {% if form_data.escolaridade=='Mestrado' %}selected{% endif %}>
-                                Mestrado</option>
-                            <option value="Doutorado" {% if form_data.escolaridade=='Doutorado' %}selected{% endif %}>
-                                Doutorado</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Segunda Coluna -->
-                <div class="col-md-6">
-                    <!-- Campo para selecionar o número de filhos -->
-                    <div class="form-group">
-                        <label for="numero_filhos">Número de Filhos:</label>
-                        <select class="form-control" id="numero_filhos" name="numero_filhos"
-                            onchange="gerarCamposIdadesFilhos()">
-                            <option value="" disabled selected>Selecione...</option>
-                            {% for i in range(0, 11) %}
-                            <option value="{{ i }}" {% if form_data.numero_filhos==i %}selected{% endif %}>{{ i }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Campos dinâmicos para as idades dos filhos 
-                    <div id="filhos_idades">
-                        {% if form_data.numero_filhos %}
-                        {% for i in range(1, form_data.numero_filhos + 1) %}
-                        <div class="form-group">
-                            <label for="idade_filho_{{ i }}">Idade do Filho {{ i }}:</label>
-                            <input type="number" class="form-control" id="idade_filho_{{ i }}"
-                                name="idade_filho_{{ i }}" value="{{ form_data['idade_filho_' ~ i] or '' }}" min="0"
-                                max="100">
-                        </div>
-                        {% endfor %}
-                        {% endif %}
-                    </div> -->
-
-
-
-
-
-
-                    <div class="form-group">
-                        <label>Fumante:</label>
-                        <div>
-                            <input type="radio" id="fumante_sim" name="fumante" value="Sim" {% if
-                                form_data.fumante=='Sim' %}checked{% endif %}>
-                            <label for="fumante_sim">Sim</label>
-                            <input type="radio" id="fumante_nao" name="fumante" value="Não" {% if
-                                form_data.fumante=='Não' %}checked{% endif %}>
-                            <label for="fumante_nao">Não</label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Bebida:</label>
-                        <div>
-                            <input type="radio" id="bebida_sim" name="bebida" value="Sim" {% if form_data.bebida=='Sim'
-                                %}checked{% endif %}>
-                            <label for="bebida_sim">Sim</label>
-                            <input type="radio" id="bebida_nao" name="bebida" value="Não" {% if form_data.bebida=='Não'
-                                %}checked{% endif %}>
-                            <label for="bebida_nao">Não</label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="alergia">Alergia:</label>
-                        <input type="text" class="form-control" id="alergia" name="alergia"
-                            value="{{ form_data.alergia }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="medicamento_constante">Medicamento de Uso Constante:</label>
-                        <div>
-                            <input type="radio" id="medicamento_sim" name="medicamento_constante" value="Sim" {% if
-                                form_data.medicamento_constante=='Sim' %}checked{% endif %}>
-                            <label for="medicamento_sim">Sim</label>
-                            <input type="radio" id="medicamento_nao" name="medicamento_constante" value="Não" {% if
-                                form_data.medicamento_constante=='Não' %}checked{% endif %}>
-                            <label for="medicamento_nao">Não</label>
-                        </div>
-                        <input type="text" class="form-control mt-2" id="qual_medicamento" name="qual_medicamento"
-                            placeholder="Qual?" value="{{ form_data.qual_medicamento }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="vacina">Vacina:</label>
-                        <select class="form-control" id="vacina" name="vacina">
-                            <option value="" disabled selected></option>
-                            <option value="Sim" {% if form_data.vacina=="Sim" %} selected {% endif %}>Sim</option>
-                            <option value="Não" {% if form_data.vacina=="Não" %} selected {% endif %}>Não</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="certificado">Certificado:</label>
-                        <select class="form-control" id="certificado" name="certificado">
-                            <option value="" disabled selected></option>
-                            <option value="Sim" {% if form_data.certificado=="Sim" %} selected {% endif %}>Sim</option>
-                            <option value="Não" {% if form_data.certificado=="Não" %} selected {% endif %}>Não</option>
-                        </select>
-                    </div>
-
-
-                    <!-- Não Perguntar ao Candidato -->
-                    <h4>Não Perguntar ao Candidato <span style="color: red;">*</span></h4>
-                    <div class="form-group">
-                        <label for="genero">Gênero: <span style="color: red;">*</span></label>
-                        <select class="form-control" id="genero" name="genero">
-                            <option value="" disabled selected></option>
-                            <option value="Homem" {% if form_data.genero=='Homem' %}selected{% endif %}>Homem</option>
-                            <option value="Mulher" {% if form_data.genero=='Mulher' %}selected{% endif %}>Mulher
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="peso">Peso: <span style="color: red;">*</span></label>
-                        <select class="form-control" id="peso" name="peso">
-                            <option value="" disabled selected></option>
-                            <option value="Normal" {% if form_data.peso=='Normal' %}selected{% endif %}>Normal</option>
-                            <option value="Sobrepeso" {% if form_data.peso=='Sobrepeso' %}selected{% endif %}>Sobrepeso
-                            </option>
-                            <option value="Obesidade" {% if form_data.peso=='Obesidade' %}selected{% endif %}>Obesidade
-                            </option>
-                            <option value="Magro" {% if form_data.peso=='Magro' %}selected{% endif %}>Magro</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="cor_pele">Cor de Pele: <span style="color: red;">*</span></label>
-                        <select class="form-control" id="cor_pele" name="cor_pele">
-                            <option value="" disabled selected></option>
-                            <option value="Branca" {% if form_data.cor_pele=='Branca' %}selected{% endif %}>Branca
-                            </option>
-                            <option value="Preta" {% if form_data.cor_pele=='Preta' %}selected{% endif %}>Preta</option>
-                            <option value="Parda" {% if form_data.cor_pele=='Parda' %}selected{% endif %}>Parda</option>
-                            <option value="Amarela" {% if form_data.cor_pele=='Amarela' %}selected{% endif %}>Amarela
-                            </option>
-                            <option value="Indígena" {% if form_data.cor_pele=='Indígena' %}selected{% endif %}>Indígena
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="tatuagem">Tatuagem: <span style="color: red;">*</span></label>
-                        <select class="form-control" id="tatuagem" name="tatuagem">
-                            <option value="" disabled selected></option>
-                            <option value="Sim, Visível" {% if form_data.tatuagem=='Sim, Visível' %}selected{% endif %}>
-                                Sim, Visível</option>
-                            <option value="Sim" {% if form_data.tatuagem=='Sim' %}selected{% endif %}>Sim</option>
-                            <option value="Não" {% if form_data.tatuagem=='Não' %}selected{% endif %}>Não</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="pcd">PCD (Pessoa com Deficiência):</label>
-                        <select class="form-control" id="pcd" name="pcd">
-                            <option value="" disabled selected></option>
-                            <option value="Sim" {% if form_data.pcd=="Sim" %} selected {% endif %}>Sim</option>
-                            <option value="Não" {% if form_data.pcd=="Não" %} selected {% endif %}>Não</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="perfil">Perfil:</label>
-                        <select class="form-control" id="perfil" name="perfil">
-                            <option value="" disabled selected></option>
-                            <option value="Ostensivo" {% if form_data.perfil=='Ostensivo' %}selected{% endif %}>
-                                Ostensivo</option>
-                            <option value="Social" {% if form_data.perfil=='Social' %}selected{% endif %}>Social
-                            </option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
 </div>
 
-<!-- Seção de Documentação -->
-<div class="form-section">
-    <h4>Documentação</h4>
 
+<form id="registrationForm"
+    action="{{ url_for('submit_form') if not form_data.id else url_for('update_form', cpf=form_data.cpf, _external=True) }}"
+    method="POST" enctype="multipart/form-data">
+
+    <input type="hidden" id="registro_id" name="registro_id" value="{{ form_data.id }}">
+
+    <!-- Upload de Currículo -->
     <div class="form-group">
-        <label for="cpf">CPF:</label>
-        <input type="text" class="form-control" id="cpf" name="cpf" value="{{ form_data.cpf }}" required>
-    </div>
-</div>
-
-<!-- Seção de Cursos Realizados -->
-<div class="form-section">
-    <h4>Cursos Realizados por Você</h4>
-    <div class="form-group">
-        <label for="cursos">Descreva os cursos que você já realizou:</label>
-        <textarea class="form-control" id="cursos" name="cursos">{{ form_data.cursos }}</textarea>
-    </div>
-</div>
-
-<div class="form-section">
-    <h4>Conhecimento de Digitação</h4>
-    <div class="form-group">
-        <label for="conhecimento_digitacao">Selecione:</label>
-        <select class="form-control" id="conhecimento_digitacao" name="conhecimento_digitacao">
-            <option value="" disabled selected></option>
-            <option id="bom" value="Bom" {% if form_data.conhecimento_digitacao=='Bom' %}selected{% endif %}>Bom
-            </option>
-            <option id="regular" value="Regular" {% if form_data.conhecimento_digitacao=='Regular' %}selected{% endif
-                %}>Regular</option>
-            <option id="ruim" value="Ruim" {% if form_data.conhecimento_digitacao=='Ruim' %}selected{% endif %}>
-                Ruim</option>
-        </select>
-    </div>
-</div>
-
-
-<!-- Seção de Regiões de Preferência -->
-<div class="form-section">
-    <h4>Regiões de Preferência para Trabalhar</h4>
-    <div class="checkbox-group checkbox-regioes">
-
-        <div class="checkbox-group checkbox-regioes">
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_barreiro" name="regioes_preferencia"
-                    value="Região Barreiro" {% if form_data.regioes_preferencia and 'Região Barreiro' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_barreiro">Região Barreiro</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_centro_sul" name="regioes_preferencia"
-                    value="Região Centro Sul" {% if form_data.regioes_preferencia and 'Região Centro Sul' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_centro_sul">Região Centro Sul</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_leste" name="regioes_preferencia"
-                    value="Região Leste" {% if form_data.regioes_preferencia and 'Região Leste' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_leste">Região Leste</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_nordeste" name="regioes_preferencia"
-                    value="Região Nordeste" {% if form_data.regioes_preferencia and 'Região Nordeste' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_nordeste">Região Nordeste</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_noroeste" name="regioes_preferencia"
-                    value="Região Noroeste" {% if form_data.regioes_preferencia and 'Região Noroeste' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_noroeste">Região Noroeste</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_norte" name="regioes_preferencia"
-                    value="Região Norte" {% if form_data.regioes_preferencia and 'Região Norte' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_norte">Região Norte</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_oeste" name="regioes_preferencia"
-                    value="Região Oeste" {% if form_data.regioes_preferencia and 'Região Oeste' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_oeste">Região Oeste</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_pampulha" name="regioes_preferencia"
-                    value="Região Pampulha" {% if form_data.regioes_preferencia and 'Região Pampulha' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_pampulha">Região Pampulha</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_venda_nova" name="regioes_preferencia"
-                    value="Região Venda Nova" {% if form_data.regioes_preferencia and 'Região Venda Nova' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_venda_nova">Região Venda Nova</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="regiao_metropolitana" name="regioes_preferencia"
-                    value="Região Metropolitana" {% if form_data.regioes_preferencia and 'Região Metropolitana' in
-                    form_data.regioes_preferencia %}checked{% endif %}>
-                <label class="form-check-label" for="regiao_metropolitana">Região Metropolitana</label>
-            </div>
-            <!-- Botão para selecionar todas as regiões -->
-            <div class="form-check">
-                <input class="checkbox" type="checkbox" id="selecionar_todas" onclick="toggleRegioes(this)">
-                <label class="form-check-label" for="selecionar_todas">Selecionar Todas</label>
-            </div>
+        <label for="curriculo">Currículo:</label>
+        <div class="input-group">
+            <input type="file" class="form-control" id="curriculo" name="curriculo" accept=".pdf,.doc,.docx,.txt">
+            <button type="button" class="btn btn-danger" id="enviarCurriculo">
+                <i class="fas fa-upload"></i> Enviar
+            </button>
         </div>
+        <small class="form-text text-muted">Formatos aceitos: PDF, DOC, DOCX, TXT (Máximo 10MB)</small>
+        <div id="upload-status" class="mt-2" style="display: none;"></div>
     </div>
 
+    <script>
+        document.getElementById('enviarCurriculo').addEventListener('click', async function () {
+            console.log('Botão de upload clicado');
+            
+            const fileInput = document.getElementById('curriculo');
+            const file = fileInput.files[0];
+            const uploadStatus = document.getElementById('upload-status');
+            const enviarBtn = document.getElementById('enviarCurriculo');
 
+            console.log('Arquivo selecionado:', file);
 
-    <!-- Seção de Disponibilidade de Horário -->
-    <div class="form-section">
-        <h4>Disponibilidade de Horário para Trabalhar</h4>
-        <div class="checkbox-group checkbox-horarios">
-            <div class="form-check">
-                <input class="checkbox-horarios" type="checkbox" id="disponibilidade1" name="disponibilidade_horario"
-                    value="44h (Horario Comercial)" {% if form_data.disponibilidade_horario
-                    and '44h (Horario Comercial)' in form_data.disponibilidade_horario %}checked{% endif %}>
-                <label class="form-check-label" for="disponibilidade1">44h (Horário Comercial)</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox-horarios" type="checkbox" id="disponibilidade2" name="disponibilidade_horario"
-                    value="12x36 Dia" {% if form_data.disponibilidade_horario and '12x36 Dia' in
-                    form_data.disponibilidade_horario %}checked{% endif %}>
-                <label class="form-check-label" for="disponibilidade2">12x36 Dia</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox-horarios" type="checkbox" id="disponibilidade3" name="disponibilidade_horario"
-                    value="12x36 Noite" {% if form_data.disponibilidade_horario and '12x36 Noite' in
-                    form_data.disponibilidade_horario %}checked{% endif %}>
-                <label class="form-check-label" for="disponibilidade3">12x36 Noite</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox-horarios" type="checkbox" id="disponibilidade4" name="disponibilidade_horario"
-                    value="Feirista" {% if form_data.disponibilidade_horario and 'Feirista' in
-                    form_data.disponibilidade_horario %}checked{% endif %}>
-                <label class="form-check-label" for="disponibilidade4">Feirista</label>
-            </div>
-            <div class="form-check">
-                <input class="checkbox-horarios" type="checkbox" id="selectAllHorarios" name="select_all_horarios">
-                <label class="form-check-label" for="selectAllHorarios">Todos</label>
-            </div>
-        </div>
-    </div>
+            // Limpa status anterior
+            uploadStatus.innerHTML = '';
+            uploadStatus.style.display = 'block';
 
+            if (!file) {
+                console.log('Nenhum arquivo selecionado');
+                uploadStatus.innerHTML = '<div class="alert alert-warning">Por favor, selecione um arquivo primeiro.</div>';
+                return;
+            }
 
+            // Validação do tamanho do arquivo (10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB em bytes
+            if (file.size > maxSize) {
+                console.log('Arquivo muito grande:', file.size, 'bytes');
+                uploadStatus.innerHTML = '<div class="alert alert-danger">Arquivo muito grande. Tamanho máximo: 10MB</div>';
+                return;
+            }
 
-    <!-- Seção de Últimos Empregos -->
-    <div class="form-section">
-        <h4>Escreva sobre os 3 Últimos Empregos</h4>
+            // Validação do tipo de arquivo
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+            console.log('Tipo do arquivo:', file.type);
+            if (!allowedTypes.includes(file.type)) {
+                console.log('Tipo de arquivo não permitido:', file.type);
+                uploadStatus.innerHTML = '<div class="alert alert-danger">Tipo de arquivo não suportado. Use PDF, DOC, DOCX ou TXT.</div>';
+                return;
+            }
 
-        <!-- Empresa 1 -->
-        <div class="form-group">
-            <label for="empresa1">Empresa 1:</label>
-            <input type="text" class="form-control" id="empresa1" name="empresa1" value="{{ form_data.empresa1 }}">
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="estado1">Estado:</label>
-                    <select class="form-control" id="estado1" name="estado1"
-                        onchange="carregarCidadesEmprego(this.value, 'cidade1')">
-                        <option value="" disabled selected>Selecione o Estado</option>
-                        <option value="AC" {% if form_data.estado1=='AC' %}selected{% endif %}>Acre</option>
-                        <option value="AL" {% if form_data.estado1=='AL' %}selected{% endif %}>Alagoas</option>
-                        <option value="AP" {% if form_data.estado1=='AP' %}selected{% endif %}>Amapá</option>
-                        <option value="AM" {% if form_data.estado1=='AM' %}selected{% endif %}>Amazonas</option>
-                        <option value="BA" {% if form_data.estado1=='BA' %}selected{% endif %}>Bahia</option>
-                        <option value="CE" {% if form_data.estado1=='CE' %}selected{% endif %}>Ceará</option>
-                        <option value="DF" {% if form_data.estado1=='DF' %}selected{% endif %}>Distrito Federal
-                        </option>
-                        <option value="ES" {% if form_data.estado1=='ES' %}selected{% endif %}>Espírito Santo
-                        </option>
-                        <option value="GO" {% if form_data.estado1=='GO' %}selected{% endif %}>Goiás</option>
-                        <option value="MA" {% if form_data.estado1=='MA' %}selected{% endif %}>Maranhão</option>
-                        <option value="MT" {% if form_data.estado1=='MT' %}selected{% endif %}>Mato Grosso
-                        </option>
-                        <option value="MS" {% if form_data.estado1=='MS' %}selected{% endif %}>Mato Grosso do
-                            Sul</option>
-                        <option value="MG" {% if form_data.estado1=='MG' %}selected{% endif %}>Minas Gerais
-                        </option>
-                        <option value="PA" {% if form_data.estado1=='PA' %}selected{% endif %}>Pará</option>
-                        <option value="PB" {% if form_data.estado1=='PB' %}selected{% endif %}>Paraíba</option>
-                        <option value="PR" {% if form_data.estado1=='PR' %}selected{% endif %}>Paraná</option>
-                        <option value="PE" {% if form_data.estado1=='PE' %}selected{% endif %}>Pernambuco
-                        </option>
-                        <option value="PI" {% if form_data.estado1=='PI' %}selected{% endif %}>Piauí</option>
-                        <option value="RJ" {% if form_data.estado1=='RJ' %}selected{% endif %}>Rio de Janeiro
-                        </option>
-                        <option value="RN" {% if form_data.estado1=='RN' %}selected{% endif %}>Rio Grande do
-                            Norte</option>
-                        <option value="RS" {% if form_data.estado1=='RS' %}selected{% endif %}>Rio Grande do Sul
-                        </option>
-                        <option value="RO" {% if form_data.estado1=='RO' %}selected{% endif %}>Rondônia</option>
-                        <option value="RR" {% if form_data.estado1=='RR' %}selected{% endif %}>Roraima</option>
-                        <option value="SC" {% if form_data.estado1=='SC' %}selected{% endif %}>Santa Catarina
-                        </option>
-                        <option value="SP" {% if form_data.estado1=='SP' %}selected{% endif %}>São Paulo
-                        </option>
-                        <option value="SE" {% if form_data.estado1=='SE' %}selected{% endif %}>Sergipe</option>
-                        <option value="TO" {% if form_data.estado1=='TO' %}selected{% endif %}>Tocantins
-                        </option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="cidade1">Cidade:</label>
-                    <select class="form-control" id="cidade1" name="cidade1">
-                        <option value="" disabled>Selecione a cidade</option>
-                        {% if form_data.cidade1 %}
-                        <option value="{{ form_data.cidade1 }}" selected>{{ form_data.cidade1 }}</option>
-                        {% endif %}
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="funcao1">Função:</label>
-                    <input type="text" class="form-control" id="funcao1" name="funcao1" value="{{ form_data.funcao1 }}">
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="data_admissao1">Data de Admissão:</label>
-                    <input type="date" class="form-control" id="data_admissao1" name="data_admissao1"
-                        value="{{ form_data.data_admissao1 }}">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="data_saida1">Data de Saída:</label>
-                    <input type="date" class="form-control" id="data_saida1" name="data_saida1"
-                        value="{{ form_data.data_saida1 }}">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="motivo_saida1">Motivo da Saída:</label>
-            <input type="text" class="form-control" id="motivo_saida1" name="motivo_saida1"
-                value="{{ form_data.motivo_saida1 }}">
-        </div>
-        <div class="form-group">
-            <label for="salario1">Salário:</label>
-            <input type="text" class="form-control salario-input" id="salario1" name="salario1"
-                onkeyup="mascaraSalario(this)" value="{{ form_data.salario1 }}">
-        </div>
+            // Desabilita o botão durante o upload
+            enviarBtn.disabled = true;
+            enviarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            uploadStatus.innerHTML = '<div class="alert alert-info">Enviando arquivo...</div>';
 
-        <!-- Empresa 2 -->
-        <div class="form-group">
-            <label for="empresa2">Empresa 2:</label>
-            <input type="text" class="form-control" id="empresa2" name="empresa2" value="{{ form_data.empresa2 }}">
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="estado2">Estado:</label>
-                    <select class="form-control" id="estado2" name="estado2"
-                        onchange="carregarCidadesEmprego(this.value, 'cidade2')">
-                        <option value="" disabled selected>Selecione o Estado</option>
-                        <option value="AC" {% if form_data.estado2=='AC' %}selected{% endif %}>Acre</option>
-                        <option value="AL" {% if form_data.estado2=='AL' %}selected{% endif %}>Alagoas</option>
-                        <option value="AP" {% if form_data.estado2=='AP' %}selected{% endif %}>Amapá</option>
-                        <option value="AM" {% if form_data.estado2=='AM' %}selected{% endif %}>Amazonas</option>
-                        <option value="BA" {% if form_data.estado2=='BA' %}selected{% endif %}>Bahia</option>
-                        <option value="CE" {% if form_data.estado2=='CE' %}selected{% endif %}>Ceará</option>
-                        <option value="DF" {% if form_data.estado2=='DF' %}selected{% endif %}>Distrito Federal
-                        </option>
-                        <option value="ES" {% if form_data.estado2=='ES' %}selected{% endif %}>Espírito Santo
-                        </option>
-                        <option value="GO" {% if form_data.estado2=='GO' %}selected{% endif %}>Goiás</option>
-                        <option value="MA" {% if form_data.estado2=='MA' %}selected{% endif %}>Maranhão</option>
-                        <option value="MT" {% if form_data.estado2=='MT' %}selected{% endif %}>Mato Grosso
-                        </option>
-                        <option value="MS" {% if form_data.estado2=='MS' %}selected{% endif %}>Mato Grosso do
-                            Sul</option>
-                        <option value="MG" {% if form_data.estado2=='MG' %}selected{% endif %}>Minas Gerais
-                        </option>
-                        <option value="PA" {% if form_data.estado2=='PA' %}selected{% endif %}>Pará</option>
-                        <option value="PB" {% if form_data.estado2=='PB' %}selected{% endif %}>Paraíba</option>
-                        <option value="PR" {% if form_data.estado2=='PR' %}selected{% endif %}>Paraná</option>
-                        <option value="PE" {% if form_data.estado2=='PE' %}selected{% endif %}>Pernambuco
-                        </option>
-                        <option value="PI" {% if form_data.estado2=='PI' %}selected{% endif %}>Piauí</option>
-                        <option value="RJ" {% if form_data.estado2=='RJ' %}selected{% endif %}>Rio de Janeiro
-                        </option>
-                        <option value="RN" {% if form_data.estado2=='RN' %}selected{% endif %}>Rio Grande do
-                            Norte</option>
-                        <option value="RS" {% if form_data.estado2=='RS' %}selected{% endif %}>Rio Grande do Sul
-                        </option>
-                        <option value="RO" {% if form_data.estado2=='RO' %}selected{% endif %}>Rondônia</option>
-                        <option value="RR" {% if form_data.estado2=='RR' %}selected{% endif %}>Roraima</option>
-                        <option value="SC" {% if form_data.estado2=='SC' %}selected{% endif %}>Santa Catarina
-                        </option>
-                        <option value="SP" {% if form_data.estado2=='SP' %}selected{% endif %}>São Paulo
-                        </option>
-                        <option value="SE" {% if form_data.estado2=='SE' %}selected{% endif %}>Sergipe</option>
-                        <option value="TO" {% if form_data.estado2=='TO' %}selected{% endif %}>Tocantins
-                        </option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="cidade2">Cidade:</label>
-                    <select class="form-control" id="cidade2" name="cidade2">
-                        <option value="" disabled>Selecione a cidade</option>
-                        {% if form_data.cidade2 %}
-                        <option value="{{ form_data.cidade2 }}" selected>{{ form_data.cidade2 }}</option>
-                        {% endif %}
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="funcao2">Função:</label>
-                    <input type="text" class="form-control" id="funcao2" name="funcao2" value="{{ form_data.funcao2 }}">
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="data_admissao2">Data de Admissão:</label>
-                    <input type="date" class="form-control" id="data_admissao2" name="data_admissao2"
-                        value="{{ form_data.data_admissao2 }}">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="data_saida2">Data de Saída:</label>
-                    <input type="date" class="form-control" id="data_saida2" name="data_saida2"
-                        value="{{ form_data.data_saida2 }}">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="motivo_saida2">Motivo da Saída:</label>
-            <input type="text" class="form-control" id="motivo_saida2" name="motivo_saida2"
-                value="{{ form_data.motivo_saida2 }}">
-        </div>
-        <div class="form-group">
-            <label for="salario2">Salário:</label>
-            <input type="text" class="form-control salario-input" id="salario2" name="salario2"
-                onkeyup="mascaraSalario(this)" value="{{ form_data.salario2 }}">
-        </div>
+            const formData = new FormData();
+            formData.append('curriculo', file);
+            
+            // Adiciona o CPF para atualizar o banco de dados
+            const cpf = document.getElementById('cpf').value;
+            if (cpf) {
+                formData.append('cpf', cpf);
+            }
 
-        <!-- Empresa 3 -->
-        <div class="form-group">
-            <label for="empresa3">Empresa 3:</label>
-            <input type="text" class="form-control" id="empresa3" name="empresa3" value="{{ form_data.empresa3 }}">
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="estado3">Estado:</label>
-                    <select class="form-control" id="estado3" name="estado3"
-                        onchange="carregarCidadesEmprego(this.value, 'cidade3')">
-                        <option value="" disabled selected>Selecione o Estado</option>
-                        <option value="AC" {% if form_data.estado3=='AC' %}selected{% endif %}>Acre</option>
-                        <option value="AL" {% if form_data.estado3=='AL' %}selected{% endif %}>Alagoas</option>
-                        <option value="AP" {% if form_data.estado3=='AP' %}selected{% endif %}>Amapá</option>
-                        <option value="AM" {% if form_data.estado3=='AM' %}selected{% endif %}>Amazonas</option>
-                        <option value="BA" {% if form_data.estado3=='BA' %}selected{% endif %}>Bahia</option>
-                        <option value="CE" {% if form_data.estado3=='CE' %}selected{% endif %}>Ceará</option>
-                        <option value="DF" {% if form_data.estado3=='DF' %}selected{% endif %}>Distrito Federal
-                        </option>
-                        <option value="ES" {% if form_data.estado3=='ES' %}selected{% endif %}>Espírito Santo
-                        </option>
-                        <option value="GO" {% if form_data.estado3=='GO' %}selected{% endif %}>Goiás</option>
-                        <option value="MA" {% if form_data.estado3=='MA' %}selected{% endif %}>Maranhão</option>
-                        <option value="MT" {% if form_data.estado3=='MT' %}selected{% endif %}>Mato Grosso
-                        </option>
-                        <option value="MS" {% if form_data.estado3=='MS' %}selected{% endif %}>Mato Grosso do
-                            Sul</option>
-                        <option value="MG" {% if form_data.estado3=='MG' %}selected{% endif %}>Minas Gerais
-                        </option>
-                        <option value="PA" {% if form_data.estado3=='PA' %}selected{% endif %}>Pará</option>
-                        <option value="PB" {% if form_data.estado3=='PB' %}selected{% endif %}>Paraíba</option>
-                        <option value="PR" {% if form_data.estado3=='PR' %}selected{% endif %}>Paraná</option>
-                        <option value="PE" {% if form_data.estado3=='PE' %}selected{% endif %}>Pernambuco
-                        </option>
-                        <option value="PI" {% if form_data.estado3=='PI' %}selected{% endif %}>Piauí</option>
-                        <option value="RJ" {% if form_data.estado3=='RJ' %}selected{% endif %}>Rio de Janeiro
-                        </option>
-                        <option value="RN" {% if form_data.estado3=='RN' %}selected{% endif %}>Rio Grande do
-                            Norte</option>
-                        <option value="RS" {% if form_data.estado3=='RS' %}selected{% endif %}>Rio Grande do Sul
-                        </option>
-                        <option value="RO" {% if form_data.estado3=='RO' %}selected{% endif %}>Rondônia</option>
-                        <option value="RR" {% if form_data.estado3=='RR' %}selected{% endif %}>Roraima</option>
-                        <option value="SC" {% if form_data.estado3=='SC' %}selected{% endif %}>Santa Catarina
-                        </option>
-                        <option value="SP" {% if form_data.estado3=='SP' %}selected{% endif %}>São Paulo
-                        </option>
-                        <option value="SE" {% if form_data.estado3=='SE' %}selected{% endif %}>Sergipe</option>
-                        <option value="TO" {% if form_data.estado3=='TO' %}selected{% endif %}>Tocantins
-                        </option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="cidade3">Cidade:</label>
-                    <select class="form-control" id="cidade3" name="cidade3">
-                        <option value="" disabled>Selecione a cidade</option>
-                        {% if form_data.cidade3 %}
-                        <option value="{{ form_data.cidade3 }}" selected>{{ form_data.cidade3 }}</option>
-                        {% endif %}
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="funcao3">Função:</label>
-                    <input type="text" class="form-control" id="funcao3" name="funcao3" value="{{ form_data.funcao3 }}">
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="data_admissao3">Data de Admissão:</label>
-                    <input type="date" class="form-control" id="data_admissao3" name="data_admissao3"
-                        value="{{ form_data.data_admissao3 }}">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="data_saida3">Data de Saída:</label>
-                    <input type="date" class="form-control" id="data_saida3" name="data_saida3"
-                        value="{{ form_data.data_saida3 }}">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="motivo_saida3">Motivo da Saída:</label>
-            <input type="text" class="form-control" id="motivo_saida3" name="motivo_saida3"
-                value="{{ form_data.motivo_saida3 }}">
-        </div>
-        <div class="form-group">
-            <label for="salario3">Salário:</label>
-            <input type="text" class="form-control salario-input" id="salario3" name="salario3"
-                onkeyup="mascaraSalario(this)" value="{{ form_data.salario3 }}">
-        </div>
+            console.log('FormData criado, enviando para /upload_curriculo...');
 
-        <!-- Empregos Informais -->
-        <div class="form-group">
-            <label for="empregos_informais">Empregos Informais:</label>
-            <input type="text" class="form-control" id="empregos_informais" name="empregos_informais"
-                value="{{ form_data.empregos_informais }}">
-        </div>
-    </div>
+            try {
+                const response = await fetch('/upload_curriculo', {
+                    method: 'POST',
+                    body: formData
+                });
 
+                console.log('Resposta recebida:', response);
+                console.log('Status:', response.status);
+                console.log('Headers:', response.headers);
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
+                const result = await response.json();
+                console.log('Resultado do upload:', result);
 
-    <!-- Seção de Observações -->
-    <div class="form-section">
-        <h4>Observações</h4>
-        <div class="form-group">
-            <textarea class="form-control" id="observacoes" name="observacoes"
-                rows="4">{{ form_data.observacoes }}</textarea>
-        </div>
-    </div>
+                if (result.success) {
+                    uploadStatus.innerHTML = '<div class="alert alert-success">Currículo enviado com sucesso!</div>';
+                    
+                    // Atualiza a visualização do currículo
+                    const viewCurriculoBtn = document.getElementById('viewCurriculo');
+                    if (viewCurriculoBtn) {
+                        viewCurriculoBtn.dataset.curriculo = `/static/uploads/${result.filename}`;
+                        viewCurriculoBtn.style.display = 'inline-block';
+                    } else {
+                        // Se não existir o botão, cria um novo
+                        const infoItem = document.querySelector('.info-item:has(.fa-file-alt)');
+                        if (infoItem) {
+                            const newBtn = document.createElement('button');
+                            newBtn.type = 'button';
+                            newBtn.id = 'viewCurriculo';
+                            newBtn.className = 'btn btn-primary';
+                            newBtn.style.cssText = 'background-color: #AB1A18; color: white; border-color: #AB1A18;';
+                            newBtn.dataset.curriculo = `/static/uploads/${result.filename}`;
+                            newBtn.textContent = 'Ver Currículo';
+                            infoItem.innerHTML = infoItem.innerHTML.replace('<span>Sem currículo</span>', '');
+                            infoItem.appendChild(newBtn);
+                        }
+                    }
 
+                    // Limpa o input de arquivo
+                    fileInput.value = '';
+                    
+                    // Recarrega a página após 2 segundos para mostrar o currículo
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    console.error('Erro retornado pelo servidor:', result.message);
+                    uploadStatus.innerHTML = `<div class="alert alert-danger">Erro ao enviar o currículo: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Erro no upload:', error);
+                uploadStatus.innerHTML = '<div class="alert alert-danger">Erro ao enviar o currículo. Verifique sua conexão e tente novamente.</div>';
+            } finally {
+                // Reabilita o botão
+                enviarBtn.disabled = false;
+                enviarBtn.innerHTML = '<i class="fas fa-upload"></i> Enviar';
+            }
+        });
+
+        // Adiciona validação visual ao selecionar arquivo
+        document.getElementById('curriculo').addEventListener('change', function() {
+            const file = this.files[0];
+            const uploadStatus = document.getElementById('upload-status');
+            
+            console.log('Arquivo selecionado:', file);
+            
+            if (file) {
+                const maxSize = 10 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    uploadStatus.innerHTML = '<div class="alert alert-warning">Arquivo muito grande. Tamanho máximo: 10MB</div>';
+                    uploadStatus.style.display = 'block';
+                } else {
+                    uploadStatus.innerHTML = '<div class="alert alert-info">Arquivo selecionado: ' + file.name + '</div>';
+                    uploadStatus.style.display = 'block';
+                }
+            }
+        });
+    </script>
 
     <!-- Cargo indicado -->
     <div class="form-group">
-        <h4>Cargos Indicados</h4>
+        <h5>Cargos Indicados</h5>
         <div class="select-indicated-cargo" id="select-indicated-cargo" style="cursor: pointer;">
             <p>Selecionar Cargos Indicados</p>
         </div>
@@ -1359,9 +979,683 @@ Sistema RS - Atualizar Ficha
                     form_data.cargo_indicado %}checked{% endif %}>
                 <label class="form-check-label" for="cargo8">ASG</label>
             </div>
+            <div class="form-check">
+                <input class="checkbox" type="checkbox" id="cargo9" name="cargo_indicado" value="ZELADORIA" {%
+                    if 'ZELADORIA' in form_data.cargo_indicado %}checked{% endif %}>
+                <label class="form-check-label" for="cargo9">ZELADORIA</label>
+            </div>
+            <div class="form-check">
+                <input class="checkbox" type="checkbox" id="cargo10" name="cargo_indicado" value="MENSAGEIRO" {%
+                    if 'MENSAGEIRO' in form_data.cargo_indicado %}checked{% endif %}>
+                <label class="form-check-label" for="cargo10">MENSAGEIRO</label>
+            </div>
+            <div class="form-check">
+                <input class="checkbox" type="checkbox" id="cargo11" name="cargo_indicado" value="COPEIRA" {%
+                    if 'COPEIRA' in form_data.cargo_indicado %}checked{% endif %}>
+                <label class="form-check-label" for="cargo11">COPEIRA</label>
+            </div>
+            <div class="form-check">
+                <input class="checkbox" type="checkbox" id="cargo12" name="cargo_indicado" value="SUPERVISOR PREDIAL" {%
+                    if 'SUPERVISOR PREDIAL' in form_data.cargo_indicado %}checked{% endif %}>
+                <label class="form-check-label" for="cargo12">SUPERVISOR PREDIAL</label>
+            </div>
+        </div>
+        <!-- Mensagem de erro -->
+        <small id="cargo-error" class="text-danger" style="display: none;">Selecione pelo menos um cargo.</small>
+    </div>
+
+    <!-- Seção de Dados Pessoais -->
+    <div class="form-section">
+        <h4>Dados Pessoais</h4>
+        <div class="row">
+            <!-- Primeira Coluna -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="nome_completo">Nome Completo:</label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo"
+                        value="{{ form_data.nome_completo }}">
+                </div>
+                <div class="form-group">
+                    <label for="estado_civil">Estado Civil:</label>
+                    <select class="form-control" id="estado_civil" name="estado_civil">
+                        <option value="" disabled selected></option>
+                        <option value="SOLTEIRO" {% if form_data.estado_civil=='SOLTEIRO' %}selected{% endif %}>
+                            Solteiro</option>
+                        <option value="CASADO" {% if form_data.estado_civil=='CASADO' %}selected{% endif %}>Casado
+                        </option>
+                        <option value="DIVORCIADO" {% if form_data.estado_civil=='DIVORCIADO' %}selected{% endif %}>
+                            Divorciado</option>
+                        <option value="VIÚVO" {% if form_data.estado_civil=='VIÚVO' %}selected{% endif %}>Viúvo
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cep">CEP:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="cep" name="cep" value="{{ form_data.cep }}">
+                        <button class="btn btn-outline-secondary" type="button" id="buscarCep">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="endereco">Endereço:</label>
+                    <input type="text" class="form-control" id="endereco" name="endereco"
+                        value="{{ form_data.endereco }}">
+                </div>
+                <div class="form-group">
+                    <label for="numero">Número:</label>
+                    <input type="text" class="form-control" id="numero" name="numero" value="{{ form_data.numero }}">
+                </div>
+                <div class="form-group">
+                    <label for="complemento">Complemento:</label>
+                    <input type="text" class="form-control" id="complemento" name="complemento"
+                        value="{{ form_data.complemento }}">
+                </div>
+                <div class="form-group">
+                    <label for="bairro">Bairro:</label>
+                    <input type="text" class="form-control" id="bairro" name="bairro" value="{{ form_data.bairro }}">
+                </div>
+                <div class="form-group">
+                    <label for="cidade">Cidade:</label>
+                    <input type="text" class="form-control" id="cidade" name="cidade" value="{{ form_data.cidade }}">
+                </div>
+                <div class="form-group">
+                    <label for="telefone">Telefone:</label>
+                    <input type="text" class="form-control" id="telefone" name="telefone"
+                        value="{{ form_data.telefone or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="telefone_recado">Telefone para Recado:</label>
+                    <input type="text" class="form-control" id="telefone_recado" name="telefone_recado"
+                        value="{{ form_data.telefone_recado or '' }}" placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label for="email">E-mail:</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ form_data.email or '' }}"
+                        placeholder="Digite seu e-mail">
+                </div>
+                <div class="form-group">
+                    <label for="estado_nasc">Estado e Cidade de Nascimento:</label>
+                    <select class="form-control" id="estado_nasc" name="estado_nasc"
+                        onchange="carregarCidades(this.value)">
+                        <option value="" selected disabled>Selecione o Estado</option>
+                        <option value="AC" {% if form_data.estado_nasc=='AC' %}selected{% endif %}>Acre</option>
+                        <option value="AL" {% if form_data.estado_nasc=='AL' %}selected{% endif %}>Alagoas</option>
+                        <option value="AP" {% if form_data.estado_nasc=='AP' %}selected{% endif %}>Amapá</option>
+                        <option value="AM" {% if form_data.estado_nasc=='AM' %}selected{% endif %}>Amazonas</option>
+                        <option value="BA" {% if form_data.estado_nasc=='BA' %}selected{% endif %}>Bahia</option>
+                        <option value="CE" {% if form_data.estado_nasc=='CE' %}selected{% endif %}>Ceará</option>
+                        <option value="DF" {% if form_data.estado_nasc=='DF' %}selected{% endif %}>Distrito Federal
+                        </option>
+                        <option value="ES" {% if form_data.estado_nasc=='ES' %}selected{% endif %}>Espírito Santo
+                        </option>
+                        <option value="GO" {% if form_data.estado_nasc=='GO' %}selected{% endif %}>Goiás</option>
+                        <option value="MA" {% if form_data.estado_nasc=='MA' %}selected{% endif %}>Maranhão</option>
+                        <option value="MT" {% if form_data.estado_nasc=='MT' %}selected{% endif %}>Mato Grosso
+                        </option>
+                        <option value="MS" {% if form_data.estado_nasc=='MS' %}selected{% endif %}>Mato Grosso do
+                            Sul</option>
+                        <option value="MG" {% if form_data.estado_nasc=='MG' %}selected{% endif %}>Minas Gerais
+                        </option>
+                        <option value="PA" {% if form_data.estado_nasc=='PA' %}selected{% endif %}>Pará</option>
+                        <option value="PB" {% if form_data.estado_nasc=='PB' %}selected{% endif %}>Paraíba</option>
+                        <option value="PR" {% if form_data.estado_nasc=='PR' %}selected{% endif %}>Paraná</option>
+                        <option value="PE" {% if form_data.estado_nasc=='PE' %}selected{% endif %}>Pernambuco
+                        </option>
+                        <option value="PI" {% if form_data.estado_nasc=='PI' %}selected{% endif %}>Piauí</option>
+                        <option value="RJ" {% if form_data.estado_nasc=='RJ' %}selected{% endif %}>Rio de Janeiro
+                        </option>
+                        <option value="RN" {% if form_data.estado_nasc=='RN' %}selected{% endif %}>Rio Grande do
+                            Norte</option>
+                        <option value="RS" {% if form_data.estado_nasc=='RS' %}selected{% endif %}>Rio Grande do Sul
+                        </option>
+                        <option value="RO" {% if form_data.estado_nasc=='RO' %}selected{% endif %}>Rondônia</option>
+                        <option value="RR" {% if form_data.estado_nasc=='RR' %}selected{% endif %}>Roraima</option>
+                        <option value="SC" {% if form_data.estado_nasc=='SC' %}selected{% endif %}>Santa Catarina
+                        </option>
+                        <option value="SP" {% if form_data.estado_nasc=='SP' %}selected{% endif %}>São Paulo
+                        </option>
+                        <option value="SE" {% if form_data.estado_nasc=='SE' %}selected{% endif %}>Sergipe</option>
+                        <option value="TO" {% if form_data.estado_nasc=='TO' %}selected{% endif %}>Tocantins
+                        </option>
+                    </select>
+                    <select class="form-control mt-2" id="cidade_nasc" name="cidade_nasc">
+                        <option value="" disabled>Selecione a cidade</option>
+                        {% if form_data.cidade_nasc %}
+                        <option value="{{ form_data.cidade_nasc }}" selected>{{ form_data.cidade_nasc }}</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="data_nasc">Data de Nascimento:</label>
+                    <input type="date" class="form-control" id="data_nasc" name="data_nasc"
+                        value="{{ form_data.data_nasc }}">
+                </div>
+                <div class="form-group">
+                    <label for="idade">Idade:</label>
+                    <input type="number" class="form-control" id="idade" name="idade" value="{{ form_data.idade }}"
+                        readonly>
+                </div>
+                <div class="form-group">
+                    <label for="escolaridade">Escolaridade:</label>
+                    <select class="form-control" id="escolaridade" name="escolaridade">
+                        <option value="" disabled selected>Selecione a escolaridade</option>
+                        <option value="FUNDAMENTAL INCOMPLETO" {% if form_data.escolaridade=='FUNDAMENTAL INCOMPLETO'
+                            %}selected{% endif %}>Fundamental
+                            Incompleto</option>
+                        <option value="FUNDAMENTAL COMPLETO" {% if form_data.escolaridade=='FUNDAMENTAL COMPLETO'
+                            %}selected{% endif %}>Fundamental Completo</option>
+                        <option value="MÉDIO INCOMPLETO" {% if form_data.escolaridade=='MÉDIO INCOMPLETO' %}selected{%
+                            endif %}>Médio Incompleto</option>
+                        <option value="MÉDIO COMPLETO" {% if form_data.escolaridade=='MÉDIO COMPLETO' %}selected{% endif
+                            %}>Médio Completo</option>
+                        <option value="TÉCNICO INCOMPLETO" {% if form_data.escolaridade=='TÉCNICO INCOMPLETO'
+                            %}selected{% endif %}>Técnico Incompleto</option>
+                        <option value="TÉCNICO COMPLETO" {% if form_data.escolaridade=='TÉCNICO COMPLETO' %}selected{%
+                            endif %}>Técnico Completo</option>
+                        <option value="SUPERIOR INCOMPLETO" {% if form_data.escolaridade=='SUPERIOR INCOMPLETO'
+                            %}selected{% endif %}>Superior Incompleto</option>
+                        <option value="SUPERIOR COMPLETO" {% if form_data.escolaridade=='SUPERIOR COMPLETO' %}selected{%
+                            endif %}>Superior Completo</option>
+                        <option value="PÓS-GRADUAÇÃO" {% if form_data.escolaridade=='PÓS-GRADUAÇÃO' %}selected{% endif
+                            %}>Pós-graduação</option>
+                        <option value="MESTRADO" {% if form_data.escolaridade=='MESTRADO' %}selected{% endif %}>
+                            Mestrado</option>
+                        <option value="DOUTORADO" {% if form_data.escolaridade=='DOUTORADO' %}selected{% endif %}>
+                            Doutorado</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Segunda Coluna -->
+            <div class="col-md-6">
+                <!-- Campo para selecionar o número de filhos -->
+                <div class="form-group">
+                    <label for="numero_filhos">Número de Filhos:</label>
+                    <select class="form-control" id="numero_filhos" name="numero_filhos"
+                        onchange="gerarCamposIdadesFilhos()">
+                        <option value="" disabled selected>Selecione...</option>
+                        {% for i in range(0, 11) %}
+                        <option value="{{ i }}" {% if form_data.numero_filhos==i %}selected{% endif %}>{{ i }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Fumante:</label>
+                    <div>
+                        <input type="radio" id="fumante_sim" name="fumante" value="SIM" {% if form_data.fumante=='SIM'
+                            %}checked{% endif %}>
+                        <label for="fumante_sim">Sim</label>
+                        <input type="radio" id="fumante_nao" name="fumante" value="NÃO" {% if form_data.fumante=='NÃO'
+                            %}checked{% endif %}>
+                        <label for="fumante_nao">Não</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Bebida:</label>
+                    <div>
+                        <input type="radio" id="bebida_sim" name="bebida" value="SIM" {% if form_data.bebida=='SIM'
+                            %}checked{% endif %}>
+                        <label for="bebida_sim">Sim</label>
+                        <input type="radio" id="bebida_nao" name="bebida" value="NÃO" {% if form_data.bebida=='NÃO'
+                            %}checked{% endif %}>
+                        <label for="bebida_nao">Não</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="alergia">Alergia:</label>
+                    <input type="text" class="form-control" id="alergia" name="alergia" value="{{ form_data.alergia }}">
+                </div>
+                <div class="form-group">
+                    <label for="medicamento_constante">Medicamento de Uso Constante:</label>
+                    <div>
+                        <input type="radio" id="medicamento_sim" name="medicamento_constante" value="SIM" {% if
+                            form_data.medicamento_constante=='SIM' %}checked{% endif %}>
+                        <label for="medicamento_sim">Sim</label>
+                        <input type="radio" id="medicamento_nao" name="medicamento_constante" value="NÃO" {% if
+                            form_data.medicamento_constante=='NÃO' %}checked{% endif %}>
+                        <label for="medicamento_nao">Não</label>
+                    </div>
+                    <input type="text" class="form-control mt-2" id="qual_medicamento" name="qual_medicamento"
+                        placeholder="Qual?" value="{{ form_data.qual_medicamento }}">
+                </div>
+
+                <!-- Não Perguntar ao Candidato -->
+                <h4>Não Perguntar ao Candidato <span style="color: red;">*</span></h4>
+                <div class="form-group">
+                    <label for="genero">Gênero: <span style="color: red;">*</span></label>
+                    <select class="form-control" id="genero" name="genero">
+                        <option value="" disabled selected></option>
+                        <option value="HOMEM" {% if form_data.genero=='HOMEM' %}selected{% endif %}>Homem</option>
+                        <option value="MULHER" {% if form_data.genero=='MULHER' %}selected{% endif %}>Mulher
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="peso">Peso: <span style="color: red;">*</span></label>
+                    <select class="form-control" id="peso" name="peso">
+                        <option value="" disabled selected></option>
+                        <option value="Normal" {% if form_data.peso=='Normal' %}selected{% endif %}>Normal</option>
+                        <option value="Sobrepeso" {% if form_data.peso=='Sobrepeso' %}selected{% endif %}>Sobrepeso
+                        </option>
+                        <option value="Obesidade" {% if form_data.peso=='Obesidade' %}selected{% endif %}>Obesidade
+                        </option>
+                        <option value="Magro" {% if form_data.peso=='Magro' %}selected{% endif %}>Magro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cor_pele">Cor de Pele: <span style="color: red;">*</span></label>
+                    <select class="form-control" id="cor_pele" name="cor_pele">
+                        <option value="" disabled selected></option>
+                        <option value="BRANCA" {% if form_data.cor_pele=='BRANCA' %}selected{% endif %}>Branca
+                        </option>
+                        <option value="PRETA" {% if form_data.cor_pele=='PRETA' %}selected{% endif %}>Preta</option>
+                        <option value="PARDA" {% if form_data.cor_pele=='PARDA' %}selected{% endif %}>Parda</option>
+                        <option value="AMARELA" {% if form_data.cor_pele=='AMARELA' %}selected{% endif %}>Amarela
+                        </option>
+                        <option value="INDÍGENA" {% if form_data.cor_pele=='INDÍGENA' %}selected{% endif %}>Indígena
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tatuagem">Tatuagem: <span style="color: red;">*</span></label>
+                    <select class="form-control" id="tatuagem" name="tatuagem">
+                        <option value="" disabled selected></option>
+                        <option value="SIM, VISÍVEL" {% if form_data.tatuagem=='SIM, VISÍVEL' %}selected{% endif %}>
+                            Sim, Visível</option>
+                        <option value="SIM" {% if form_data.tatuagem=='SIM' %}selected{% endif %}>Sim</option>
+                        <option value="NÃO" {% if form_data.tatuagem=='NÃO' %}selected{% endif %}>Não</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pcd">PCD (Pessoa com Deficiência):</label>
+                    <select class="form-control" id="pcd" name="pcd">
+                        <option value="" disabled selected></option>
+                        <option value="Sim" {% if form_data.pcd=="Sim" %} selected {% endif %}>Sim</option>
+                        <option value="Não" {% if form_data.pcd=="Não" %} selected {% endif %}>Não</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="perfil">Perfil:</label>
+                    <select class="form-control" id="perfil" name="perfil">
+                        <option value="" disabled selected></option>
+                        <option value="OSTENSIVO" {% if form_data.perfil=='OSTENSIVO' %}selected{% endif %}>
+                            Ostensivo</option>
+                        <option value="SOCIAL" {% if form_data.perfil=='SOCIAL' %}selected{% endif %}>Social
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Documentação -->
+    <div class="form-section">
+        <h4>Documentação</h4>
+
+        <div class="form-group">
+            <label for="cpf">CPF:</label>
+            <input type="text" class="form-control" id="cpf" name="cpf" value="{{ form_data.cpf }}" required>
+        </div>
+    </div>
+
+    <!-- Seção de Cursos Realizados -->
+    <div class="form-section">
+        <h4>Cursos Realizados por Você</h4>
+        <div class="form-group">
+            <label for="cursos_realizados">Descreva os cursos que você já realizou:</label>
+            <textarea class="form-control" id="cursos_realizados" name="cursos_realizados"
+                rows="4">{{ form_data.cursos_realizados }}</textarea>
+        </div>
+    </div>
+
+
+    <div class="form-section">
+        <h4>Conhecimento de Digitação</h4>
+        <div class="form-group">
+            <label for="conhecimento_digitacao">Selecione:</label>
+            <select class="form-control" id="conhecimento_digitacao" name="conhecimento_digitacao">
+                <option value="" disabled selected></option>
+                <option id="bom" value="Bom" {% if form_data.conhecimento_digitacao=='Bom' %}selected{% endif %}>Bom
+                </option>
+                <option id="regular" value="Regular" {% if form_data.conhecimento_digitacao=='Regular' %}selected{%
+                    endif %}>Regular</option>
+                <option id="ruim" value="Ruim" {% if form_data.conhecimento_digitacao=='Ruim' %}selected{% endif %}>
+                    Ruim</option>
+            </select>
+        </div>
+    </div>
+
+
+    <!-- Seção de Regiões de Preferência -->
+    <div class="form-section">
+        <h4>Regiões de Preferência para Trabalhar</h4>
+        <div class="checkbox-group checkbox-regioes">
+
+            <div class="checkbox-group checkbox-regioes">
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_barreiro" name="regioes_preferencia"
+                        value="REGIÃO BARREIRO" {% if form_data.regioes_preferencia and 'REGIÃO BARREIRO' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_barreiro">Região Barreiro</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_centro_sul" name="regioes_preferencia"
+                        value="REGIÃO CENTRO SUL" {% if form_data.regioes_preferencia and 'REGIÃO CENTRO SUL' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_centro_sul">Região Centro Sul</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_leste" name="regioes_preferencia"
+                        value="REGIÃO LESTE" {% if form_data.regioes_preferencia and 'REGIÃO LESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_leste">Região Leste</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_nordeste" name="regioes_preferencia"
+                        value="REGIÃO NORDESTE" {% if form_data.regioes_preferencia and 'REGIÃO NORDESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_nordeste">Região Nordeste</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_noroeste" name="regioes_preferencia"
+                        value="REGIÃO NOROESTE" {% if form_data.regioes_preferencia and 'REGIÃO NOROESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_noroeste">Região Noroeste</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_norte" name="regioes_preferencia"
+                        value="REGIÃO NORTE" {% if form_data.regioes_preferencia and 'REGIÃO NORTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_norte">Região Norte</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_oeste" name="regioes_preferencia"
+                        value="REGIÃO OESTE" {% if form_data.regioes_preferencia and 'REGIÃO OESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_oeste">Região Oeste</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_pampulha" name="regioes_preferencia"
+                        value="REGIÃO PAMPULHA" {% if form_data.regioes_preferencia and 'REGIÃO PAMPULHA' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_pampulha">Região Pampulha</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_venda_nova" name="regioes_preferencia"
+                        value="REGIÃO VENDA NOVA" {% if form_data.regioes_preferencia and 'REGIÃO VENDA NOVA' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_venda_nova">Região Venda Nova</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_betim_contagem" name="regioes_preferencia"
+                        value="REGIÃO BETIM/CONTAGEM" {% if form_data.regioes_preferencia and 'REGIÃO BETIM/CONTAGEM' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_betim_contagem">Região Betim/Contagem</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_nova_lima" name="regioes_preferencia"
+                        value="REGIÃO NOVA LIMA" {% if form_data.regioes_preferencia and 'REGIÃO NOVA LIMA' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_nova_lima">Região Nova Lima</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_outros_municipios" name="regioes_preferencia"
+                        value="OUTROS MUNICÍPIOS" {% if form_data.regioes_preferencia and 'OUTROS MUNICÍPIOS' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_outros_municipios">Outros Municípios</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_vli_sudeste" name="regioes_preferencia"
+                        value="VLI SUDESTE" {% if form_data.regioes_preferencia and 'VLI SUDESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_vli_sudeste">VLI SUDESTE</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_vli_nordeste" name="regioes_preferencia"
+                        value="VLI NORDESTE" {% if form_data.regioes_preferencia and 'VLI NORDESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_vli_nordeste">VLI NORDESTE</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_vli_centro_leste" name="regioes_preferencia"
+                        value="VLI CENTRO LESTE" {% if form_data.regioes_preferencia and 'VLI CENTRO LESTE' in
+                        form_data.regioes_preferencia %}checked{% endif %}>
+                    <label class="form-check-label" for="regiao_vli_centro_leste">VLI CENTRO LESTE</label>
+                </div>
+                <div class="form-check">
+                    <input class="checkbox" type="checkbox" id="regiao_vli_mg" name="regioes_preferencia" value="VLI MG"
+                        {% if form_data.regioes_preferencia and 'VLI MG' in form_data.regioes_preferencia %}checked{%
+                        endif %}>
+                    <label class="form-check-label" for="regiao_vli_mg">VLI MG</label>
+                </div>
+            </div>
+
+
+            <!-- Botão para selecionar todas as regiões -->
+            <div class="form-check">
+                <input class="checkbox" type="checkbox" id="selecionar_todas" onclick="toggleRegioes(this)">
+                <label class="form-check-label" for="selecionar_todas">Selecionar Todas</label>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Seção de Disponibilidade de Horário -->
+    <div class="form-section">
+        <h4>Disponibilidade de Horário para Trabalhar</h4>
+        <div class="checkbox-group checkbox-horarios">
+            <div class="form-check">
+                <input class="checkbox-horarios" type="checkbox" id="disponibilidade1" name="disponibilidade_horario"
+                    value="44H (HORARIO COMERCIAL)" {% if form_data.disponibilidade_horario
+                    and '44H (HORARIO COMERCIAL)' in form_data.disponibilidade_horario %}checked{% endif %}>
+                <label class="form-check-label" for="disponibilidade1">44h (Horário Comercial)</label>
+            </div>
+            <div class="form-check">
+                <input class="checkbox-horarios" type="checkbox" id="disponibilidade2" name="disponibilidade_horario"
+                    value="12X36 DIA" {% if form_data.disponibilidade_horario and '12X36 DIA' in
+                    form_data.disponibilidade_horario %}checked{% endif %}>
+                <label class="form-check-label" for="disponibilidade2">12x36 Dia</label>
+            </div>
+            <div class="form-check">
+                <input class="checkbox-horarios" type="checkbox" id="disponibilidade3" name="disponibilidade_horario"
+                    value="12X36 NOITE" {% if form_data.disponibilidade_horario and '12X36 NOITE' in
+                    form_data.disponibilidade_horario %}checked{% endif %}>
+                <label class="form-check-label" for="disponibilidade3">12x36 Noite</label>
+            </div>
+            <div class="form-check">
+                <input class="checkbox-horarios" type="checkbox" id="disponibilidade4" name="disponibilidade_horario"
+                    value="FEIRISTA" {% if form_data.disponibilidade_horario and 'FEIRISTA' in
+                    form_data.disponibilidade_horario %}checked{% endif %}>
+                <label class="form-check-label" for="disponibilidade4">Ferista</label>
+            </div>
+
+            <!-- Diferenciando o checkbox de "Selecionar Todos" -->
+            <div class="form-check">
+                <input class="checkbox-select-all" type="checkbox" id="selectAllHorarios">
+                <label class="form-check-label" for="selectAllHorarios">Selecionar Todos</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h4>Empregos Informais</h4>
+        <!-- Empregos Informais -->
+        <div class="form-group">
+            <label for="empregos_informais">Escreva sobre os empregos informais:</label>
+            <textarea class="form-control" id="empregos_informais" name="empregos_informais"
+                rows="5">{{ form_data.empregos_informais }}</textarea>
+        </div>
+    </div>
+
+
+    <!-- Seção de Últimos Empregos -->
+    <div class="form-section">
+        <h4>Escreva sobre os 3 Últimos Empregos</h4>
+
+        <!-- Empresa 1 -->
+        <div class="form-group">
+            <label for="empresa1">Empresa 1:</label>
+            <input type="text" class="form-control" id="empresa1" name="empresa1" value="{{ form_data.empresa1 }}">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="funcao1">Função:</label>
+                    <input type="text" class="form-control" id="funcao1" name="funcao1" value="{{ form_data.funcao1 }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="tempo_permanencia1">Tempo de Permanência:</label>
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia1_anos"
+                        name="tempo_permanencia1_anos" placeholder="Anos"
+                        value="{{ form_data.tempo_permanencia1_anos }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia1_meses"
+                        name="tempo_permanencia1_meses" placeholder="Meses"
+                        value="{{ form_data.tempo_permanencia1_meses }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia1_dias"
+                        name="tempo_permanencia1_dias" placeholder="Dias"
+                        value="{{ form_data.tempo_permanencia1_dias }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="motivo_saida1">Motivo da Saída:</label>
+            <input type="text" class="form-control" id="motivo_saida1" name="motivo_saida1"
+                value="{{ form_data.motivo_saida1 }}">
+        </div>
+        <div class="form-group">
+            <label for="salario1">Salário:</label>
+            <input type="text" class="form-control salario-input" id="salario1" name="salario1"
+                onkeyup="mascaraSalario(this)" value="{{ form_data.salario1 }}">
+        </div>
+        <div class="form-group">
+            <label for="atividades1">Descreva as Atividades:</label>
+            <textarea class="form-control" id="atividades_empresa1" name="atividades_empresa1"
+                rows="3">{{ form_data.atividades_empresa1 }}</textarea>
         </div>
 
+        <!-- Empresa 2 -->
+        <div class="form-group">
+            <label for="empresa2">Empresa 2:</label>
+            <input type="text" class="form-control" id="empresa2" name="empresa2" value="{{ form_data.empresa2 }}">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="funcao2">Função:</label>
+                    <input type="text" class="form-control" id="funcao2" name="funcao2" value="{{ form_data.funcao2 }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="tempo_permanencia2">Tempo de Permanência:</label>
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia2_anos"
+                        name="tempo_permanencia2_anos" placeholder="Anos"
+                        value="{{ form_data.tempo_permanencia2_anos }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia2_meses"
+                        name="tempo_permanencia2_meses" placeholder="Meses"
+                        value="{{ form_data.tempo_permanencia2_meses }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia2_dias"
+                        name="tempo_permanencia2_dias" placeholder="Dias"
+                        value="{{ form_data.tempo_permanencia2_dias }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="motivo_saida2">Motivo da Saída:</label>
+            <input type="text" class="form-control" id="motivo_saida2" name="motivo_saida2"
+                value="{{ form_data.motivo_saida2 }}">
+        </div>
+        <div class="form-group">
+            <label for="salario2">Salário:</label>
+            <input type="text" class="form-control salario-input" id="salario2" name="salario2"
+                onkeyup="mascaraSalario(this)" value="{{ form_data.salario2 }}">
+        </div>
+        <div class="form-group">
+            <label for="atividades_empresa2">Descreva as Atividades:</label>
+            <textarea class="form-control" id="atividades_empresa2" name="atividades_empresa2"
+                rows="3">{{ form_data.atividades_empresa2 }}</textarea>
+        </div>
+
+        <!-- Empresa 3 -->
+        <div class="form-group">
+            <label for="empresa3">Empresa 3:</label>
+            <input type="text" class="form-control" id="empresa3" name="empresa3" value="{{ form_data.empresa3 }}">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="funcao3">Função:</label>
+                    <input type="text" class="form-control" id="funcao3" name="funcao3" value="{{ form_data.funcao3 }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="tempo_permanencia3">Tempo de Permanência:</label>
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia3_anos"
+                        name="tempo_permanencia3_anos" placeholder="Anos"
+                        value="{{ form_data.tempo_permanencia3_anos }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia3_meses"
+                        name="tempo_permanencia3_meses" placeholder="Meses"
+                        value="{{ form_data.tempo_permanencia3_meses }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" id="tempo_permanencia3_dias"
+                        name="tempo_permanencia3_dias" placeholder="Dias"
+                        value="{{ form_data.tempo_permanencia3_dias }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="motivo_saida3">Motivo da Saída:</label>
+            <input type="text" class="form-control" id="motivo_saida3" name="motivo_saida3"
+                value="{{ form_data.motivo_saida3 }}">
+        </div>
+        <div class="form-group">
+            <label for="salario3">Salário:</label>
+            <input type="text" class="form-control salario-input" id="salario3" name="salario3"
+                onkeyup="mascaraSalario(this)" value="{{ form_data.salario3 }}">
+        </div>
+        <div class="form-group">
+            <label for="atividades_empresa3">Descreva as Atividades:</label>
+            <textarea class="form-control" id="atividades_empresa3" name="atividades_empresa3"
+                rows="3">{{ form_data.atividades_empresa3 }}</textarea>
+        </div>
     </div>
+    <!-- Seção de Observações -->
+    <div class="form-section">
+        <h4>Observações</h4>
+        <div class="form-group">
+            <textarea class="form-control" id="observacoes" name="observacoes"
+                rows="4">{{ form_data.observacoes }}</textarea>
+        </div>
+    </div>
+
+
+
 
     <!-- Seção de Avaliações e Observações Internas -->
     <div class="evaluation-section"
@@ -1374,6 +1668,18 @@ Sistema RS - Atualizar Ficha
                 </option>
                 <option value="Reprovado" {% if form_data.avaliacao_rh=="Reprovado" %}selected{% endif %}>
                     Reprovado</option>
+            </select>
+        </div>
+
+        <div class="evaluation-item" style="margin-bottom: 15px;">
+            <label for="sindicancia" style="font-weight: bold; color: #333;">Sindicância:</label>
+            <select id="sindicancia" name="sindicancia" class="form-select" style="border: 1px solid #ccc;">
+                <option value="" {% if not form_data.sindicancia %}selected{% endif %}>Selecione...</option>
+                <option value="Em Verificação" {% if form_data.sindicancia=="Em Verificação" %}selected{% endif %}>Em
+                    Verificação</option>
+                <option value="Aprovado" {% if form_data.sindicancia=="Aprovado" %}selected{% endif %}>Aprovado</option>
+                <option value="Reprovado" {% if form_data.sindicancia=="Reprovado" %}selected{% endif %}>Reprovado
+                </option>
             </select>
         </div>
 
@@ -1399,21 +1705,32 @@ Sistema RS - Atualizar Ficha
                 style="border: 1px solid #ccc;">
                 <option value="" {% if not form_data.assinatura_gerencia %}selected{% endif %}>Selecione...
                 </option>
-                <option value="Alan Souza" {% if form_data.assinatura_gerencia=="Alan Souza" %}selected{% endif %}>Alan
-                    Souza</option>
+
                 <option value="Gilson Coelho" {% if form_data.assinatura_gerencia=="Gilson Coelho" %}selected{% endif
-                    %}>Gilson
+                    %}>
+                    Gilson
                     Coelho</option>
                 <option value="Jefferson Marques" {% if form_data.assinatura_gerencia=="Jefferson Marques"
                     %}selected{%endif %}>Jefferson Marques </option>
-                <option value="Mauro Raidan" {% if form_data.assinatura_gerencia=="Mauro Raidan" %}selected{% endif %}>
-                    Mauro Raidan</option>
+                <option value="Tiago Viera" {% if form_data.assinatura_gerencia=="Tiago Viera" %}selected{% endif %}>
+                    Tiago Viera</option>
+                <option value="Renato Hell" {% if form_data.assinatura_gerencia=="Renato Hell" %}selected{% endif %}>
+                    Renato Hell</option>
+                <option value="Ana Maria" {% if form_data.assinatura_gerencia=="Ana Maria" %}selected{% endif %}>
+                    Ana Maria</option>
                 <option value="Ronaldo Oliveira" {% if form_data.assinatura_gerencia=="Ronaldo Oliveira" %}selected{%
                     endif %}>Ronaldo Oliveira</option>
                 <option value="Warlley Martins" {% if form_data.assinatura_gerencia=="Warlley Martins" %}selected{%
                     endif %}>Warlley Martins</option>
                 <option value="Wilder Martins" {% if form_data.assinatura_gerencia=="Wilder Martins" %}selected{% endif
-                    %}>Wilder Martins</option>
+                    %}>
+                    Wilder Martins</option>
+                <option value="Wendel Dutra" {% if form_data.assinatura_gerencia=="Wendel Dutra" %}selected{% endif %}>
+                    Wendel Dutra</option>
+                <option value="André Buzin" {% if form_data.assinatura_gerencia=="André Buzin" %}selected{% endif %}>
+                    André Buzin</option>
+                <option value="Vandemil Junior" {% if form_data.assinatura_gerencia=="Vandemil Junior" %}selected{% endif %}>
+                    Vandemil Junior</option>
             </select>
         </div>
 
@@ -1424,14 +1741,15 @@ Sistema RS - Atualizar Ficha
                 <option value="" {% if not form_data.admitido %}selected{% endif %}>Selecione...</option>
                 <option value="Sim" {% if form_data.admitido=='Sim' %}selected{% endif %}>Sim</option>
                 <option value="Não" {% if form_data.admitido=='Não' %}selected{% endif %}>Não</option>
+                <option value="Em processo de admissão" {% if form_data.admitido=='Em processo de admissão' %}selected{% endif %}>Em processo de admissão</option>
             </select>
         </div>
     </div>
 
 
     <!-- Motivo da Reprovação pelo RH -->
-    <div id="motivo_reprovacao_rh" style="display: none; margin-top: 15px;">
-        <label for="motivo_reprovacao_rh" style="font-weight: bold; color: #AB1A18;">Motivo da Reprovação pelo
+    <div id="motivo_reprovacao_rh_container" style="display: none; margin-top: 15px;">
+        <label for="motivo_reprovacao_rh_textarea" style="font-weight: bold; color: #AB1A18;">Motivo da Reprovação pelo
             RH</label>
         <textarea name="motivo_reprovacao_rh" id="motivo_reprovacao_rh_textarea" rows="3" class="form-control"
             style="border: 1px solid #AB1A18; resize: vertical; padding: 10px;"
@@ -1439,8 +1757,8 @@ Sistema RS - Atualizar Ficha
     </div>
 
     <!-- Motivo da Reprovação pelo Gerente -->
-    <div id="motivo_reprovacao_gerente" style="display: none; margin-top: 15px;">
-        <label for="motivo_reprovacao_gerente" style="font-weight: bold; color: #AB1A18;">Motivo da Reprovação
+    <div id="motivo_reprovacao_gerente_container" style="display: none; margin-top: 15px;">
+        <label for="motivo_reprovacao_gerente_textarea" style="font-weight: bold; color: #AB1A18;">Motivo da Reprovação
             pelo Gerente</label>
         <textarea name="motivo_reprovacao_gerente" id="motivo_reprovacao_gerente_textarea" rows="3" class="form-control"
             style="border: 1px solid #AB1A18; resize: vertical; padding: 10px;"
@@ -1448,17 +1766,63 @@ Sistema RS - Atualizar Ficha
     </div>
 
 
-    <button type="submit" class="btn btn-primary">{{ 'Salvar' if not form_data.id else 'Atualizar' }}</button>
-    </form>
+
+    <style>
+        .modal-dialog {
+            max-width: 350px;
+            width: 100%;
+            margin: auto;
+        }
+
+        .modal-content {
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    </style>
+
+
+</form>
+</div>
+<!-- Popup de salvamento automático -->
+<div id="auto-save-popup"
+    style="position: fixed; bottom: 20px; right: 20px; background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; font-size: 14px; opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0.5s ease;">
 </div>
 
+<!-- Carrega o script de auto-salvamento primeiro -->
+<script src="{{ url_for('static', filename='js/auto_sav.js') }}"></script>
+
+<script>
+    // Verificar se o script de auto-salvamento foi carregado corretamente
+    console.log('Página view_registration.html carregada. Verificando script auto-salvamento...');
+    if (typeof autoSave === 'function') {
+        console.log('Script de auto-salvamento encontrado e inicializado corretamente!');
+    } else {
+        console.error('ERRO: Script de auto-salvamento não foi inicializado!');
+    }
+</script>
+
+<script src="{{ url_for('static', filename='js/form_submission.js') }}"></script>
 <script src="{{ url_for('static', filename='js/calcularIdade.js') }}"></script>
 <script src="{{ url_for('static', filename='js/verificarCPF.js') }}"></script>
 <script src="{{ url_for('static', filename='js/viewCurriculo.js') }}"></script>
-<script src="{{ url_for('static', filename='js/buscarCEP.js') }}"></script>
+<script src="{{ url_for('static', filename='js/buscarCep.js') }}"></script>
 <script src="{{ url_for('static', filename='js/carregarCidades.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mascaras.js') }}"></script>
 <script src="{{ url_for('static', filename='js/idadeFilhos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/socket_recruiter.js') }}"></script>
+<script src="{{ url_for('static', filename='js/avaliacoes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/selecionar_horarios.js') }}"></script>
+<script src="{{ url_for('static', filename='js/motivo_reprovacao.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toggle_regioes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/select_cargos.js') }}"></script>
+
+
 
 
 
@@ -1471,189 +1835,38 @@ Sistema RS - Atualizar Ficha
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
+<script>
+    // Inicializa a conexão com o Socket.IO
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+</script>
+
+
+
+
 
 {% if form_data.situacao == "Em Conversa" and form_data.recrutador != current_user.username %}
 <script>
-    // Desabilitar todos os campos do formulário
-    document.addEventListener('DOMContentLoaded', function () {
-        const formFields = document.querySelectorAll('input, select, textarea');
-        formFields.forEach(function (field) {
-            field.disabled = true;
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const checkboxes = document.querySelectorAll('input[name="cargo_indicado"]');
+        const errorElement = document.getElementById('cargo-error');
+
+        form.addEventListener('submit', (event) => {
+            // Verifica se pelo menos um checkbox está selecionado
+            const isChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
+
+            if (!isChecked) {
+                errorElement.style.display = 'block';
+            } else {
+                errorElement.style.display = 'none';
+            }
         });
-        // Também podemos esconder o botão de salvar
-        const saveButton = document.querySelector('button[type="submit"]');
-        if (saveButton) {
-            saveButton.style.display = 'none';
-        }
     });
 </script>
 {% endif %}
 
 
-<script>
-    // Inicializa o Socket.IO
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
-
-    // Certifique-se de que o botão está sendo selecionado corretamente
-    // Certifique-se de que o botão está sendo selecionado corretamente
-    document.addEventListener('DOMContentLoaded', function () {
-        const confirmSetRecruiterButton = document.getElementById('confirmSetRecruiter');
-
-        if (confirmSetRecruiterButton) {
-            confirmSetRecruiterButton.addEventListener('click', function () {
-                const cpf = '{{ form_data.cpf }}';  // Pegando o CPF da ficha
-
-                if (cpf) {
-                    // Emitindo o evento via Socket.IO
-                    socket.emit('set_recruiter', { cpf: cpf });
-                }
-            });
-        }
-    });
-
-    socket.on('set_recruiter_response', function (data) {
-        if (data.status === 'success') {
-            const recrutadorElement = document.getElementById('recrutador');
-            const setRecruiterButton = document.getElementById('setRecruiterButton');
-
-            // Verifica se o elemento recrutador existe antes de alterar o conteúdo
-            if (recrutadorElement) {
-                recrutadorElement.textContent = "Recrutador: " + (data.recrutador ? data.recrutador : "Não Definido");
-            } else {
-                console.error('Elemento recrutador não encontrado');
-            }
-
-            // Oculta o botão "Definir Recrutador" após o recrutador ser definido
-            if (setRecruiterButton) {
-                setRecruiterButton.style.display = 'none';  // Oculta o botão
-            }
-
-            // Fecha o modal automaticamente
-            var modalElement = document.getElementById('setRecruiterModal');
-            if (modalElement) {
-                var modalInstance = new bootstrap.Modal(modalElement);
-                modalInstance.hide();
-            } else {
-                console.error('Modal setRecruiterModal não encontrado');
-            }
-
-        } else {
-            console.log('Erro ao definir recrutador:', data.message);
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var avaliacaoRh = document.getElementById('avaliacao_rh');
-        var avaliacaoGerencia = document.getElementById('avaliacao_gerencia');
-        var situacaoSpan = document.getElementById('form-status');
-        var situacaoInput = document.getElementById('situacao');
-
-        function atualizarSituacao() {
-            if (avaliacaoRh.value === 'Reprovado' || avaliacaoGerencia.value === 'Reprovado') {
-                situacaoSpan.textContent = 'Reprovado';
-                situacaoInput.value = 'Reprovado';
-            } else if (avaliacaoRh.value === 'Aprovado' && (avaliacaoGerencia.value === '' || avaliacaoGerencia.value === null)) {
-                situacaoSpan.textContent = 'Aprovado RH';
-                situacaoInput.value = 'Aprovado RH';
-            } else if (avaliacaoRh.value === 'Aprovado' && avaliacaoGerencia.value === 'Aprovado') {
-                situacaoSpan.textContent = 'Aprovado';
-                situacaoInput.value = 'Aprovado';
-            } else if (avaliacaoRh.value === 'Aprovado' && avaliacaoGerencia.value === 'Em Conversa') {
-                situacaoSpan.textContent = 'Em Conversa';
-                situacaoInput.value = 'Em Conversa';
-            } else {
-                situacaoSpan.textContent = 'Não Avaliado';
-                situacaoInput.value = 'Não Avaliado';
-            }
-        }
-
-        avaliacaoRh.addEventListener('change', atualizarSituacao);
-        avaliacaoGerencia.addEventListener('change', atualizarSituacao);
-
-        // Inicializa a situação ao carregar a página
-        atualizarSituacao();
-    });
 
 
 
-
-    document.getElementById('selectAllHorarios').addEventListener('change', function () {
-        var checkboxes = document.querySelectorAll('.checkbox-horarios');
-        for (var i = 0; i < checkboxes.length; i++) {
-            checkboxes[i].checked = this.checked;
-        }
-    });
-
-
-
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const avaliacaoRH = document.getElementById('avaliacao_rh');
-        const motivoReprovacaoRH = document.getElementById('motivo_reprovacao_rh');
-        avaliacaoRH.addEventListener('change', function () {
-            if (avaliacaoRH.value === 'Reprovado') {
-                motivoReprovacaoRH.style.display = 'block';
-            } else {
-                motivoReprovacaoRH.style.display = 'none';
-            }
-        });
-
-        const avaliacaoGerencia = document.getElementById('avaliacao_gerencia');
-        const motivoReprovacaoGerente = document.getElementById('motivo_reprovacao_gerente');
-        avaliacaoGerencia.addEventListener('change', function () {
-            if (avaliacaoGerencia.value === 'Reprovado') {
-                motivoReprovacaoGerente.style.display = 'block';
-            } else {
-                motivoReprovacaoGerente.style.display = 'none';
-            }
-        });
-
-        // Garantir que os campos apareçam já preenchidos, se necessário
-        if (avaliacaoRH.value === 'Reprovado') {
-            motivoReprovacaoRH.style.display = 'block';
-        }
-        if (avaliacaoGerencia.value === 'Reprovado') {
-            motivoReprovacaoGerente.style.display = 'block';
-        }
-    });
-
-    function toggleRegioes(source) {
-        // Seleciona todos os checkboxes com o name "regioes_preferencia"
-        var regioesCheckboxes = document.querySelectorAll('input[name="regioes_preferencia"]');
-
-        // Altera o estado dos checkboxes de regiões de preferência com base no estado do botão "selecionar todas"
-        regioesCheckboxes.forEach(function (checkbox) {
-            checkbox.checked = source.checked;
-        });
-    }
-
-
-
-    document.getElementById('select-indicated-cargo').addEventListener('click', function () {
-        var checkboxes = document.getElementById('cargo-indicado-checkboxes');
-
-        // Alterna a visibilidade
-        if (checkboxes.style.display === 'none' || checkboxes.style.display === '') {
-            checkboxes.style.display = 'grid'; // Mostra os checkboxes
-        } else {
-            checkboxes.style.display = 'none'; // Esconde os checkboxes
-        }
-    });
-
-
-    function updateSelectedCargos() {
-        let selectedCargos = [];
-        document.querySelectorAll('.cargo-checkbox:checked').forEach(function (checkbox) {
-            selectedCargos.push(checkbox.value);
-        });
-        displaySelectedCargos(selectedCargos);
-    }
-
-    function displaySelectedCargos(cargos) {
-        const selectedCargosDiv = document.getElementById('selectedCargos');
-        selectedCargosDiv.innerHTML = '';
-
-        cargos.forEach(cargo => {
-            const span = document.createElement('span');
-            span.classList.add('badge', 'badge-primary', 'm
+{% endblock %}

@@ -73,13 +73,82 @@
         font-weight: bold;
         margin-top: 20px;
     }
+
+    /* Estilização para a linha de detalhes */
+    .detalhes-ficha {
+        background-color: #f9f9f9;
+        border-top: 1px solid #ddd;
+    }
+
+    .conteudo-detalhes {
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #ffffff;
+    }
+
+    /* Botão com a seta */
+    .btn-seta {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+
+    .btn-seta:hover {
+        background-color: #5a6268;
+    }
+
+
+    .offcanvas-body iframe {
+        border: none;
+        /* Remove a borda do iframe */
+        height: 100%;
+        /* Preenche a altura do modal */
+        width: 100%;
+        /* Preenche a largura do modal */
+    }
+</style>
+<style>
+    .btn-warning i {
+        font-size: 1.2em;
+        /* Tamanho do ícone */
+    }
+
+    .badge {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .text-danger {
+        cursor: pointer;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .text-danger:hover {
+        color: #ff0000;
+        text-decoration: none;
+    }
+
+    td:nth-child(3) {
+        /* Cargo Indicado */
+        max-width: 350px;
+        /* Ajuste conforme necessário */
+        white-space: normal;
+        /* Permite a quebra apenas em espaços */
+        word-break: keep-all;
+        /* Mantém palavras inteiras */
+        overflow-wrap: break-word;
+        /* Evita overflow */
+    }
 </style>
 
 <a href="{{ url_for('sistema_rs') }}" class="back-button">
     <i class="fas fa-arrow-left"></i>
     Voltar
 </a>
-
 
 {% if msg %}
 <div class="alert alert-warning">{{ msg }}</div>
@@ -90,7 +159,7 @@
 
     <!-- Filtros de Pesquisa -->
     <!-- Filtros de Pesquisa -->
-    <form method="GET" action="{{ url_for('banco_rs') }}">
+    <form id="filterForm" method="GET" action="{{ url_for('banco_rs') }}">
         <div class="row mb-4">
             <!-- Filtro por Nome Completo -->
             <div class="col-md-4">
@@ -132,31 +201,6 @@
                     </option>
                 </select>
             </div>
-
-            <!-- Filtro por Data de Nascimento -->
-            <div class="col-md-4">
-                <label for="data_nasc_inicio">Data de Nascimento - Início</label>
-                <input type="date" class="form-control" id="data_nasc_inicio" name="data_nasc_inicio"
-                    value="{{ request.args.get('data_nasc_inicio') }}">
-            </div>
-            <div class="col-md-4">
-                <label for="data_nasc_fim">Data de Nascimento - Fim</label>
-                <input type="date" class="form-control" id="data_nasc_fim" name="data_nasc_fim"
-                    value="{{ request.args.get('data_nasc_fim') }}">
-            </div>
-
-            <!-- Filtro por Idade -->
-            <div class="col-md-4">
-                <label for="idade_min">Idade Mínima</label>
-                <input type="number" class="form-control" id="idade_min" name="idade_min"
-                    value="{{ request.args.get('idade_min') }}">
-            </div>
-            <div class="col-md-4">
-                <label for="idade_max">Idade Máxima</label>
-                <input type="number" class="form-control" id="idade_max" name="idade_max"
-                    value="{{ request.args.get('idade_max') }}">
-            </div>
-
             <!-- Filtro por Fumante -->
             <div class="col-md-4">
                 <label for="fumante">Fumante</label>
@@ -219,49 +263,239 @@
                 </select>
             </div>
 
+            <style>
+                #dropdown-regioes {
+                    position: relative;
+                    display: inline-block;
+                    width: 100%;
+                }
+
+                #dropdownMenuButton {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    background-color: #fff;
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                #dropdownMenuButton::after {
+                    content: '\25BC';
+                    /* Seta indicando dropdown */
+                    font-size: 12px;
+                    color: #666;
+                    margin-left: auto;
+                }
+
+                .dropdown-menu {
+                    width: 100%;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    padding: 0;
+                    /* Removendo padding para alinhar corretamente */
+                    border: 1px solid #ccc;
+                }
+
+                .dropdown-menu li {
+                    display: flex;
+                    align-items: center;
+                    /* Garante que checkbox e texto fiquem alinhados */
+                }
+
+                .dropdown-menu label {
+                    display: flex;
+                    align-items: center;
+                    margin: 0;
+                    cursor: pointer;
+                    width: 100%;
+                }
+
+                .dropdown-menu input[type="checkbox"] {
+                    margin-right: 8px;
+                    /* Espaço entre o checkbox e o texto */
+                }
+
+                .dropdown-menu input[type="checkbox"]+label {
+                    width: auto;
+                }
+
+                #dropdown-title {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    max-width: 100%;
+                    display: inline-block;
+                }
+
+                .dropdown-menu .form-check {
+                    display: flex;
+                    align-items: center;
+                }
+
+                .dropdown-menu .form-check-label {
+                    margin: 0;
+                    padding-left: 5px;
+                }
+            </style>
+            <!-- Filtro por Regiões de Preferência -->
             <!-- Filtro por Regiões de Preferência -->
             <div class="col-md-4">
-                <label for="regioes_preferencia">Regiões de Preferência</label>
-                <select class="form-control" id="regioes_preferencia" name="regioes_preferencia">
-                    <option value="" selected>Todas</option>
-                    <option value="Região Barreiro" {% if request.args.get('regioes_preferencia')=='Região Barreiro'
-                        %}selected{% endif %}>Região Barreiro</option>
-                    <option value="Região Centro Sul" {% if request.args.get('regioes_preferencia')=='Região Centro Sul'
-                        %}selected{% endif %}>Região Centro Sul</option>
-                    <option value="Região Leste" {% if request.args.get('regioes_preferencia')=='Região Leste'
-                        %}selected{% endif %}>Região Leste</option>
-                    <option value="Região Nordeste" {% if request.args.get('regioes_preferencia')=='Região Nordeste'
-                        %}selected{% endif %}>Região Nordeste</option>
-                    <option value="Região Noroeste" {% if request.args.get('regioes_preferencia')=='Região Noroeste'
-                        %}selected{% endif %}>Região Noroeste</option>
-                    <option value="Região Norte" {% if request.args.get('regioes_preferencia')=='Região Norte'
-                        %}selected{% endif %}>Região Norte</option>
-                    <option value="Região Oeste" {% if request.args.get('regioes_preferencia')=='Região Oeste'
-                        %}selected{% endif %}>Região Oeste</option>
-                    <option value="Região Pampulha" {% if request.args.get('regioes_preferencia')=='Região Pampulha'
-                        %}selected{% endif %}>Região Pampulha</option>
-                    <option value="Região Venda Nova" {% if request.args.get('regioes_preferencia')=='Região Venda Nova'
-                        %}selected{% endif %}>Região Venda Nova</option>
-                </select>
-
+                <!-- Campo de Regiões de Preferência com checkboxes -->
+                <div class="form-group">
+                    <label for="regioes_preferencia">Regiões de Preferência</label>
+                    <div class="dropdown" id="dropdown-regioes">
+                        <button class="btn btn-light dropdown-toggle form-control" type="button" id="dropdownMenuButton"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="dropdown-title">Selecione as regiões</span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-options"
+                            style="width: 100%;">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Barreiro"> Região
+                                    Barreiro</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Centro Sul">
+                                    Região Centro Sul</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Leste"> Região
+                                    Leste</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Nordeste"> Região
+                                    Nordeste</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Noroeste"> Região
+                                    Noroeste</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Norte"> Região
+                                    Norte</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Oeste"> Região
+                                    Oeste</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Pampulha"> Região
+                                    Pampulha</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Venda Nova">
+                                    Região Venda Nova</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Betim/Contagem">
+                                    Região Betim/Contagem</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Nova Lima">
+                                    Região Nova Lima</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI SUDESTE">
+                                    VLI SUDESTE</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI NORDESTE">
+                                    VLI NORDESTE</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI CENTRO LESTE">
+                                    VLI CENTRO LESTE</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI MG">
+                                    VLI MG</label></li>
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Outros Municípios">
+                                    Outros Municípios</label></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
+
+
+            <!-- Filtro por Estado de Residência -->
+            <div class="col-md-4">
+                <label for="estado">Estado de Residência</label>
+                <select class="form-control" id="estado" name="estado" onchange="carregarCidades(this.value)">
+                    <option value="" selected>Todos</option>
+                    <option value="AC" {% if request.args.get('estado')=='AC' %}selected{% endif %}>Acre</option>
+                    <option value="AL" {% if request.args.get('estado')=='AL' %}selected{% endif %}>Alagoas</option>
+                    <option value="AM" {% if request.args.get('estado')=='AM' %}selected{% endif %}>Amazonas</option>
+                    <option value="AP" {% if request.args.get('estado')=='AP' %}selected{% endif %}>Amapá</option>
+                    <option value="BA" {% if request.args.get('estado')=='BA' %}selected{% endif %}>Bahia</option>
+                    <option value="CE" {% if request.args.get('estado')=='CE' %}selected{% endif %}>Ceará</option>
+                    <option value="DF" {% if request.args.get('estado')=='DF' %}selected{% endif %}>Distrito Federal
+                    </option>
+                    <option value="ES" {% if request.args.get('estado')=='ES' %}selected{% endif %}>Espírito Santo
+                    </option>
+                    <option value="GO" {% if request.args.get('estado')=='GO' %}selected{% endif %}>Goiás</option>
+                    <option value="MA" {% if request.args.get('estado')=='MA' %}selected{% endif %}>Maranhão</option>
+                    <option value="MG" {% if request.args.get('estado')=='MG' %}selected{% endif %}>Minas Gerais
+                    </option>
+                    <option value="MS" {% if request.args.get('estado')=='MS' %}selected{% endif %}>Mato Grosso do Sul
+                    </option>
+                    <option value="MT" {% if request.args.get('estado')=='MT' %}selected{% endif %}>Mato Grosso</option>
+                    <option value="PA" {% if request.args.get('estado')=='PA' %}selected{% endif %}>Pará</option>
+                    <option value="PB" {% if request.args.get('estado')=='PB' %}selected{% endif %}>Paraíba</option>
+                    <option value="PE" {% if request.args.get('estado')=='PE' %}selected{% endif %}>Pernambuco</option>
+                    <option value="PI" {% if request.args.get('estado')=='PI' %}selected{% endif %}>Piauí</option>
+                    <option value="PR" {% if request.args.get('estado')=='PR' %}selected{% endif %}>Paraná</option>
+                    <option value="RJ" {% if request.args.get('estado')=='RJ' %}selected{% endif %}>Rio de Janeiro
+                    </option>
+                    <option value="RN" {% if request.args.get('estado')=='RN' %}selected{% endif %}>Rio Grande do Norte
+                    </option>
+                    <option value="RO" {% if request.args.get('estado')=='RO' %}selected{% endif %}>Rondônia</option>
+                    <option value="RR" {% if request.args.get('estado')=='RR' %}selected{% endif %}>Roraima</option>
+                    <option value="RS" {% if request.args.get('estado')=='RS' %}selected{% endif %}>Rio Grande do Sul
+                    </option>
+                    <option value="SC" {% if request.args.get('estado')=='SC' %}selected{% endif %}>Santa Catarina
+                    </option>
+                    <option value="SE" {% if request.args.get('estado')=='SE' %}selected{% endif %}>Sergipe</option>
+                    <option value="SP" {% if request.args.get('estado')=='SP' %}selected{% endif %}>São Paulo</option>
+                    <option value="TO" {% if request.args.get('estado')=='TO' %}selected{% endif %}>Tocantins</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Cidade de Residência -->
+            <div class="col-md-4">
+                <label for="cidade">Cidade de Residência</label>
+                <select class="form-control" id="cidade" name="cidade">
+                    <option value="" selected>Selecione a cidade</option>
+                </select>
+            </div>
+
+
+            <style>
+                #dropdown-horario {
+                    position: relative;
+                    display: inline-block;
+                    width: 100%;
+                }
+
+                #dropdownMenuButtonHorario {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
+
+                #dropdown-options-horario {
+                    width: 100%;
+                    max-height: 200px;
+                    overflow-y: auto;
+                }
+            </style>
 
             <!-- Filtro por Disponibilidade de Horário -->
             <div class="col-md-4">
-                <label for="disponibilidade_horario">Disponibilidade de Horário</label>
-                <select class="form-control" id="disponibilidade_horario" name="disponibilidade_horario">
-                    <option value="" selected>Todos</option>
-                    <option value="44h (Horário Comercial)" {% if
-                        request.args.get('disponibilidade_horario')=='44h (Horário Comercial)' %}selected{% endif %}>44h
-                        (Horário Comercial)</option>
-                    <option value="12x36 Dia" {% if request.args.get('disponibilidade_horario')=='12x36 Dia'
-                        %}selected{% endif %}>12x36 Dia</option>
-                    <option value="12x36 Noite" {% if request.args.get('disponibilidade_horario')=='12x36 Noite'
-                        %}selected{% endif %}>12x36 Noite</option>
-                    <option value="Feirista" {% if request.args.get('disponibilidade_horario')=='Feirista' %}selected{%
-                        endif %}>Feirista</option>
-                </select>
+                <div class="form-group">
+                    <label for="disponibilidade_horario">Disponibilidade de Horário</label>
+                    <div class="dropdown" id="dropdown-horario">
+                        <button class="btn btn-light dropdown-toggle form-control" type="button"
+                            id="dropdownMenuButtonHorario" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="dropdown-title-horario">Selecione a disponibilidade</span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonHorario"
+                            id="dropdown-options-horario" style="width: 100%;">
+                            <li><label><input type="checkbox" name="disponibilidade_horario"
+                                        value="44h (Horário Comercial)">
+                                    44h (Horário Comercial)</label></li>
+                            <li><label><input type="checkbox" name="disponibilidade_horario" value="12x36 Dia"> 12x36
+                                    Dia</label></li>
+                            <li><label><input type="checkbox" name="disponibilidade_horario" value="12x36 Noite"> 12x36
+                                    Noite</label></li>
+                            <li><label><input type="checkbox" name="disponibilidade_horario" value="Feirista">
+                                    Ferista</label></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
+
+
+
             <!-- Filtro por Cargo Indicado -->
             <div class="col-md-4">
                 <label for="cargo_indicado">Cargo Indicado</label>
@@ -285,8 +519,34 @@
                         endif %}>Recepcionista</option>
                     <option value="ASG" {% if request.args.get('cargo_indicado')=='ASG' %}selected{% endif %}>ASG
                     </option>
+                    <option value="ZELADORIA" {% if request.args.get('cargo_indicado')=='ZELADORIA' %}selected{% endif
+                        %}>Zeladoria
+                    </option>
                 </select>
             </div>
+
+            <!-- Filtro por Recrutador -->
+            <div class="col-md-4">
+                <label for="recrutador">Recrutador</label>
+                <select class="form-control" id="recrutador" name="recrutador">
+                    <option value="" selected>Todos</option>
+                    <option value="samira.barbosa" {% if request.args.get('recrutador')=='samira.barbosa' %}selected{%
+                        endif %}>Samira Barbosa</option>
+                    <option value="nara.rodrigues" {% if request.args.get('recrutador')=='nara.rodrigues' %}selected{%
+                        endif %}>Nara Rodrigues</option>
+                    <option value="wilson.monteiro" {% if request.args.get('recrutador')=='wilson.monteiro' %}selected{%
+                        endif %}>Wilson Monteiro</option>
+                    <option value="vivian.wanderley" {% if request.args.get('recrutador')=='vivian.wanderley'
+                        %}selected{% endif %}>Vivian Wanderley</option>
+                    <option value="grasielle.mapa" {% if request.args.get('recrutador')=='grasielle.mapa' %}selected{%
+                        endif %}>Grasielle Mapa</option>
+                    <option value="guilherme.vieira" {% if request.args.get('recrutador')=='guilherme.vieira' %}selected{%
+                        endif %}>Guilherme Vieira</option>
+                    <option value="não definido">Não Definido</option>
+
+                </select>
+            </div>
+
 
 
             <!-- Filtro por Avaliação RH -->
@@ -314,6 +574,90 @@
                         endif %}>Em Conversa</option>
                 </select>
             </div>
+
+            <div class="col-md-4">
+                <label for="avaliacao_geral">Avaliação Geral</label>
+                <select class="form-control" id="avaliacao_geral" name="avaliacao_geral">
+                    <option value="" selected>Todos</option>
+                    <option value="Aprovado" {% if request.args.get('avaliacao_geral')=='Aprovado' %}selected{% endif
+                        %}>Aprovado</option>
+                    <option value="Reprovado" {% if request.args.get('avaliacao_geral')=='Reprovado' %}selected{% endif
+                        %}>Reprovado</option>
+                    <option value="Em Conversa" {% if request.args.get('avaliacao_geral')=='Em Conversa' %}selected{%
+                        endif %}>Em Conversa</option>
+                    <option value="Não Avaliado" {% if request.args.get('avaliacao_geral')=='Não Avaliado' %}selected{%
+                        endif %}>Não Avaliado</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="sindicancia">Sindicância</label>
+                <select class="form-control" id="sindicancia" name="sindicancia">
+                    <option value="" selected>Todos</option>
+                    <option value="Em Verificação" {% if request.args.get('sindicancia')=='Em Verificação' %}selected{%
+                        endif %}>Em Verificação</option>
+                    <option value="Aprovado" {% if request.args.get('sindicancia')=='Aprovado' %}selected{% endif %}>
+                        Aprovado</option>
+                    <option value="Reprovado" {% if request.args.get('sindicancia')=='Reprovado' %}selected{% endif %}>
+                        Reprovado</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Assinatura da Gerência -->
+            <div class="col-md-4">
+                <label for="assinatura_gerencia">Assinatura da Gerência</label>
+                <select class="form-control" id="assinatura_gerencia" name="assinatura_gerencia">
+                    <option value="" selected>Todos</option>
+                    <option value="Gilson Coelho" {% if request.args.get('assinatura_gerencia')=='Gilson Coelho'
+                        %}selected{% endif %}>Gilson Coelho</option>
+                    <option value="Jefferson Marques" {% if request.args.get('assinatura_gerencia')=='Jefferson Marques'
+                        %}selected{% endif %}>Jefferson Marques</option>
+                    <option value="Mauro Raidan" {% if request.args.get('assinatura_gerencia')=='Mauro Raidan'
+                        %}selected{% endif %}>Mauro Raidan</option>
+                    <option value="Ronaldo Oliveira" {% if request.args.get('assinatura_gerencia')=='Ronaldo Oliveira'
+                        %}selected{% endif %}>Ronaldo Oliveira</option>
+                    <option value="Warlley Martins" {% if request.args.get('assinatura_gerencia')=='Warlley Martins'
+                        %}selected{% endif %}>Warlley Martins</option>
+                    <option value="Wilder Martins" {% if request.args.get('assinatura_gerencia')=='Wilder Martins'
+                        %}selected{% endif %}>Wilder Martins</option>
+                    <option value="Wendel Dutra" {% if request.args.get('assinatura_gerencia')=='Wendel Dutra'
+                        %}selected{% endif %}>Wendel Dutra</option>
+                    <option value="André Buzin" {% if request.args.get('assinatura_gerencia')=='André Buzin'
+                        %}selected{% endif %}>André Buzin</option>
+                    <option value="Xenia Faria" {% if request.args.get('assinatura_gerencia')=='Xenia Faria'
+                        %}selected{% endif %}>Xenia Faria</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Admitido -->
+            <div class="col-md-4">
+                <label for="admitido">Admitido</label>
+                <select class="form-control" id="admitido" name="admitido">
+                    <option value="" selected>Todos</option>
+                    <option value="Sim" {% if request.args.get('admitido')=='Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if request.args.get('admitido')=='Não' %}selected{% endif %}>Não</option>
+                    <option value="Em processo de admissão" {% if request.args.get('admitido')=='Em processo de admissão' %}selected{% endif %}>Em processo de admissão</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Situação -->
+            <div class="col-md-4">
+                <label for="situacao">Situação</label>
+                <select class="form-control" id="situacao" name="situacao">
+                    <option value="" selected>Todos</option>
+                    <option value="Admitido" {% if request.args.get('situacao')=='Admitido' %}selected{% endif %}>Admitido</option>
+                    <option value="Em processo de admissão" {% if request.args.get('situacao')=='Em processo de admissão' %}selected{% endif %}>Em processo de admissão</option>
+                    <option value="Aprovado" {% if request.args.get('situacao')=='Aprovado' %}selected{% endif %}>Aprovado</option>
+                    <option value="Aprovado RH" {% if request.args.get('situacao')=='Aprovado RH' %}selected{% endif %}>Aprovado RH</option>
+                    <option value="Reprovado" {% if request.args.get('situacao')=='Reprovado' %}selected{% endif %}>Reprovado</option>
+                    <option value="Reprovado RH" {% if request.args.get('situacao')=='Reprovado RH' %}selected{% endif %}>Reprovado RH</option>
+                    <option value="Em Verificação" {% if request.args.get('situacao')=='Em Verificação' %}selected{% endif %}>Em Verificação</option>
+                    <option value="Em Conversa" {% if request.args.get('situacao')=='Em Conversa' %}selected{% endif %}>Em Conversa</option>
+                    <option value="Não Avaliado" {% if request.args.get('situacao')=='Não Avaliado' %}selected{% endif %}>Não Avaliado</option>
+                </select>
+            </div>
+
+
         </div>
 
         <!-- Botões de Filtrar e Limpar -->
@@ -324,75 +668,28 @@
     </form>
     <!-- Linha horizontal -->
     <hr>
-
     <!-- Exibição dos filtros selecionados -->
-    <div class="mt-3">
-        <h5>Filtros Selecionados:</h5>
+    <!-- Exibição dos filtros selecionados -->
+    <div id="filtros-selecionados" class="mt-3">
+        {% if filtros_ativos %}
+        <p>Filtros aplicados:</p>
         <ul>
-            {% if request.args.get('nome') %}
-            <li><strong>Nome Completo:</strong> {{ request.args.get('nome') }}</li>
-            {% endif %}
-            {% if request.args.get('cpf') %}
-            <li><strong>CPF:</strong> {{ request.args.get('cpf') }}</li>
-            {% endif %}
-            {% if request.args.get('genero') %}
-            <li><strong>Genêro:</strong> {{ request.args.get('genero') }}</li>
-            {% endif %}
-            {% if request.args.get('estado_civil') %}
-            <li><strong>Estado Civil:</strong> {{ request.args.get('estado_civil') }}</li>
-            {% endif %}
-            {% if request.args.get('data_nasc_inicio') %}
-            <li><strong>Data de Nascimento (Início):</strong> {{ request.args.get('data_nasc_inicio') }}</li>
-            {% endif %}
-            {% if request.args.get('data_nasc_fim') %}
-            <li><strong>Data de Nascimento (Fim):</strong> {{ request.args.get('data_nasc_fim') }}</li>
-            {% endif %}
-            {% if request.args.get('idade_min') %}
-            <li><strong>Idade Mínima:</strong> {{ request.args.get('idade_min') }}</li>
-            {% endif %}
-            {% if request.args.get('idade_max') %}
-            <li><strong>Idade Máxima:</strong> {{ request.args.get('idade_max') }}</li>
-            {% endif %}
-            {% if request.args.get('fumante') %}
-            <li><strong>Fumante:</strong> {{ request.args.get('fumante') }}</li>
-            {% endif %}
-            {% if request.args.get('bebida') %}
-            <li><strong>Bebida:</strong> {{ request.args.get('bebida') }}</li>
-            {% endif %}
-            {% if request.args.get('alergia') %}
-            <li><strong>Alergia:</strong> {{ request.args.get('alergia') }}</li>
-            {% endif %}
-            {% if request.args.get('medicamento') %}
-            <li><strong>Medicamento de Uso Constante:</strong> {{ request.args.get('medicamento') }}</li>
-            {% endif %}
-            {% if request.args.get('pcd') %}
-            <li><strong>PCD:</strong> {{ request.args.get('pcd') }}</li>
-            {% endif %}
-            {% if request.args.get('tatuagem') %}
-            <li><strong>Tatuagem:</strong> {{ request.args.get('tatuagem') }}</li>
-            {% endif %}
-            {% if request.args.get('regioes_preferencia') %}
-            <li><strong>Regiões de Preferência:</strong> {{ request.args.get('regioes_preferencia') }}</li>
-            {% endif %}
-            {% if request.args.get('disponibilidade_horario') %}
-            <li><strong>Disponibilidade de Horário:</strong> {{ request.args.get('disponibilidade_horario') }}</li>
-            {% endif %}
-            {% if request.args.get('cargo_indicado') %}
-            <li><strong>Cargo Indicado:</strong> {{ request.args.get('cargo_indicado') }}</li>
-            {% endif %}
-            {% if request.args.get('avaliacao_rh') %}
-            <li><strong>Avaliação RH:</strong> {{ request.args.get('avaliacao_rh') }}</li>
-            {% endif %}
-            {% if request.args.get('avaliacao_gerencia') %}
-            <li><strong>Avaliação Gerência:</strong> {{ request.args.get('avaliacao_gerencia') }}</li>
-            {% endif %}
+            {% for key, value in filtros_ativos.items() %}
+            <li>
+                <strong>{{ filtro_nomes_amigaveis[key] if key in filtro_nomes_amigaveis else key }}:</strong> {{ value
+                }}
+                <a href="{{ filtro_remocao_links[key] }}" class="text-danger ms-2">
+                    <i class="fas fa-times"></i> Remover
+                </a>
+            </li>
+            {% endfor %}
         </ul>
+        {% else %}
+        <p>Nenhum filtro aplicado.</p>
+        {% endif %}
     </div>
 
 </div>
-
-
-
 
 
 <!-- Modal para criar ficha -->
@@ -443,9 +740,6 @@
     });
 </script>
 
-
-
-
 <!-- Botão + Criar Ficha -->
 <div class="d-flex justify-content-end mb-4 mt-4">
     <button type="button" class="btn btn-primary btn-criar" data-bs-toggle="modal" data-bs-target="#createFichaModal">
@@ -461,48 +755,60 @@
     </button>
 </div>
 
+
+
 <!-- Tabela de Resultados -->
-<div class="table-responsive mt-4">
+<div id="resultados">
     <table class="table table-bordered table-hover">
         <thead>
             <tr>
-                <th>
-                    <input type="checkbox" id="selectAll" /> <!-- Checkbox para selecionar todos -->
-                </th>
+                <th><input type="checkbox" id="selectAll" /></th>
                 <th>Nome</th>
-                <th>CPF</th>
-                <th>Data de Nascimento</th>
-                <th>Data de Submissão</th>
-                <th>Situação</th> <!-- Nova coluna para situação -->
+                <th>Cargo Indicado</th>
+                <th>
+                    Data de Submissão
+                    <a href="{{ url_for('banco_rs', **args_date_asc) }}" class="text-decoration-none"
+                        title="Ordenar por Data Crescente">
+                        <i class="fas fa-arrow-up"></i>
+                    </a>
+                    <a href="{{ url_for('banco_rs', **args_date_desc) }}" class="text-decoration-none"
+                        title="Ordenar por Data Decrescente">
+                        <i class="fas fa-arrow-down"></i>
+                    </a>
+                </th>
+                <th>Cidade/Bairro</th>
+                <th>Recrutador</th>
+                <th>Situação</th>
                 <th>Ações</th>
             </tr>
         </thead>
         <tbody id="candidato-table">
             {% if candidatos|length > 0 %}
             {% for candidato in candidatos %}
-            <tr>
-                <td>
-                    <input type="checkbox" class="select-checkbox" value="{{ candidato.cpf }}" />
-                </td>
+            <tr class="main-row">
+                <td><input type="checkbox" class="select-checkbox" value="{{ candidato.cpf }}" /></td>
                 <td>{{ candidato.nome_completo }}</td>
-                <td>{{ candidato.cpf }}</td>
-                <td>{{ candidato.data_nasc or 'Não informado' }}</td> <!-- Verificando se data_nasc está preenchido -->
-                <td>{{ candidato.created_at.strftime('%d/%m/%Y') if candidato.created_at else 'Não disponível' }}</td>
-                <td>{{ candidato.situacao }}</td> <!-- Exibindo a situação -->
+                <td>{{ candidato.cargo_indicado or 'Não informado' }}</td>
+                <td>{{ candidato.created_at }}</td>
+                <td>{{ candidato.cidade_bairro }}</td>
+                <td>{{ candidato.recrutador or 'Não definido' }}</td>
+                <td>{{ candidato.situacao }}</td>
                 <td>
-                    <a href="{{ url_for('view_form', cpf=candidato.cpf) }}" class="btn btn-primary" target="_blank">
-                        Visualizar
-                    </a>
+
+                    <button class="btn btn-warning btn-sm" onclick="openEditForm('{{ candidato.cpf }}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+
+
+                    <a href="{{ url_for('view_form', cpf=candidato.cpf) }}" class="btn btn-primary"
+                        target="_blank">Visualizar</a>
                     <a href="{{ url_for('export_pdf', cpf=candidato.cpf) }}" class="btn btn-danger btn-sm"
-                        target="_blank">
-                        PDF
-                    </a>
+                        target="_blank">PDF</a>
                     <a href="{{ url_for('export_excel', cpf=candidato.cpf) }}" class="btn btn-success btn-sm"
-                        target="_blank">
-                        EXCEL
-                    </a>
+                        target="_blank">EXCEL</a>
                 </td>
             </tr>
+
             {% endfor %}
             {% else %}
             <tr>
@@ -511,10 +817,23 @@
             {% endif %}
         </tbody>
     </table>
+
+    <div class="pagination-options mt-3">
+        <!-- Select para número de itens por página -->
+        <label for="itemsPerPage">Fichas por página:</label>
+        <select id="itemsPerPage" class="form-control d-inline-block w-auto">
+            <option value="10" {% if request.args.get('items_per_page')=='10' %}selected{% endif %}>10</option>
+            <option value="20" {% if request.args.get('items_per_page')=='20' %}selected{% endif %}>20</option>
+            <option value="50" {% if request.args.get('items_per_page')=='50' %}selected{% endif %}>50</option>
+            <option value="100" {% if request.args.get('items_per_page')=='100' %}selected{% endif %}>100</option>
+        </select>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span>Candidatos exibidos: {{ start_candidate }}-{{ end_candidate }} de {{ total_candidates }}</span>
+    </div>
+
 </div>
-
-
-
 
 <!-- Modal para confirmar a geração do PDF -->
 <div class="modal fade" id="pdfModal" tabindex="-1" aria-labelledby="pdfModalLabel" aria-hidden="true">
@@ -535,44 +854,380 @@
     </div>
 </div>
 
+<!-- O novo container de paginação que será atualizado via AJAX -->
+<div id="pagination">
+    {% if pagination.total_pages > 1 %}
+    <nav aria-label="Navegação de página">
+        <ul class="pagination justify-content-center flex-wrap">
+            <!-- Página anterior -->
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a href="{{ url_for('banco_rs', **dict(request.args.to_dict(), page=pagination.prev_num)) }}"
+                    class="page-link">&laquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+            {% endif %}
 
-<!-- Verificação da paginação no template -->
-{% if pagination.total_pages > 1 %}
-<nav aria-label="Navegação de página">
-    <ul class="pagination justify-content-center">
-        {% if pagination.has_prev %}
-        <li class="page-item">
-            <a class="page-link" href="{{ url_for('banco_rs', page=pagination.prev_num) }}">&laquo;</a>
-        </li>
-        {% endif %}
+            <!-- Primeira página, se necessário -->
+            {% if pagination.start_page > 1 %}
+            <li class="page-item">
+                <a href="{{ url_for('banco_rs', **dict(request.args.to_dict(), page=1)) }}" class="page-link">1</a>
+            </li>
+            {% if pagination.start_page > 2 %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+            {% endif %}
 
-        {% for page_num in range(1, pagination.total_pages + 1) %}
-        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-            <a class="page-link" href="{{ url_for('banco_rs', page=page_num) }}">{{ page_num }}</a>
-        </li>
-        {% endfor %}
+            <!-- Páginas visíveis ao redor da atual -->
+            {% for page_num in range(pagination.start_page, pagination.end_page + 1) %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                <a href="{{ url_for('banco_rs', **dict(request.args.to_dict(), page=page_num)) }}" class="page-link">{{
+                    page_num }}</a>
+            </li>
+            {% endfor %}
 
-        {% if pagination.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="{{ url_for('banco_rs', page=pagination.next_num) }}">&raquo;</a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
+            <!-- Última página, se necessário -->
+            {% if pagination.end_page < pagination.total_pages %} {% if pagination.end_page < pagination.total_pages - 1
+                %} <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                <li class="page-item">
+                    <a href="{{ url_for('banco_rs', **dict(request.args.to_dict(), page=pagination.total_pages)) }}"
+                        class="page-link">{{ pagination.total_pages }}</a>
+                </li>
+                {% endif %}
 
-
-
+                <!-- Próxima página -->
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a href="{{ url_for('banco_rs', **dict(request.args.to_dict(), page=pagination.next_num)) }}"
+                        class="page-link">&raquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 
+<!-- Aviso de carregamento -->
+<div id="loading-indicator" style="display: none; text-align: center; margin-top: 10px;">
+    <p>Carregando...</p>
+</div>
+
+<!-- Pré-carregamento da próxima página -->
+<div id="next-page-content" style="display: none;"></div>
+
+<!-- Modal de Edição da Ficha -->
+<div class="modal fade" id="editRegistrationModal" tabindex="-1" aria-labelledby="editRegistrationModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRegistrationModalLabel">Editar Ficha de Inscrição</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="edit-registration-form" action="/update_registration" method="POST">
+                <div class="modal-body">
+
+                    <!-- Informações principais no topo -->
+                    <div class="mb-4 border rounded p-3 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="edit-recrutador">Recrutador:</label>
+                                <input type="text" id="edit-recrutador" name="recrutador" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="edit-situacao">Situação:</label>
+                                <input type="text" id="edit-situacao" name="situacao" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="edit-cpf">CPF:</label>
+                                <input type="text" id="edit-cpf" name="cpf" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-cargo_indicado">Cargo Indicado:</label>
+                                <textarea id="edit-cargo_indicado" name="cargo_indicado" class="form-control"
+                                    readonly></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-observacoes">Observações:</label>
+                                <textarea id="edit-observacoes" name="observacoes" class="form-control"
+                                    readonly></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-regioes_preferencia">Regiões de Preferência:</label>
+                                <textarea id="edit-regioes_preferencia" name="regioes_preferencia" class="form-control"
+                                    readonly></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-disponibilidade_horario">Disponibilidade de Horário:</label>
+                                <textarea id="edit-disponibilidade_horario" name="disponibilidade_horario"
+                                    class="form-control" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dados complementares -->
+                    <div class="row g-3">
+                        <!-- Coluna 1 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit-nome-completo">Nome Completo:</label>
+                                <input type="text" id="edit-nome-completo" name="nome_completo" class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-telefone">Telefone:</label>
+                                <input type="text" id="edit-telefone" name="telefone" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-endereco">Endereço:</label>
+                                <input type="text" id="edit-endereco" name="endereco" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-bairro">Bairro:</label>
+                                <input type="text" id="edit-bairro" name="bairro" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cidade">Cidade:</label>
+                                <input type="text" id="edit-cidade" name="cidade" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-data_nasc">Data de Nascimento:</label>
+                                <input type="text" id="edit-data_nasc" name="data_nasc" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-escolaridade">Escolaridade:</label>
+                                <input type="text" id="edit-escolaridade" name="escolaridade" class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-fumante">Fumante:</label>
+                                <input type="text" id="edit-fumante" name="fumante" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-bebida">Bebida:</label>
+                                <input type="text" id="edit-bebida" name="bebida" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-genero">Gênero:</label>
+                                <input type="text" id="edit-genero" name="genero" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-peso">Peso:</label>
+                                <input type="text" id="edit-peso" name="peso" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cor_pele">Cor de Pele:</label>
+                                <input type="text" id="edit-cor_pele" name="cor_pele" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-tatuagem">Tatuagem:</label>
+                                <input type="text" id="edit-tatuagem" name="tatuagem" class="form-control" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit-cursos">Cursos Realizados:</label>
+                                <input type="text" id="edit-cursos" name="cursos" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-conhecimento_digitacao">Conhecimento de Digitação:</label>
+                                <input type="text" id="edit-conhecimento_digitacao" name="conhecimento_digitacao"
+                                    class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-avaliacao_rh">Avaliação RH:</label>
+                                <input type="text" id="edit-avaliacao_rh" name="avaliacao_rh" class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-sindicancia">Sindicância:</label>
+                                <input type="text" id="edit-sindicancia" name="sindicancia" class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-avaliacao_gerencia">Avaliação Gestor:</label>
+                                <input type="text" id="edit-avaliacao_gerencia" name="avaliacao_gerencia"
+                                    class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-assinatura_gerencia">Assinatura Gestor:</label>
+                                <input type="text" id="edit-assinatura_gerencia" name="assinatura_gerencia"
+                                    class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-admitido">Admitido:</label>
+                                <input type="text" id="edit-admitido" name="admitido" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Adiciona o Socket.IO antes dos outros scripts -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+
+<!-- Adiciona a biblioteca jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Scripts existentes -->
+<script src="{{ url_for('static', filename='js/selecaoTabelaEPaginacao.js') }}"></script>
+<script src="{{ url_for('static', filename='js/editRegistrationModal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/verify_cpf_ficha.js') }}"></script>
+<script src="{{ url_for('static', filename='js/banco_rs_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mascaras.js') }}"></script>
 <script src="{{ url_for('static', filename='js/generatePdf.js') }}"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='js/carregarCidadeBancoFiltro.js') }}"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const closeModalButton = document.getElementById('close-modal-btn');
+        const modalElement = document.getElementById('editRegistrationModal');
+
+        if (closeModalButton && modalElement) {
+            closeModalButton.addEventListener('click', function () {
+                // Obtém a instância do modal Bootstrap e fecha
+                const bootstrapModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                bootstrapModal.hide();
+            });
+        } else {
+            console.error("Botão ou elemento do modal não encontrados.");
+        }
+    });
+
+
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxesHorario = document.querySelectorAll('#dropdown-options-horario input[type="checkbox"]');
+        const titleHorario = document.getElementById('dropdown-title-horario');
+
+        checkboxesHorario.forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                const checkedOptionsHorario = [];
+                checkboxesHorario.forEach(function (cb) {
+                    if (cb.checked) {
+                        checkedOptionsHorario.push(cb.value);
+                    }
+                });
+
+                titleHorario.textContent = checkedOptionsHorario.length > 0 ? checkedOptionsHorario.join(', ') : 'Selecione a disponibilidade';
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropdownTitle = document.getElementById('dropdown-title');
+        const checkboxes = document.querySelectorAll('#dropdown-options input[type="checkbox"]');
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                let selectedOptions = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        selectedOptions.push(cb.value);
+                    }
+                });
+
+                if (selectedOptions.length > 0) {
+                    dropdownTitle.textContent = selectedOptions.join(', ');
+                } else {
+                    dropdownTitle.textContent = 'Selecione as regiões';
+                }
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropdownMenu = document.querySelector('.dropdown-menu');
+        const dropdownToggle = document.getElementById('dropdownMenuButton');
+
+        // Atualiza o texto do botão com as regiões selecionadas
+        function updateDropdownButton() {
+            const selectedRegions = Array.from(dropdownMenu.querySelectorAll('input:checked'))
+                .map(checkbox => checkbox.parentNode.textContent.trim());
+
+            if (selectedRegions.length > 0) {
+                dropdownToggle.textContent = selectedRegions.join(', ');
+            } else {
+                dropdownToggle.textContent = 'Selecione Regiões de Preferência';
+            }
+        }
+
+        // Escuta mudanças nas checkboxes dentro do dropdown
+        dropdownMenu.addEventListener('change', function (e) {
+            if (e.target.tagName === 'INPUT') {
+                updateDropdownButton();
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        // Função para enviar os filtros via Ajax
+
+
+        // Reatribui os event listeners necessários após a atualização da tabela
+        function reatribuirEventListeners() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const openPdfModalButton = document.getElementById('openPdfModalButton');
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+
+            // Função para exibir ou ocultar o botão do modal
+            function toggleGeneratePdfButton() {
+                const selectedCheckboxes = document.querySelectorAll('.select-checkbox:checked');
+                openPdfModalButton.style.display = selectedCheckboxes.length > 0 ? 'block' : 'none';
+            }
+
+            // Listener para selecionar todos os checkboxes
+            selectAllCheckbox?.addEventListener('change', function () {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                toggleGeneratePdfButton();
+            });
+
+            // Listener para cada checkbox individual
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', toggleGeneratePdfButton);
+            });
+
+            // Chama a função ao carregar a tabela para verificar o estado inicial
+            toggleGeneratePdfButton();
+        }
+
+        // Inicializa o carregamento da tabela e filtros ao abrir a página
+        carregarFiltros();
+
+
+
+    });
+    // Carregar os resultados na primeira vez que a página é carregada
+    carregarFiltros();
 
     document.getElementById('createFichaForm').addEventListener('submit', function (event) {
         event.preventDefault();
@@ -609,7 +1264,6 @@
             });
     });
 
-
     // Inicializa o socket.io
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/');
 
@@ -618,15 +1272,15 @@
         const tabela = document.getElementById('candidato-table');
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
-            <td>${data.nome_completo}</td>
-            <td>${data.cpf}</td>
-            <td>${data.created_at}</td>
-            <td>
-                <a href="/view_form/${data.cpf}" class="btn btn-primary">Visualizar/Editar</a>
-                <a href="/export_pdf/${data.cpf}" class="btn btn-danger btn-sm">Exportar PDF</a>
-                <a href="/export_excel/${data.cpf}" class="btn btn-success btn-sm">Exportar Excel</a>
-            </td>
-        `;
+<td>${data.nome_completo}</td>
+<td>${data.cpf}</td>
+<td>${data.created_at}</td>
+<td>
+    <a href="/view_form/${data.cpf}" class="btn btn-primary">Visualizar/Editar</a>
+    <a href="/export_pdf/${data.cpf}" class="btn btn-danger btn-sm">Exportar PDF</a>
+    <a href="/export_excel/${data.cpf}" class="btn btn-success btn-sm">Exportar Excel</a>
+</td>
+`;
         tabela.appendChild(newRow);
     });
 
@@ -665,7 +1319,19 @@
             });
     });
 
+    socket.on('situacao_updated', function (data) {
+        // Encontra a linha da tabela correspondente ao CPF
+        const rows = document.querySelectorAll('#candidato-table tr');
+        rows.forEach(row => {
+            const cpfCell = row.querySelector('td:nth-child(1) input[type="checkbox"]');
+            if (cpfCell && cpfCell.value === data.cpf) {
+                // Atualiza a célula de situação
+                const situacaoCell = row.querySelector('td:nth-child(7)');
+                if (situacaoCell) {
+                    situacaoCell.textContent = data.situacao;
+                }
+            }
+        });
+    });
 </script>
-
-
 {% endblock %}

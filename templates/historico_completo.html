@@ -3,65 +3,41 @@
 {% block title %}Histórico Completo{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1 class="mb-4 text-center">Histórico Completo de Tickets</h1>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nome</th>
-                    <th>Categoria</th>
-                    <th>Data de Criação</th>
-                    <th>Chamado em</th>
-                    <th>Concluído em</th>
-                    <th>Status</th>
-                    <th>Guichê</th>
-                    <th>Prioridade</th>
-                    <th>Observações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ticket in tickets %}
-                <tr>
-                    <td>{{ ticket.ticket_number }}</td>
-                    <td>{{ ticket.name }}</td>
-                    <td>{{ ticket.category }}</td>
-                    <td>{{ ticket.created_at }}</td>
-                    <td>{{ ticket.called_at or 'N/A' }}</td>
-                    <td>{{ ticket.concluded_at or 'N/A' }}</td>
-                    <td>{{ ticket.status }}</td>
-                    <td>{{ ticket.guiche or 'N/A' }}</td>
-                    <td>{{ ticket.priority }}</td>
-                    <td>{{ ticket.observation or 'Nenhuma observação adicionada.' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Histórico Completo de Tickets</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th>Data de Criação</th>
+                <th>Chamado em</th>
+                <th>Concluído em</th>
+                <th>Status</th>
+                <th>Guichê</th>
+                <th>Recrutador</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket.ticket_number }}</td>
+                <td>{{ ticket.name }}</td>
+                <td>{{ ticket.category }}</td>
+                <td>{{ ticket.created_at | format_brazilian_date }}</td>
+                <td>{{ ticket.called_at or 'N/A' }}</td>
+                <td>{{ ticket.concluded_at or 'N/A' }}</td>
+                <td>{{ ticket.status }}</td>
+                <td>{{ ticket.guiche if ticket.guiche else 'Não definido' }}</td>
+                <td>{{ ticket.recruiter or 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-        <h2 class="mt-5">Tickets Cancelados</h2>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nome</th>
-                    <th>Categoria</th>
-                    <th>Data de Criação</th>
-                    <th>Cancelado em</th>
-                    <th>Observação de Cancelamento</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ticket in cancelled_tickets %}
-                <tr>
-                    <td>{{ ticket.ticket_number }}</td>
-                    <td>{{ ticket.name }}</td>
-                    <td>{{ ticket.category }}</td>
-                    <td>{{ ticket.created_at }}</td>
-                    <td>{{ ticket.cancelled_at }}</td>
-                    <td>{{ ticket.observation }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="text-center mt-4">
+        <p>Exibindo o histórico completo de tickets processados.</p>
     </div>
+</div>
 {% endblock %}

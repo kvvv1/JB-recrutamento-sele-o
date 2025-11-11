@@ -4,307 +4,258 @@
 
 {% block content %}
 <div class="container mt-5">
+
     <div class="row">
         <div class="col-md-12">
-            <h1 class="text-center mb-4">Indicadores de Desempenho</h1>
+            <h1 class="text-center mb-4" id="indicadores-title">Relatórios de Atendimento RH</h1>
         </div>
     </div>
 
+    <!-- Botão para Relatório de Situação (versão menor e verde) -->
+    <div class="mb-4 d-flex justify-content-end">
+        <button id="btn-relatorio-situacao" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalRelatorioSituacao">
+            <i class="bi bi-file-earmark-text me-1"></i> Relatório de Situação
+        </button>
+    </div>
+
+    <div class="container my-4">
+        <div class="card shadow rounded-4 border-0">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                   
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Filtros de período -->
+                        <select id="filtro-periodo" class="form-select">
+                            <option value="HOJE">Hoje</option>
+                            <option value="SEMANA">Esta Semana</option>
+                            <option value="MES_ATUAL">Mês Atual</option>
+                            <option value="ULTIMOS_3_MESES">Últimos 3 Meses</option>
+                            <option value="ULTIMOS_6_MESES">Últimos 6 Meses</option>
+                            <option value="ULTIMO_ANO">Último Ano</option>
+                            <option value="PERSONALIZADO">Personalizado...</option>
+                        </select>
+                        <input type="date" id="data-inicio" class="form-control" style="display:none; max-width:160px;">
+                        <input type="date" id="data-fim" class="form-control" style="display:none; max-width:160px;">
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs mb-3" id="relatorioTabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-tipo="quantitativo"
+                            type="button">Quantitativo</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="diario" type="button">Diário</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="semana" type="button">Por Semana</button>
+                    </li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="categoria" type="button">Por
+                            Categoria</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="aprovados_x_reprovados"
+                            type="button">Aprovados x Reprovados</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="lista_aprovados"
+                            type="button">Aprovados</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="lista_reprovados"
+                            type="button">Reprovados</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="ranking_recrutadores"
+                            type="button">Ranking</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="tempo_espera_atendimento"
+                            type="button">Tempo Espera/Atendimento</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="mensal_categoria" type="button">Mensal por
+                            Categoria</button></li>
+                    <li class="nav-item"><button class="nav-link" data-tipo="linha_tempo" type="button">Linha do
+                            Tempo</button></li>
+                </ul>
+
+                <div id="relatorio-content" class="mb-3">
+                    <!-- Aqui carrega os relatórios dinamicamente via AJAX -->
+                    <div class="text-center text-muted p-5">
+                        <div class="spinner-border text-primary"></div>
+                        <div>Carregando relatório...</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button id="exportar-excel" class="btn btn-outline-success" style="display:none;">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
+
+    <div class="border-bottom my-4"></div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center mb-4" id="indicadores-title">Indicadores do RH</h1>
+        </div>
+    </div>
+
+
+    <!-- Filtros por data e período -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <label for="sectorSelect" class="form-label">Selecione o Setor:</label>
-            <select id="sectorSelect" class="form-select">
-                <option value="">Todos os Setores</option>
-                <option value="RH">RH</option>
-                <option value="Suprimentos">Suprimentos</option>
-                <option value="DP">DP</option>
-                <option value="Operacional">Operacional</option>
+            <label for="calendarSelect" class="form-label">Selecione a Data ou Período:</label>
+            <input type="date" id="calendarSelect" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label for="predefinedPeriodSelect" class="form-label">Ou selecione um período:</label>
+            <select id="predefinedPeriodSelect" class="form-select">
+                <option value="HOJE">Hoje</option>
+                <option value="3DIAS">Últimos 3 Dias</option>
+                <option value="SEMANA">Última Semana</option>
+                <option value="MES">Último Mês</option>
+                <option value="ANO">Último Ano</option>
             </select>
         </div>
-        <div class="col-md-8 text-center">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card text-white bg-primary mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Senhas Emitidas Hoje</h5>
-                            <p class="card-text">{{ total_tickets }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card text-white bg-success mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Senhas Concluídas Hoje</h5>
-                            <p class="card-text">{{ total_concluido }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-md-4">
+            <label for="categorySelect" class="form-label">Filtrar por Categoria:</label>
+            <select id="categorySelect" class="form-select">
+                <option value="ALL">Todas as Categorias</option>
+                <option value="Admissão">Admissão</option>
+                <option value="Demissão">Demissão</option>
+                <option value="Entrevista">Entrevista</option>
+                <option value="Agendado">Agendado</option>
+                <option value="Treinamento">Treinamento</option>
+                <option value="Documentação">Documentação</option>
+                <option value="Outros">Outros</option>
+            </select>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title text-center">Senhas por Categoria</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="ticketsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title text-center">Tempo Médio de Espera por Categoria (minutos)</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="waitTimeChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+  
 
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title text-center">Tempo Médio de Atendimento por Categoria (minutos)</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="serviceTimeChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title text-center">Tempo de Espera vs. Tempo de Atendimento</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="timeComparisonChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
+
+
+    <!-- Calendário -->
     <div class="row mb-4">
         <div class="col-md-12">
+            <div id="calendar" style="max-width: 600px; margin: 0 auto;"></div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="card-title text-center">Comparação de Tickets Emitidos e Concluídos por Semana/Mês</h4>
+                    <h4 class="card-title text-center">Senhas Emitidas</h4>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="comparisonChart"></canvas>
-                    </div>
+                    <canvas id="ticketsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title text-center">Senhas Concluídas</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="completedTicketsChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row history-section">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title text-center">Histórico de Chamadas</h4>
-                </div>
-                <div class="card-body history-table">
-                    <table class="table table-striped">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Senha</th>
-                                <th>Nome</th>
-                                <th>Categoria</th>
-                                <th>Criado em</th>
-                                <th>Chamado em</th>
-                                <th>Concluído em</th>
-                                <th>Tempo de Espera</th>
-                                <th>Tempo de Atendimento</th>
-                                <th>Tempo Total no RH</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in historical_data %}
-                            <tr>
-                                <td>{{ ticket.ticket_number }}</td>
-                                <td>{{ ticket.name }}</td>
-                                <td>{{ ticket.category }}</td>
-                                <td>{{ ticket.created_at }}</td>
-                                <td>{{ ticket.called_at }}</td>
-                                <td>{{ ticket.concluded_at }}</td>
-                                <td>{{ ticket.wait_time }}</td>
-                                <td>{{ ticket.service_time }}</td>
-                                <td>{{ ticket.total_time }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title text-center">Desempenho dos Recrutadores</h4>
+            </div>
+            <div class="card-body">
+                <!-- Ajuste o tamanho do gráfico aqui -->
+                <canvas id="recruiterPerformanceChart" style="width: 400px; height: 200px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title text-center">Tempo Médio de Espera por Categoria (minutos)</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="averageWaitTimeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title text-center">Tempo Médio de Atendimento por Categoria (minutos)</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="averageServiceTimeChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title text-center">Tempo de Espera vs. Tempo de Atendimento (minutos)</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="waitVsServiceTimeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Inclua o CDN do FullCalendar e Chart.js -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/indicadores.js"></script>
+
+<!-- Modal para Relatório de Situação -->
+<div class="modal fade" id="modalRelatorioSituacao" tabindex="-1" aria-labelledby="modalRelatorioSituacaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRelatorioSituacaoLabel">Relatório de Situação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-relatorio-situacao">
+                    <div class="mb-3">
+                        <label for="data-inicial-situacao" class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="data-inicial-situacao" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="data-final-situacao" class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="data-final-situacao" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-exportacao">Exportar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var counts = JSON.parse('{{ counts | tojson | safe }}');
-        var averageWaitTimes = JSON.parse('{{ average_wait_times | tojson | safe }}');
-        var averageServiceTimes = JSON.parse('{{ average_service_times | tojson | safe }}');
-        var ticketsIssued = JSON.parse('{{ tickets_issued | tojson | safe }}');
-        var ticketsCompleted = JSON.parse('{{ tickets_completed | tojson | safe }}');
-
-        updateCharts(counts, averageWaitTimes, averageServiceTimes, ticketsIssued, ticketsCompleted);
-    });
-
-    function updateCharts(counts, averageWaitTimes, averageServiceTimes, ticketsIssued, ticketsCompleted) {
-        var ctxTickets = document.getElementById('ticketsChart').getContext('2d');
-        var ticketsChart = new Chart(ctxTickets, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(counts),
-                datasets: [{
-                    label: 'Senhas Emitidas',
-                    data: Object.values(counts),
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
+    function exportarExcel(tipo) {
+        const params = new URLSearchParams({
+            tipo: tipo,
+            date: document.getElementById('calendarSelect').value,
+            period: document.getElementById('predefinedPeriodSelect').value,
+            category: document.getElementById('categorySelect').value
         });
-
-        var ctxWaitTime = document.getElementById('waitTimeChart').getContext('2d');
-        var waitTimeChart = new Chart(ctxWaitTime, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(averageWaitTimes),
-                datasets: [{
-                    label: 'Tempo Médio de Espera (min)',
-                    data: Object.values(averageWaitTimes),
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    borderColor: 'rgba(255, 206, 86, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        var ctxServiceTime = document.getElementById('serviceTimeChart').getContext('2d');
-        var serviceTimeChart = new Chart(ctxServiceTime, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(averageServiceTimes),
-                datasets: [{
-                    label: 'Tempo Médio de Atendimento (min)',
-                    data: Object.values(averageServiceTimes),
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        var ctxComparison = document.getElementById('comparisonChart').getContext('2d');
-        var comparisonChart = new Chart(ctxComparison, {
-            type: 'line',
-            data: {
-                labels: Object.keys(counts),
-                datasets: [
-                    {
-                        label: 'Tickets Emitidos',
-                        data: ticketsIssued,
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Tickets Concluídos',
-                        data: ticketsCompleted,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        var ctxTimeComparison = document.getElementById('timeComparisonChart').getContext('2d');
-        var timeComparisonChart = new Chart(ctxTimeComparison, {
-            type: 'line',
-            data: {
-                labels: Object.keys(averageWaitTimes),
-                datasets: [
-                    {
-                        label: 'Tempo de Espera Médio (min)',
-                        data: Object.values(averageWaitTimes),
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Tempo de Atendimento Médio (min)',
-                        data: Object.values(averageServiceTimes),
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
+        window.location.href = '/indicadores/export?' + params.toString();
     }
 
-    document.getElementById('sectorSelect').addEventListener('change', function() {
-        const sector = this.value;
-        // Adicione a lógica para buscar e atualizar os gráficos com base no setor selecionado
-    });
 </script>
 {% endblock %}

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,54 +10,67 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+
         .header {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .header img {
             width: 150px;
         }
-        h1, h2, h4 {
+
+        h1,
+        h2,
+        h4 {
             color: #AB1A18;
             text-align: center;
             margin: 10px 0;
         }
+
         .form-section {
             margin-bottom: 20px;
             border-bottom: 1px solid #ccc;
             padding-bottom: 15px;
         }
+
         .form-group {
             margin-bottom: 10px;
         }
+
         label {
             font-weight: bold;
             color: #333;
         }
+
         .table {
             width: 100%;
             border-collapse: collapse;
         }
-        .table th, .table td {
+
+        .table th,
+        .table td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
         }
+
         .table th {
             background-color: #f2f2f2;
         }
     </style>
 </head>
+
 <body>
 
     <div class="header">
-        <img src="https://imgur.com/a/fSi6hDR" alt="Logo">
+        <img src="{{ logo_url }}" alt="Logo da Empresa" width="100px">
         <h1>Ficha de Inscrição</h1>
         <h2>{{ form_data.nome_completo }}</h2>
     </div>
 
     <div class="form-section">
-        <h4>Informações Pessoais</h4>
+        <h4>Dados Pessoais</h4>
         <table class="table">
             <tr>
                 <th>Nome Completo</th>
@@ -102,6 +116,34 @@
                 <th>Qual Medicamento</th>
                 <td>{{ form_data.qual_medicamento }}</td>
             </tr>
+            <tr>
+                <th>Escolaridade</th>
+                <td>{{ form_data.escolaridade }}</td>
+            </tr>
+            <tr>
+                <th>Número de Filhos</th>
+                <td>{{ form_data.numero_filhos }}</td>
+            </tr>
+            <tr>
+                <th>Peso</th>
+                <td>{{ form_data.peso }}</td>
+            </tr>
+            <tr>
+                <th>Cor de Pele</th>
+                <td>{{ form_data.cor_pele }}</td>
+            </tr>
+            <tr>
+                <th>Tatuagem</th>
+                <td>{{ form_data.tatuagem }}</td>
+            </tr>
+            <tr>
+                <th>PCD (Pessoa com Deficiência)</th>
+                <td>{{ form_data.pcd }}</td>
+            </tr>
+            <tr>
+                <th>Perfil</th>
+                <td>{{ form_data.perfil }}</td>
+            </tr>
         </table>
     </div>
 
@@ -143,30 +185,8 @@
         <h4>Documentação</h4>
         <table class="table">
             <tr>
-                <th>Identidade</th>
-                <td>{{ form_data.identidade }}</td>
-            </tr>
-            <tr>
                 <th>CPF</th>
                 <td>{{ form_data.cpf }}</td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="form-section">
-        <h4>Características Físicas</h4>
-        <table class="table">
-            <tr>
-                <th>Peso</th>
-                <td>{{ form_data.peso }}</td>
-            </tr>
-            <tr>
-                <th>Cor da Pele</th>
-                <td>{{ form_data.cor_pele }}</td>
-            </tr>
-            <tr>
-                <th>Tatuagem</th>
-                <td>{{ form_data.tatuagem }}</td>
             </tr>
         </table>
     </div>
@@ -176,7 +196,17 @@
         <table class="table">
             <tr>
                 <th>Descrição dos Cursos</th>
-                <td>{{ form_data.cursos }}</td>
+                <td>{{ form_data.cursos_realizados }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4>Conhecimento de Digitação</h4>
+        <table class="table">
+            <tr>
+                <th>Nível</th>
+                <td>{{ form_data.conhecimento_digitacao }}</td>
             </tr>
         </table>
     </div>
@@ -189,93 +219,80 @@
                 <td>{{ form_data.empresa1 }}</td>
             </tr>
             <tr>
-                <th>Cidade</th>
-                <td>{{ form_data.cidade1 }}</td>
-            </tr>
-            <tr>
                 <th>Função</th>
                 <td>{{ form_data.funcao1 }}</td>
-            </tr>
-            <tr>
-                <th>Data de Admissão</th>
-                <td>{{ form_data.data_admissao1 }}</td>
-            </tr>
-            <tr>
-                <th>Data de Saída</th>
-                <td>{{ form_data.data_saida1 }}</td>
             </tr>
             <tr>
                 <th>Motivo da Saída</th>
                 <td>{{ form_data.motivo_saida1 }}</td>
             </tr>
             <tr>
+                <th>Tempo de Permanência</th>
+                <td>{{ form_data.tempo_permanencia1_anos }} anos, {{ form_data.tempo_permanencia1_meses }} meses</td>
+            </tr>
+            <tr>
                 <th>Salário</th>
                 <td>{{ form_data.salario1 }}</td>
             </tr>
+            <tr>
+                <th>Descrição das Atividades</th>
+                <td>{{ form_data.atividades_empresa1 }}</td>
+            </tr>
         </table>
-
         <table class="table">
             <tr>
                 <th>Empresa 2</th>
                 <td>{{ form_data.empresa2 }}</td>
             </tr>
             <tr>
-                <th>Cidade</th>
-                <td>{{ form_data.cidade2 }}</td>
-            </tr>
-            <tr>
                 <th>Função</th>
                 <td>{{ form_data.funcao2 }}</td>
-            </tr>
-            <tr>
-                <th>Data de Admissão</th>
-                <td>{{ form_data.data_admissao2 }}</td>
-            </tr>
-            <tr>
-                <th>Data de Saída</th>
-                <td>{{ form_data.data_saida2 }}</td>
             </tr>
             <tr>
                 <th>Motivo da Saída</th>
                 <td>{{ form_data.motivo_saida2 }}</td>
             </tr>
             <tr>
+                <th>Tempo de Permanência</th>
+                <td>{{ form_data.tempo_permanencia2_anos }} anos, {{ form_data.tempo_permanencia2_meses }} meses</td>
+            </tr>
+            <tr>
                 <th>Salário</th>
                 <td>{{ form_data.salario2 }}</td>
             </tr>
+            <tr>
+                <th>Descrição das Atividades</th>
+                <td>{{ form_data.atividades_empresa2 }}</td>
+            </tr>
         </table>
-
         <table class="table">
             <tr>
                 <th>Empresa 3</th>
                 <td>{{ form_data.empresa3 }}</td>
             </tr>
             <tr>
-                <th>Cidade</th>
-                <td>{{ form_data.cidade3 }}</td>
-            </tr>
-            <tr>
                 <th>Função</th>
                 <td>{{ form_data.funcao3 }}</td>
-            </tr>
-            <tr>
-                <th>Data de Admissão</th>
-                <td>{{ form_data.data_admissao3 }}</td>
-            </tr>
-            <tr>
-                <th>Data de Saída</th>
-                <td>{{ form_data.data_saida3 }}</td>
             </tr>
             <tr>
                 <th>Motivo da Saída</th>
                 <td>{{ form_data.motivo_saida3 }}</td>
             </tr>
             <tr>
+                <th>Tempo de Permanência</th>
+                <td>{{ form_data.tempo_permanencia3_anos }} anos, {{ form_data.tempo_permanencia3_meses }} meses</td>
+            </tr>
+            <tr>
                 <th>Salário</th>
                 <td>{{ form_data.salario3 }}</td>
             </tr>
+            <tr>
+                <th>Descrição das Atividades</th>
+                <td>{{ form_data.atividades_empresa3 }}</td>
+            </tr>
         </table>
     </div>
+
 
     <div class="form-section">
         <h4>Empregos Informais</h4>
@@ -321,9 +338,11 @@
         <p>{{ form_data.observacoes }}</p>
     </div>
 
+    <!-- Outras partes do template -->
+
+
+
+
 </body>
-
-
-<script src="{{ url_for('static', filename='js/verificarCPF.js') }}"></script>
 
 </html>

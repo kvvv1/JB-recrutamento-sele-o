@@ -3,75 +3,129 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-4">
-        <h1 class="mb-4">Gerenciamento de Usuários</h1>
-
-        <!-- Exibir mensagens flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div>
-              {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-              {% endfor %}
+<div class="container mt-4">
+    <h1 class="mb-4">Painel Administrativo</h1>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Gestão de Usuários</h3>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie as contas de usuário do sistema.</p>
+                    <a href="{{ url_for('manage_users') }}" class="btn btn-primary">Acessar</a>
+                </div>
             </div>
-          {% endif %}
-        {% endwith %}
+        </div>
         
-  
-        <!-- Botão para abrir o modal -->
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-            Adicionar Usuário
-        </button>
-
-        <!-- Modal -->
-        <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addUserModalLabel">Adicionar Usuário</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form method="POST" action="{{ url_for('add_user') }}">
-                            <div class="mb-3">
-                                <label for="username" class="form-label">Nome de Usuário</label>
-                                <input type="text" class="form-control" id="username" name="username" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Nome Completo</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">E-mail</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Senha</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="is_admin" name="is_admin">
-                                <label class="form-check-label" for="is_admin">Administrador</label>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Adicionar Usuário</button>
-                        </form>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">Recuperação de Fichas</h3>
+                </div>
+                <div class="card-body">
+                    <p>Sistema de recuperação de fichas perdidas ou com problemas.</p>
+                    <div class="d-flex flex-column">
+                        <a href="{{ url_for('admin_recovery') }}" class="btn btn-danger mb-2">Recuperação no Servidor</a>
+                        <small class="text-muted mb-2">Recupera fichas perdidas por erros do sistema armazenadas no servidor.</small>
+                        
+                        <a href="{{ url_for('local_recovery') }}" class="btn btn-outline-danger">Recuperação Local</a>
+                        <small class="text-muted">Restaura backups salvos no navegador do usuário.</small>
                     </div>
                 </div>
             </div>
         </div>
         
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">Backups</h3>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie os backups automáticos de formulários.</p>
+                    <a href="{{ url_for('admin_backups') }}" class="btn btn-info">Acessar Backups</a>
+                    <small class="text-muted d-block mt-2">Acesse backups sincronizados dos navegadores dos usuários.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Título e Botões -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Admin Dashboard</h1>
+        <div>
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#relatorioModal">
+                Gerar Relatório
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                Adicionar Usuário
+            </button>
+        </div>
+    </div>
+
+    <!-- Exibir mensagens flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div>
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Relatório (se houver dados) -->
+    {% if dados %}
+    <div class="mt-4">
+        <h2>Relatório de {{ data_inicio }} até {{ data_fim }}</h2>
+
+        <form method="POST" action="{{ url_for('gerar_relatorio_excel') }}" class="mb-3">
+            <input type="hidden" name="data_inicio" value="{{ data_inicio }}">
+            <input type="hidden" name="data_fim" value="{{ data_fim }}">
+            <input type="hidden" name="tipo" value="{{ tipo }}">
+            <button type="submit" class="btn btn-outline-success">Exportar para Excel</button>
+        </form>
         
-        <h2 class="mt-4">Usuários Cadastrados</h2>
+
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Mês</th>
+                    <th>Ano</th>
+                    <th>Recrutador</th>
+                    <th>Total</th>
+                    <th>Aprovados</th>
+                    <th>Reprovados</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados %}
+                <tr>
+                    <td>{{ row.Mes }}</td>
+                    <td>{{ row.Ano }}</td>
+                    <td>{{ row.recrutador }}</td>
+                    <td>{{ row.Total_Candidatos }}</td>
+                    <td>{{ row.Total_Aprovados }}</td>
+                    <td>{{ row.Total_Reprovados }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Gerenciamento de Usuários -->
+    <div class="mt-5">
+        <h2>Usuários Cadastrados</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -102,8 +156,85 @@
             </tbody>
         </table>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Modal - Relatório -->
+<!-- Modal - Gerar Relatório -->
+<div class="modal fade" id="relatorioModal" tabindex="-1" aria-labelledby="relatorioModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" action="{{ url_for('gerar_relatorio_excel') }}">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Gerar Relatório</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="data_inicio" class="form-label">Data de Início</label>
+              <input type="date" class="form-control" name="data_inicio" required>
+            </div>
+            <div class="mb-3">
+              <label for="data_fim" class="form-label">Data de Fim</label>
+              <input type="date" class="form-control" name="data_fim" required>
+            </div>
+            <div class="mb-3">
+              <label for="tipo" class="form-label">Tipo de Relatório</label>
+              <select class="form-select" name="tipo" required>
+                <option value="">Selecione...</option>
+                <option value="resumo_geral">Resumo Geral (aprovados/reprovados)</option>
+                <option value="por_atendente">Total por Atendente</option>
+                <option value="entrevistas_agendamentos">Entrevistas e Agendamentos</option>
+                <option value="detalhado">Relatório Detalhado por Mês</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">Gerar Relatório</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
 
+<!-- Modal - Adicionar Usuário -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ url_for('add_user') }}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adicionar Usuário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nome de Usuário</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_admin">
+                        <label class="form-check-label">Administrador</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

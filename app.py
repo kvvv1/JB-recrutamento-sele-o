@@ -13,7 +13,6 @@ from io import BytesIO
 from pathlib import Path
 from shutil import which
 from typing import Optional
-+import inspect
 
 import eventlet
 import eventlet.wsgi

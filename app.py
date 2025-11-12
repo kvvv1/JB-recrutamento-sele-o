@@ -4123,22 +4123,13 @@ def banco_rs():
             total_params.append(recrutador_formatado)
 
 
-
     if cargos_indicados:
-
-        cargos_query = ' OR '.join(['cargo_indicado LIKE ?' for _ in cargos_indicados])
-
+        cargos_query = ' AND '.join(['cargo_indicado LIKE ?' for _ in cargos_indicados])
         query += f' AND ({cargos_query})'
-
         total_query += f' AND ({cargos_query})'
-
         for cargo in cargos_indicados:
-
             params.append(f'%{cargo}%')
-
             total_params.append(f'%{cargo}%')
-
-
 
     if avaliacao_rh and not avaliacao_geral and not avaliacao_gerencia and not sindicancia:
 

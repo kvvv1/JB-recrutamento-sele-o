@@ -2884,7 +2884,6 @@ def update_ticket():
 
 
 @app.route('/export_pdf/<cpf>')
-
 @login_required
 def export_pdf(cpf):
 
@@ -3682,7 +3681,6 @@ def submit_form():
 
 
         # Commit final das alterações
-
         db.commit()
         print(f"Commit finalizado com sucesso para CPF: {cpf}")
 
@@ -5150,7 +5148,6 @@ def view_or_fill_inscription(id):
 
 
 @app.route('/admin/manage_users', methods=['GET', 'POST'])
-
 @login_required
 def manage_users():
 
@@ -9988,7 +9985,6 @@ def get_data_nasc(cpf):
    
 
 @app.route('/view_registration/<cpf>')
-
 @login_required
 def view_registration(cpf):
 
@@ -11630,6 +11626,14 @@ def set_recruiter():
 
         return redirect(request.referrer)
 def create_ficha_manual():
+
+    if request.method == 'GET':
+
+        # Evita erro quando o template gera link direto; apenas redireciona para a listagem
+
+        return redirect(url_for('banco_rs'))
+
+
 
     nome_completo = request.form.get('nome_completo', '').strip()
 

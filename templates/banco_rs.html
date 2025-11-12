@@ -356,37 +356,53 @@
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-options"
                             style="width: 100%;">
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Barreiro"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Barreiro"
+                                        {% if 'Região Barreiro' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Barreiro</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Centro Sul">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Centro Sul"
+                                        {% if 'Região Centro Sul' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     Região Centro Sul</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Leste"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Leste"
+                                        {% if 'Região Leste' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Leste</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Nordeste"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Nordeste"
+                                        {% if 'Região Nordeste' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Nordeste</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Noroeste"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Noroeste"
+                                        {% if 'Região Noroeste' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Noroeste</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Norte"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Norte"
+                                        {% if 'Região Norte' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Norte</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Oeste"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Oeste"
+                                        {% if 'Região Oeste' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Oeste</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Pampulha"> Região
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Pampulha"
+                                        {% if 'Região Pampulha' in request.args.getlist('regioes_preferencia') %}checked{% endif %}> Região
                                     Pampulha</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Venda Nova">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Venda Nova"
+                                        {% if 'Região Venda Nova' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     Região Venda Nova</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Betim/Contagem">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Betim/Contagem"
+                                        {% if 'Região Betim/Contagem' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     Região Betim/Contagem</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Nova Lima">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Região Nova Lima"
+                                        {% if 'Região Nova Lima' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     Região Nova Lima</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI SUDESTE">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI SUDESTE"
+                                        {% if 'VLI SUDESTE' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     VLI SUDESTE</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI NORDESTE">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI NORDESTE"
+                                        {% if 'VLI NORDESTE' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     VLI NORDESTE</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI CENTRO LESTE">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI CENTRO LESTE"
+                                        {% if 'VLI CENTRO LESTE' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     VLI CENTRO LESTE</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI MG">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="VLI MG"
+                                        {% if 'VLI MG' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     VLI MG</label></li>
-                            <li><label><input type="checkbox" name="regioes_preferencia" value="Outros Municípios">
+                            <li><label><input type="checkbox" name="regioes_preferencia" value="Outros Municípios"
+                                        {% if 'Outros Municípios' in request.args.getlist('regioes_preferencia') %}checked{% endif %}>
                                     Outros Municípios</label></li>
                         </ul>
                     </div>
@@ -1214,49 +1230,33 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        const dropdownTitle = document.getElementById('dropdown-title');
-        const checkboxes = document.querySelectorAll('#dropdown-options input[type="checkbox"]');
-
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function () {
-                let selectedOptions = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        selectedOptions.push(cb.value);
-                    }
-                });
-
-                if (selectedOptions.length > 0) {
-                    dropdownTitle.textContent = selectedOptions.join(', ');
-                } else {
-                    dropdownTitle.textContent = 'Selecione as regiões';
-                }
-            });
-        });
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const dropdownMenu = document.querySelector('.dropdown-menu');
+        const dropdownMenu = document.getElementById('dropdown-options');
         const dropdownToggle = document.getElementById('dropdownMenuButton');
+        const dropdownTitle = document.getElementById('dropdown-title');
 
-        // Atualiza o texto do botão com as regiões selecionadas
-        function updateDropdownButton() {
-            const selectedRegions = Array.from(dropdownMenu.querySelectorAll('input:checked'))
-                .map(checkbox => checkbox.parentNode.textContent.trim());
+        if (!dropdownMenu || !dropdownTitle) {
+            return;
+        }
 
-            if (selectedRegions.length > 0) {
-                dropdownToggle.textContent = selectedRegions.join(', ');
-            } else {
-                dropdownToggle.textContent = 'Selecione Regiões de Preferência';
+        const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
+
+        function updateDropdownTitle() {
+            const selectedOptions = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            const text = selectedOptions.length > 0 ? selectedOptions.join(', ') : 'Selecione as regiões';
+
+            dropdownTitle.textContent = text;
+
+            if (dropdownToggle) {
+                dropdownToggle.title = text;
             }
         }
 
-        // Escuta mudanças nas checkboxes dentro do dropdown
-        dropdownMenu.addEventListener('change', function (e) {
-            if (e.target.tagName === 'INPUT') {
-                updateDropdownButton();
-            }
-        });
+        checkboxes.forEach(cb => cb.addEventListener('change', updateDropdownTitle));
+
+        updateDropdownTitle();
     });
 
     // Gerenciamento do dropdown de cargos

@@ -112,14 +112,15 @@ def _get_connection_string(env_var_name):
     return conn_str
 
 
-def get_sql_server_connection():
 
-    return pyodbc.connect(_get_connection_string("SQL_SERVER_CONNECTION_STRING"))
+def get_sql_server_connection():
+    connection_string = "DRIVER={ODBC Driver 18 for SQL Server};SERVER=SRVDB01;DATABASE=SistemaRS;UID=sa;PWD=jblimpeza2015;TrustServerCertificate=yes;Encrypt=yes;"
+    return pyodbc.connect(connection_string)
 
 
 def get_jbc_connection():
-
-    return pyodbc.connect(_get_connection_string("JBC_SQL_SERVER_CONNECTION_STRING"))
+    connection_string = "DRIVER={ODBC Driver 18 for SQL Server};SERVER=SRVDB01;DATABASE=Jbc ;UID=sa;PWD=jblimpeza2015;TrustServerCertificate=yes;Encrypt=yes;"
+    return pyodbc.connect(connection_string)
 
 
 
@@ -14337,5 +14338,5 @@ def api_tickets_dp():
 
 if __name__ == "__main__":
 
-    socketio.run(app, host='192.168.0.79', port=5050, debug=True)
+    socketio.run(app, host='192.168.0.79', port=5051, debug=True)
 

@@ -27,23 +27,26 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 import os
 
 # import pdfkit  # Comentado devido a problemas com wkhtmltopdf
+WEASYPRINT_AVAILABLE = False
 try:
     import weasyprint
+    # Testar se o weasyprint funciona realmente tentando usar um módulo básico
+    from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
-    print("✅ WeasyPrint carregado com sucesso!")
-except ImportError as e:
+    print("[OK] WeasyPrint carregado com sucesso!")
+except Exception as e:
     WEASYPRINT_AVAILABLE = False
-    print(f"⚠️ WeasyPrint não está disponível: {e}")
-    print("💡 Instale com: pip install weasyprint")
+    print(f"[AVISO] WeasyPrint nao esta disponivel: {type(e).__name__}")
+    print("[DICA] Instale as dependencias do sistema ou use pdfkit como alternativa")
 
 # Verificar se pdfkit está disponível como fallback
 try:
     import pdfkit
     PDFKIT_AVAILABLE = True
-    print("✅ pdfkit disponível como fallback")
+    print("[OK] pdfkit disponivel como fallback")
 except ImportError:
     PDFKIT_AVAILABLE = False
-    print("⚠️ pdfkit não está disponível")
+    print("[AVISO] pdfkit nao esta disponivel")
 
 import pandas as pd
 
@@ -1008,7 +1011,7 @@ def atualizar_situacao_em_massa(cursor, db):
 
     elapsed_time = time.time() - start_time
 
-    print(f"✅ Atualização de situação concluída em {elapsed_time:.2f} segundos – {total_atualizadas} regsitros alterados.")
+    print(f"[OK] Atualizacao de situacao concluida em {elapsed_time:.2f} segundos – {total_atualizadas} registros alterados.")
 
 
 
@@ -9845,7 +9848,7 @@ def export_pdf(cpf):
 
     try:
 
-        print("🔹 Início do export_pdf")  # <-- print inicial
+        print("[INFO] Inicio do export_pdf")  # <-- print inicial
 
 
 
@@ -9933,19 +9936,19 @@ def export_pdf(cpf):
                     'no-outline': None
                 }
                 pdfkit.from_string(rendered_html, ficha_pdf_path, options=options)
-                print("✅ PDF gerado com sucesso usando pdfkit!")
+                print("[OK] PDF gerado com sucesso usando pdfkit!")
             elif WEASYPRINT_AVAILABLE:
                 # Fallback: usar WeasyPrint se disponível
-                print("🔹 Gerando PDF com WeasyPrint (fallback)...")
+                print("[INFO] Gerando PDF com WeasyPrint (fallback)...")
                 weasyprint.HTML(string=rendered_html).write_pdf(ficha_pdf_path)
-                print("✅ PDF gerado com sucesso usando WeasyPrint!")
+                print("[OK] PDF gerado com sucesso usando WeasyPrint!")
             else:
                 # Último recurso: salvar como HTML
-                print("⚠️ Nenhuma biblioteca de PDF disponível. Salvando como HTML...")
+                print("[AVISO] Nenhuma biblioteca de PDF disponivel. Salvando como HTML...")
                 html_path = ficha_pdf_path.replace('.pdf', '.html')
                 with open(html_path, 'w', encoding='utf-8') as f:
                     f.write(rendered_html)
-                print(f"🔹 Arquivo HTML salvo em: {html_path}")
+                print(f"[INFO] Arquivo HTML salvo em: {html_path}")
                 flash("PDF não pôde ser gerado. Arquivo HTML foi salvo como alternativa.", "warning")
                 return redirect(url_for('banco_rs'))
 

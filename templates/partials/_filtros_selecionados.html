@@ -98,9 +98,10 @@
         <a href="#" class="remove-filter" data-filter="disponibilidade_horario">✖</a>
     </li>
     {% endif %}
-    {% if request.args.get('cargo_indicado') %}
+    {% if request.args.getlist('cargo_indicado') %}
     <li>
-        <strong>Cargo Indicado:</strong> {{ request.args.get('cargo_indicado') }}
+        <strong>Cargo Indicado:</strong>
+        {{ ', '.join(request.args.getlist('cargo_indicado')) }}
         <a href="#" class="remove-filter" data-filter="cargo_indicado">✖</a>
     </li>
     {% endif %}

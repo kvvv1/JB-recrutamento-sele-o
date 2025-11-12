@@ -467,6 +467,67 @@
                     max-height: 200px;
                     overflow-y: auto;
                 }
+
+                #dropdown-cargo {
+                    position: relative;
+                    display: inline-block;
+                    width: 100%;
+                }
+
+                #dropdownMenuButtonCargo {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    background-color: #fff;
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                #dropdownMenuButtonCargo::after {
+                    content: '\25BC';
+                    font-size: 12px;
+                    color: #666;
+                    margin-left: auto;
+                }
+
+                #dropdown-options-cargo {
+                    width: 100%;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    padding: 0;
+                    border: 1px solid #ccc;
+                }
+
+                #dropdown-options-cargo li {
+                    display: flex;
+                    align-items: center;
+                }
+
+                #dropdown-options-cargo label {
+                    display: flex;
+                    align-items: center;
+                    margin: 0;
+                    cursor: pointer;
+                    width: 100%;
+                }
+
+                #dropdown-options-cargo input[type="checkbox"] {
+                    margin-right: 8px;
+                }
+
+                #dropdown-title-cargo {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    max-width: 100%;
+                    display: inline-block;
+                }
             </style>
 
             <!-- Filtro por Disponibilidade de Horário -->
@@ -498,31 +559,42 @@
 
             <!-- Filtro por Cargo Indicado -->
             <div class="col-md-4">
-                <label for="cargo_indicado">Cargo Indicado</label>
-                <select class="form-control" id="cargo_indicado" name="cargo_indicado">
-                    <option value="" selected>Todos</option>
-                    <option value="Portaria" {% if request.args.get('cargo_indicado')=='Portaria' %}selected{% endif %}>
-                        Portaria</option>
-                    <option value="Manutenção" {% if request.args.get('cargo_indicado')=='Manutenção' %}selected{% endif
-                        %}>Manutenção</option>
-                    <option value="Administrativo" {% if request.args.get('cargo_indicado')=='Administrativo'
-                        %}selected{% endif %}>Administrativo</option>
-                    <option value="Jovem Aprendiz Limpeza" {% if
-                        request.args.get('cargo_indicado')=='Jovem Aprendiz Limpeza' %}selected{% endif %}>Jovem
-                        Aprendiz Limpeza</option>
-                    <option value="Jovem Aprendiz Administrativo" {% if
-                        request.args.get('cargo_indicado')=='Jovem Aprendiz Administrativo' %}selected{% endif %}>Jovem
-                        Aprendiz Administrativo</option>
-                    <option value="Manobrista" {% if request.args.get('cargo_indicado')=='Manobrista' %}selected{% endif
-                        %}>Manobrista</option>
-                    <option value="Recepcionista" {% if request.args.get('cargo_indicado')=='Recepcionista' %}selected{%
-                        endif %}>Recepcionista</option>
-                    <option value="ASG" {% if request.args.get('cargo_indicado')=='ASG' %}selected{% endif %}>ASG
-                    </option>
-                    <option value="ZELADORIA" {% if request.args.get('cargo_indicado')=='ZELADORIA' %}selected{% endif
-                        %}>Zeladoria
-                    </option>
-                </select>
+                <div class="form-group">
+                    <label for="cargo_indicado">Cargo Indicado</label>
+                    <div class="dropdown" id="dropdown-cargo">
+                        <button class="btn btn-light dropdown-toggle form-control" type="button"
+                            id="dropdownMenuButtonCargo" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="dropdown-title-cargo">Selecione os cargos</span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonCargo"
+                            id="dropdown-options-cargo" style="width: 100%;">
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Portaria"
+                                        {% if 'Portaria' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Portaria</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Manutenção"
+                                        {% if 'Manutenção' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Manutenção</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Administrativo"
+                                        {% if 'Administrativo' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Administrativo</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Jovem Aprendiz Limpeza"
+                                        {% if 'Jovem Aprendiz Limpeza' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Jovem Aprendiz Limpeza</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Jovem Aprendiz Administrativo"
+                                        {% if 'Jovem Aprendiz Administrativo' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Jovem Aprendiz Administrativo</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Manobrista"
+                                        {% if 'Manobrista' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Manobrista</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="Recepcionista"
+                                        {% if 'Recepcionista' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Recepcionista</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="ASG"
+                                        {% if 'ASG' in request.args.getlist('cargo_indicado') %}checked{% endif %}>ASG</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="ZELADORIA"
+                                        {% if 'ZELADORIA' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Zeladoria</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="MENSAGEIRO"
+                                        {% if 'MENSAGEIRO' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Mensageiro</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="COPEIRA"
+                                        {% if 'COPEIRA' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Copeira</label></li>
+                            <li><label><input type="checkbox" name="cargo_indicado" value="SUPERVISOR PREDIAL"
+                                        {% if 'SUPERVISOR PREDIAL' in request.args.getlist('cargo_indicado') %}checked{% endif %}>Supervisor Predial</label></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <!-- Filtro por Recrutador -->
@@ -1184,6 +1256,33 @@
             if (e.target.tagName === 'INPUT') {
                 updateDropdownButton();
             }
+        });
+    });
+
+    // Gerenciamento do dropdown de cargos
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxesCargo = document.querySelectorAll('#dropdown-options-cargo input[type="checkbox"]');
+        const titleCargo = document.getElementById('dropdown-title-cargo');
+
+        // Atualiza o título com os cargos selecionados ao carregar a página
+        function updateCargoTitle() {
+            const checkedOptionsCargo = [];
+            checkboxesCargo.forEach(function (cb) {
+                if (cb.checked) {
+                    checkedOptionsCargo.push(cb.value);
+                }
+            });
+            titleCargo.textContent = checkedOptionsCargo.length > 0 ? checkedOptionsCargo.join(', ') : 'Selecione os cargos';
+        }
+
+        // Inicializa o título ao carregar
+        updateCargoTitle();
+
+        // Atualiza o título quando um checkbox é alterado
+        checkboxesCargo.forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                updateCargoTitle();
+            });
         });
     });
 

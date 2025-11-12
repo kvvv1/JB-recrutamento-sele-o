@@ -1,96 +1,152 @@
-from flask import Flask, send_file, render_template, request, redirect, url_for, g, jsonify, flash, session, make_response
-
-from flask import after_this_request
-
-import sqlite3
-
-from flask_paginate import Pagination, get_page_parameter
-
-from flask_socketio import SocketIO
-
-from datetime import datetime, timedelta, date
-
-import pytz
-
-import pyttsx3
-
-import pyodbc
-
-import pygame
-
-from werkzeug.utils import secure_filename
-
-from werkzeug.security import generate_password_hash, check_password_hash
-
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required, UserMixin
-
+import json
+import logging
+import math
 import os
-
-# import pdfkit  # Comentado devido a problemas com wkhtmltopdf
-WEASYPRINT_AVAILABLE = False
-try:
-    import weasyprint
-    # Testar se o weasyprint funciona realmente tentando usar um módulo básico
-    from weasyprint import HTML
-    WEASYPRINT_AVAILABLE = True
-    print("[OK] WeasyPrint carregado com sucesso!")
-except Exception as e:
-    WEASYPRINT_AVAILABLE = False
-    print(f"[AVISO] WeasyPrint nao esta disponivel: {type(e).__name__}")
-    print("[DICA] Instale as dependencias do sistema ou use pdfkit como alternativa")
-
-# Verificar se pdfkit está disponível como fallback
-try:
-    import pdfkit
-    PDFKIT_AVAILABLE = True
-    print("[OK] pdfkit disponivel como fallback")
-except ImportError:
-    PDFKIT_AVAILABLE = False
-    print("[AVISO] pdfkit nao esta disponivel")
-
-import pandas as pd
-
+import re
+import sqlite3
 import tempfile
-
-from functools import wraps  
-
-from flask import abort      
+import time
+from collections import defaultdict
+from datetime import datetime, timedelta, date
+from functools import wraps
+from io import BytesIO
+from pathlib import Path
+from shutil import which
+from typing import Optional
 
 import eventlet
-
 import eventlet.wsgi
-
-from gevent import monkey
-
-import math 
-
-from PyPDF2 import PdfMerger
-
-from io import BytesIO
-
+import pandas as pd
+import pygame
 import pyodbc
-
-import time
-
-import re
-
-from PyPDF2 import PdfReader
-
-import json
-
-from passlib.hash import pbkdf2_sha256
-
+import pytz
+import pyttsx3
+from flask import (
+    Flask,
+    abort,
+    after_this_request,
+    current_app,
+    flash,
+    g,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
+from flask_paginate import Pagination, get_page_parameter
+from flask_socketio import SocketIO
+from gevent import monkey
 from markupsafe import Markup
-
 from openpyxl import Workbook
-
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-
 from openpyxl.drawing.image import Image
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from passlib.hash import pbkdf2_sha256
+from PyPDF2 import PdfMerger, PdfReader
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
-from io import BytesIO
+logger = logging.getLogger(__name__)
 
-from collections import defaultdict
+WEASYPRINT_AVAILABLE = False
+WEASYPRINT_IMPORT_ERROR: Optional[Exception] = None
+PDFKIT_IMPORTED = False
+PDFKIT_IMPORT_ERROR: Optional[Exception] = None
+WKHTMLTOPDF_CMD: Optional[str] = None
+
+try:
+    from weasyprint import HTML
+
+    WEASYPRINT_AVAILABLE = True
+except Exception as exc:  # noqa: BLE001
+    WEASYPRINT_IMPORT_ERROR = exc
+    logger.warning(
+        "WeasyPrint indisponível: %s. Instale as dependências GTK+ ou mantenha o fallback.",
+        exc,
+    )
+
+try:
+    import pdfkit  # type: ignore
+
+    PDFKIT_IMPORTED = True
+    WKHTMLTOPDF_CMD = which("wkhtmltopdf")
+    if WKHTMLTOPDF_CMD is None:
+        logger.warning(
+            "pdfkit importado, mas o executável 'wkhtmltopdf' não foi encontrado no PATH."
+        )
+except ImportError as exc:
+    PDFKIT_IMPORT_ERROR = exc
+    logger.warning("pdfkit indisponível: %s.", exc)
+
+DEFAULT_PDFKIT_OPTIONS = {
+    "page-size": "A4",
+    "margin-top": "0.75in",
+    "margin-right": "0.75in",
+    "margin-bottom": "0.75in",
+    "margin-left": "0.75in",
+    "encoding": "UTF-8",
+    "no-outline": None,
+}
+
+
+def generate_pdf_from_html(rendered_html: str, output_path: Path) -> str:
+    """
+    Gera um PDF a partir de HTML utilizando o melhor backend disponível.
+
+    Retorna o nome do backend utilizado ou levanta RuntimeError em caso de falha.
+    """
+
+    errors = []
+
+    if WEASYPRINT_AVAILABLE:
+        try:
+            HTML(string=rendered_html, base_url=current_app.static_folder).write_pdf(
+                output_path
+            )
+            return "weasyprint"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Falha ao gerar PDF com WeasyPrint: %s", exc, exc_info=True)
+            errors.append(f"WeasyPrint: {exc}")
+
+    if PDFKIT_IMPORTED:
+        if WKHTMLTOPDF_CMD is None:
+            errors.append("pdfkit: executável 'wkhtmltopdf' não encontrado")
+        else:
+            try:
+                pdfkit.from_string(
+                    rendered_html,
+                    str(output_path),
+                    options=DEFAULT_PDFKIT_OPTIONS,
+                )
+                return "pdfkit"
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Falha ao gerar PDF com pdfkit: %s", exc, exc_info=True)
+                errors.append(f"pdfkit: {exc}")
+
+    if WEASYPRINT_IMPORT_ERROR:
+        errors.append(f"WeasyPrint indisponível: {WEASYPRINT_IMPORT_ERROR}")
+    if PDFKIT_IMPORT_ERROR:
+        errors.append(f"pdfkit indisponível: {PDFKIT_IMPORT_ERROR}")
+
+    detail = " | ".join(errors) if errors else "Nenhum backend de PDF disponível."
+    raise RuntimeError(f"Não foi possível gerar o PDF. {detail}")
+
+
+def ensure_parent_directory(path: Path) -> None:
+    """Garante que o diretório pai do arquivo exista."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
 
 
 
@@ -623,15 +679,7 @@ def atualizar_situacao_em_massa(cursor, db):
         cursor.execute(update_query, (situacao, situacao))
 
     db.commit()
-
-
-
-
-
 import time
-
-
-
 def atualizar_situacao_em_massa(cursor, db):
 
     """
@@ -1377,13 +1425,7 @@ def index():
 def home():
 
     return render_template('home.html')
-
-
-
-
-
 @app.route('/login', methods=['GET', 'POST'])
-
 def login():
 
     if current_user.is_authenticated:
@@ -1910,10 +1952,6 @@ def gerar_excel(dados, data_inicio, data_fim, tipo='resumo_geral', logo_path='st
 
 
 
-from flask import send_file
-
-
-
 @app.route('/relatorio_excel', methods=['POST'])
 
 def gerar_relatorio_excel():
@@ -2169,11 +2207,7 @@ def getattr_filter(obj, attr):
     except AttributeError:
 
         return 'Não informado'
-
-
-
 @app.route('/visualizar_ficha/<int:id>', methods=['GET'])
-
 def visualizar_ficha(id):
 
     candidato = get_candidato_by_id(id)  # Substitua pela lógica de busca do candidato
@@ -2829,9 +2863,7 @@ def update_ticket():
 
 
 @app.route('/submit_form', methods=['POST'])
-
 @login_required
-
 def submit_form():
 
     db = None
@@ -3605,9 +3637,6 @@ def _salvar_backup_formulario(dados):
         print(f"Erro ao salvar backup: {e}")
 
         return False
-
-
-
 def _remover_backup_formulario(cpf):
 
     """Remove backups existentes para um CPF após salvamento bem-sucedido"""
@@ -4359,9 +4388,7 @@ def banco_rs():
 
 
     # Converter resultados
-
     candidatos_dict = []
-
     for candidato in candidatos:
 
         candidato_dict = dict(zip([column[0] for column in cursor.description], candidato))
@@ -5077,9 +5104,7 @@ def manage_candidates():
 
 
 @app.route('/user_logs')
-
 @login_required
-
 def user_logs():
 
     if not current_user.is_admin:
@@ -5707,9 +5732,7 @@ def enhance_with_interview_data(cursor, cpf, response_data):
 
 
 @app.route('/verify_cpf_modal', methods=['POST'])
-
 @login_required
-
 def verify_cpf_modal():
 
     data = request.json
@@ -6493,9 +6516,7 @@ def send_tv(id):
 
 
 @app.route('/reposition_ticket/<int:id>', methods=['POST'])
-
 @login_required
-
 def reposition_ticket(id):
 
     db = get_sql_server_connection()
@@ -6996,7 +7017,7 @@ def indicadores():
 
 
 
-from flask import request, jsonify, send_file
+from flask import request, jsonify
 
 import pandas as pd
 
@@ -7005,9 +7026,7 @@ import io
 
 
 @app.route('/indicadores/data')
-
 @login_required
-
 def indicadores_data():
 
     import pandas as pd
@@ -7127,76 +7146,6 @@ def indicadores_data():
         """Função de compatibilidade para manter código existente funcionando"""
 
         return process_data_for_df(data, columns, force_row_with_zeros)
-
-        # Se não há dados ou é None, retorna uma linha de zeros ou lista vazia
-
-        if data is None or len(data) == 0:
-
-            if force_row_with_zeros:
-
-                return [tuple([0 for _ in range(len(columns))])]
-
-            else:
-
-                return []
-
-
-
-        # Verifica se cada linha tem o número correto de colunas
-
-        valid_data = []
-
-        for row in data:
-
-            # Se a linha é uma tupla/lista com o número correto de colunas
-
-            if isinstance(row, (tuple, list)) and len(row) == len(columns):
-
-                valid_data.append(row)
-
-            # Se a linha é um valor único (como no caso de agregações que retornam um único valor)
-
-            elif not isinstance(row, (tuple, list)):
-
-                # Cria uma tupla com o valor único na primeira posição e zeros no restante
-
-                valid_data.append((row,) + tuple([0 for _ in range(len(columns)-1)]))
-
-            # Se a linha tem menos colunas que o esperado
-
-            elif len(row) < len(columns):
-
-                # Completa com zeros até atingir o número correto de colunas
-
-                valid_data.append(tuple(row) + tuple([0 for _ in range(len(columns) - len(row))]))
-
-            # Se a linha tem mais colunas que o esperado
-
-            elif len(row) > len(columns):
-
-                # Trunca para o número correto de colunas
-
-                valid_data.append(tuple(row[:len(columns)]))
-
-
-
-        # Se após a validação não restarem dados válidos
-
-        if not valid_data:
-
-            if force_row_with_zeros:
-
-                return [tuple([0 for _ in range(len(columns))])]
-
-            else:
-
-                return []
-
-
-
-        return valid_data
-
-
 
 
 
@@ -7382,66 +7331,6 @@ def indicadores_data():
 
         result = df.to_dict(orient='records')
 
-        query = """
-
-            SELECT 
-
-                CAST(r.created_at AS DATE) AS data_ordenacao,
-
-                CONVERT(VARCHAR, CAST(r.created_at AS DATE), 103) AS data_formatada,
-
-                COUNT(*) AS total_entrevistados,
-
-                SUM(CASE WHEN r.situacao LIKE 'Aprovado%' THEN 1 ELSE 0 END) AS total_aprovados,
-
-                SUM(CASE WHEN r.situacao LIKE 'Reprovado%' THEN 1 ELSE 0 END) AS total_reprovados,
-
-                SUM(CASE WHEN r.situacao LIKE 'Admitido%' THEN 1 ELSE 0 END) AS total_admitidos,
-
-                SUM(CASE WHEN LTRIM(RTRIM(ISNULL(r.situacao, ''))) = '' OR r.situacao = 'Não Avaliado' THEN 1 ELSE 0 END) AS total_sem_avaliacao,
-
-                SUM(CASE WHEN r.situacao = 'Em Verificação' THEN 1 ELSE 0 END) AS total_em_verificacao,
-
-                SUM(CASE WHEN r.situacao = 'Em Conversa' THEN 1 ELSE 0 END) AS total_em_conversa,
-
-                SUM(CASE 
-
-                        WHEN r.situacao NOT LIKE 'Aprovado%' 
-
-                             AND r.situacao NOT LIKE 'Reprovado%' 
-
-                             AND r.situacao NOT LIKE 'Admitido%'
-
-                             AND LTRIM(RTRIM(ISNULL(r.situacao, ''))) <> ''
-
-                             AND r.situacao NOT IN ('Não Avaliado', 'Em Verificação', 'Em Conversa')
-
-                        THEN 1 ELSE 0 
-
-                    END) AS total_outros
-
-            FROM registration_form r
-
-            WHERE r.created_at >= ? AND r.created_at < ?
-
-            GROUP BY CAST(r.created_at AS DATE)
-
-            ORDER BY data_ordenacao
-
-        """
-
-        cursor.execute(query, (start_date, end_date))
-
-        data = cursor.fetchall()
-
-        columns = [desc[0] for desc in cursor.description]
-
-        data = ajusta_shape(data, columns)
-
-        df = pd.DataFrame(data, columns=columns)
-
-        result = df.to_dict(orient='records')
-
 
 
     elif tipo == 'semana':
@@ -7514,74 +7403,6 @@ def indicadores_data():
 
         result = df.to_dict(orient='records')
 
-        query = """
-
-            SELECT 
-
-                CASE DATENAME(WEEKDAY, created_at)
-
-                    WHEN 'Monday' THEN 'Segunda-feira'
-
-                    WHEN 'Tuesday' THEN 'Terça-feira'
-
-                    WHEN 'Wednesday' THEN 'Quarta-feira'
-
-                    WHEN 'Thursday' THEN 'Quinta-feira'
-
-                    WHEN 'Friday' THEN 'Sexta-feira'
-
-                    WHEN 'Saturday' THEN 'Sábado'
-
-                    WHEN 'Sunday' THEN 'Domingo'
-
-                END AS dia_da_semana,
-
-                COUNT(*) AS total_entrevistados,
-
-                SUM(CASE WHEN situacao LIKE 'Aprovado%' THEN 1 ELSE 0 END) AS total_aprovados,
-
-                SUM(CASE WHEN situacao LIKE 'Reprovado%' THEN 1 ELSE 0 END) AS total_reprovados
-
-            FROM registration_form
-
-            WHERE created_at >= ? AND created_at < ?
-
-            GROUP BY DATENAME(WEEKDAY, created_at)
-
-            ORDER BY 
-
-                CASE DATENAME(WEEKDAY, created_at)
-
-                    WHEN 'Monday' THEN 1
-
-                    WHEN 'Tuesday' THEN 2
-
-                    WHEN 'Wednesday' THEN 3
-
-                    WHEN 'Thursday' THEN 4
-
-                    WHEN 'Friday' THEN 5
-
-                    WHEN 'Saturday' THEN 6
-
-                    WHEN 'Sunday' THEN 7
-
-                END
-
-        """
-
-        cursor.execute(query, (start_date, end_date))
-
-        data = cursor.fetchall()
-
-        columns = [desc[0] for desc in cursor.description]
-
-        data = ajusta_shape(data, columns)
-
-        df = pd.DataFrame(data, columns=columns)
-
-        result = df.to_dict(orient='records')
-
 
 
     elif tipo == 'categoria':
@@ -7619,44 +7440,6 @@ def indicadores_data():
         columns = [desc[0] for desc in cursor.description]
 
         data = process_data_for_df(data, columns)
-
-        df = pd.DataFrame(data, columns=columns)
-
-        result = df.to_dict(orient='records')
-
-        query = """
-
-            SELECT 
-
-                t.category,
-
-                COUNT(*) AS total_entrevistados,
-
-                SUM(CASE WHEN r.situacao LIKE 'Aprovado%' THEN 1 ELSE 0 END) AS total_aprovados,
-
-                SUM(CASE WHEN r.situacao LIKE 'Reprovado%' THEN 1 ELSE 0 END) AS total_reprovados,
-
-                SUM(CASE WHEN r.situacao LIKE 'Admitido%' THEN 1 ELSE 0 END) AS total_admitidos
-
-            FROM tickets t
-
-            LEFT JOIN registration_form r ON t.cpf = r.cpf
-
-            WHERE t.created_at >= ? AND t.created_at < ?
-
-            GROUP BY t.category
-
-            ORDER BY total_entrevistados DESC
-
-        """
-
-        cursor.execute(query, (start_date, end_date))
-
-        data = cursor.fetchall()
-
-        columns = [desc[0] for desc in cursor.description]
-
-        data = ajusta_shape(data, columns)
 
         df = pd.DataFrame(data, columns=columns)
 
@@ -7761,9 +7544,6 @@ def indicadores_data():
         df = pd.DataFrame(data, columns=columns)
 
         result = df.to_dict(orient='records')
-
-
-
     elif tipo == 'lista_reprovados':
 
         query = """
@@ -7820,7 +7600,7 @@ def indicadores_data():
 
         columns = [desc[0] for desc in cursor.description]
 
-        data = ajusta_shape(data, columns)
+        data = process_data_for_df(data, columns)
 
         df = pd.DataFrame(data, columns=columns)
 
@@ -7888,64 +7668,6 @@ def indicadores_data():
 
         result = df.to_dict(orient='records')
 
-        query = """
-
-            SELECT 
-
-                recrutador,
-
-                COUNT(*) AS total_atendimentos,
-
-                SUM(CASE WHEN situacao LIKE 'Aprovado%' THEN 1 ELSE 0 END) AS total_aprovados,
-
-                SUM(CASE WHEN situacao LIKE 'Reprovado%' THEN 1 ELSE 0 END) AS total_reprovados,
-
-                SUM(CASE WHEN situacao LIKE 'Admitido%' THEN 1 ELSE 0 END) AS total_admitidos,
-
-                SUM(CASE WHEN LTRIM(RTRIM(ISNULL(situacao, ''))) = '' OR situacao = 'Não Avaliado' THEN 1 ELSE 0 END) AS total_sem_avaliacao,
-
-                SUM(CASE WHEN situacao = 'Em Verificação' THEN 1 ELSE 0 END) AS total_em_verificacao,
-
-                SUM(CASE WHEN situacao = 'Em Conversa' THEN 1 ELSE 0 END) AS total_em_conversa,
-
-                SUM(CASE 
-
-                        WHEN situacao NOT LIKE 'Aprovado%' 
-
-                             AND situacao NOT LIKE 'Reprovado%' 
-
-                             AND situacao NOT LIKE 'Admitido%'
-
-                             AND LTRIM(RTRIM(ISNULL(situacao, ''))) <> ''
-
-                             AND situacao NOT IN ('Não Avaliado', 'Em Verificação', 'Em Conversa')
-
-                        THEN 1 ELSE 0 
-
-                    END) AS total_outros
-
-            FROM registration_form
-
-            WHERE created_at >= ? AND created_at < ?
-
-            GROUP BY recrutador
-
-            ORDER BY total_aprovados DESC
-
-        """
-
-        cursor.execute(query, (start_date, end_date))
-
-        data = cursor.fetchall()
-
-        columns = [desc[0] for desc in cursor.description]
-
-        data = ajusta_shape(data, columns)
-
-        df = pd.DataFrame(data, columns=columns)
-
-        result = df.to_dict(orient='records')
-
 
 
     elif tipo == 'tempo_espera_atendimento':
@@ -7975,36 +7697,6 @@ def indicadores_data():
         columns = [desc[0] for desc in cursor.description]
 
         data = process_data_for_df(data, columns)
-
-        df = pd.DataFrame(data, columns=columns)
-
-        result = df.to_dict(orient='records')
-
-        query = """
-
-            SELECT 
-
-                t.category,
-
-                AVG(CASE WHEN t.called_at IS NOT NULL THEN DATEDIFF(second, t.created_at, t.called_at) ELSE NULL END) / 60.0 AS tempo_medio_espera_min,
-
-                AVG(CASE WHEN t.called_at IS NOT NULL AND t.concluded_at IS NOT NULL THEN DATEDIFF(second, t.called_at, t.concluded_at) ELSE NULL END) / 60.0 AS tempo_medio_atendimento_min
-
-            FROM tickets t
-
-            WHERE t.created_at >= ? AND t.created_at < ?
-
-            GROUP BY t.category
-
-        """
-
-        cursor.execute(query, (start_date, end_date))
-
-        data = cursor.fetchall()
-
-        columns = [desc[0] for desc in cursor.description]
-
-        data = ajusta_shape(data, columns)
 
         df = pd.DataFrame(data, columns=columns)
 
@@ -8050,7 +7742,7 @@ def indicadores_data():
 
         columns = [desc[0] for desc in cursor.description]
 
-        data = ajusta_shape(data, columns)
+        data = process_data_for_df(data, columns)
 
         df = pd.DataFrame(data, columns=columns)
 
@@ -8090,7 +7782,7 @@ def indicadores_data():
 
         columns = [desc[0] for desc in cursor.description]
 
-        data = ajusta_shape(data, columns)
+        data = process_data_for_df(data, columns)
 
         df = pd.DataFrame(data, columns=columns)
 
@@ -8113,7 +7805,6 @@ def indicadores_data():
 
 
 @app.route('/exportar_relatorio_situacao')
-
 def exportar_relatorio_situacao():
 
     from io import BytesIO
@@ -8378,14 +8069,6 @@ def indicadores_export():
 
 
 
-    # Aqui basta repetir o bloco acima para cada tipo:
-
-    # (Coloque os mesmos queries e blocos DataFrame)
-
-    # Só vou deixar o exemplo do quantitativo, repita igual para os demais tipos!
-
-
-
     if tipo == 'quantitativo':
 
         query = """
@@ -8448,14 +8131,6 @@ def indicadores_export():
 
         df = pd.DataFrame(data, columns=columns)
 
-    # ... repita para os outros tipos igual ao endpoint de cima!
-
-
-
-    # Copie o bloco acima para os demais tipos, como foi feito na rota /indicadores/data.
-
-
-
     else:
 
         df = pd.DataFrame()
@@ -8489,7 +8164,6 @@ def indicadores_export():
 # Rota para pegar os dados de um dia específico
 
 @app.route('/api/get-day-data')
-
 def get_day_data():
 
     date = request.args.get('date')  # Data selecionada no calendário
@@ -8685,7 +8359,6 @@ def get_calendar_events():
 # Rota para os indicadores diários
 
 @app.route('/api/get-indicators')
-
 def get_indicators():
 
     date = request.args.get('date')
@@ -9273,9 +8946,6 @@ def historico_completo():
 
 
     return render_template('historico_completo.html', tickets=tickets_list)
-
-
-
 def save_registration_form_from_ticket(ticket):
 
     db = get_sql_server_connection()
@@ -9383,7 +9053,6 @@ def save_registration_form_from_ticket(ticket):
 
 
 @app.route('/conclude_ticket/<int:id>', methods=['POST'])
-
 def conclude_ticket(id):
 
     db = get_sql_server_connection()
@@ -9848,21 +9517,13 @@ def export_pdf(cpf):
 
     try:
 
-        print("[INFO] Inicio do export_pdf")  # <-- print inicial
-
-
-
         cursor.execute('SELECT * FROM registration_form WHERE cpf = ?', (cpf,))
 
-        candidato = cursor.fetchone()
-
-        print("🔹 Resultado do fetchone:", candidato)  # <-- print resultado SQL
+        candidato_row = cursor.fetchone()
 
 
 
-        if not candidato:
-
-            print("🔹 Candidato não encontrado no banco de dados.")
+        if not candidato_row:
 
             flash("Candidato não encontrado.", "danger")
 
@@ -9872,99 +9533,101 @@ def export_pdf(cpf):
 
         columns = [column[0] for column in cursor.description]
 
-        candidato = dict(zip(columns, candidato))
-
-        print("🔹 Dados do candidato como dict:", candidato)  # <-- print dict candidato
+        candidato = dict(zip(columns, candidato_row))
 
 
-
-        # Data de nascimento
 
         if candidato.get('data_nasc'):
 
             try:
 
-                print("🔹 Data de nascimento original:", candidato['data_nasc'])
-
                 candidato['data_nasc'] = candidato['data_nasc'].strftime('%d/%m/%Y')
 
-                print("🔹 Data de nascimento formatada:", candidato['data_nasc'])
-
-            except AttributeError as e:
-
-                print("🔹 Erro ao formatar data de nascimento:", e)
+            except AttributeError:
 
                 candidato['data_nasc'] = "Data inválida"
 
 
 
-        curriculo_path = os.path.join('static', 'uploads', candidato.get('curriculo', '')) if candidato.get('curriculo') else None
+        curriculo_path: Optional[Path] = None
 
-        print("🔹 Curriculo path:", curriculo_path)
+        if candidato.get('curriculo'):
+
+            curriculo_path = Path('static') / 'uploads' / candidato['curriculo']
+
+            if curriculo_path.suffix.lower() != '.pdf':
+
+                flash(
+
+                    "O currículo anexado não está em formato PDF e será ignorado.",
+
+                    "warning",
+
+                )
+
+                curriculo_path = None
+
+            elif not curriculo_path.exists():
+
+                flash("Currículo informado não foi encontrado no servidor.", "warning")
+
+                curriculo_path = None
 
 
 
         logo_url = 'https://jbconservadora.com.br/wp-content/uploads/2020/09/logo-final-jb.png'
 
-        rendered_html = render_template('candidato_template.html', form_data=candidato, logo_url=logo_url)
+        rendered_html = render_template(
 
-        ficha_pdf_path = os.path.join('static', 'temp', f'Ficha_{cpf}.pdf')
+            'candidato_template.html',
 
+            form_data=candidato,
 
+            logo_url=logo_url,
 
-        if not os.path.exists(os.path.dirname(ficha_pdf_path)):
-
-            print("🔹 Criando diretório:", os.path.dirname(ficha_pdf_path))
-
-            os.makedirs(os.path.dirname(ficha_pdf_path))
+        )
 
 
 
-        print("🔹 Gerando PDF da ficha...")
+        output_dir = Path('static') / 'temp'
+
+        ficha_pdf_path = output_dir / f'Ficha_{cpf}.pdf'
+
+        ensure_parent_directory(ficha_pdf_path)
+
+
 
         try:
-            if PDFKIT_AVAILABLE:
-                # Usar pdfkit (funcionando no Windows)
-                print("🔹 Gerando PDF com pdfkit...")
-                options = {
-                    'page-size': 'A4',
-                    'margin-top': '0.75in',
-                    'margin-right': '0.75in',
-                    'margin-bottom': '0.75in',
-                    'margin-left': '0.75in',
-                    'encoding': "UTF-8",
-                    'no-outline': None
-                }
-                pdfkit.from_string(rendered_html, ficha_pdf_path, options=options)
-                print("[OK] PDF gerado com sucesso usando pdfkit!")
-            elif WEASYPRINT_AVAILABLE:
-                # Fallback: usar WeasyPrint se disponível
-                print("[INFO] Gerando PDF com WeasyPrint (fallback)...")
-                weasyprint.HTML(string=rendered_html).write_pdf(ficha_pdf_path)
-                print("[OK] PDF gerado com sucesso usando WeasyPrint!")
-            else:
-                # Último recurso: salvar como HTML
-                print("[AVISO] Nenhuma biblioteca de PDF disponivel. Salvando como HTML...")
-                html_path = ficha_pdf_path.replace('.pdf', '.html')
-                with open(html_path, 'w', encoding='utf-8') as f:
-                    f.write(rendered_html)
-                print(f"[INFO] Arquivo HTML salvo em: {html_path}")
-                flash("PDF não pôde ser gerado. Arquivo HTML foi salvo como alternativa.", "warning")
-                return redirect(url_for('banco_rs'))
 
-        except Exception as e:
-            print(f"🔹 Erro ao gerar PDF: {e}")
-            print(f"🔹 Tipo do erro: {type(e)}")
-            flash(f"Erro ao gerar PDF: {e}", "danger")
+            backend = generate_pdf_from_html(rendered_html, ficha_pdf_path)
+
+            logger.info(
+
+                "Ficha do candidato %s gerada com sucesso utilizando %s em %s",
+
+                cpf,
+
+                backend,
+
+                ficha_pdf_path,
+
+            )
+
+        except RuntimeError as exc:
+
+            logger.error(
+
+                "Falha ao gerar PDF da ficha para CPF %s: %s", cpf, exc, exc_info=True
+
+            )
+
+            flash(str(exc), "danger")
+
             return redirect(url_for('banco_rs'))
 
-        print("🔹 PDF da ficha gerado:", ficha_pdf_path, "Tamanho:", os.path.getsize(ficha_pdf_path) if os.path.exists(ficha_pdf_path) else 0)
 
 
-
-        if not os.path.exists(ficha_pdf_path) or os.path.getsize(ficha_pdf_path) == 0:
-
-            print("🔹 ERRO: PDF da ficha não foi gerado corretamente.")
+        if not ficha_pdf_path.exists() or ficha_pdf_path.stat().st_size == 0:
 
             flash("Erro ao gerar a ficha do candidato.", "danger")
 
@@ -9974,91 +9637,103 @@ def export_pdf(cpf):
 
         merger = PdfMerger()
 
+        try:
 
+            with ficha_pdf_path.open('rb') as ficha_file:
 
-        # Adiciona ficha do candidato
-
-        with open(ficha_pdf_path, 'rb') as file:
-
-            merger.append(file)
-
-        print("🔹 Ficha do candidato anexada ao merger.")
+                merger.append(ficha_file)
 
 
 
-        # Tenta anexar currículo
+            if curriculo_path:
 
-        if curriculo_path and os.path.exists(curriculo_path):
+                try:
 
-            try:
+                    with curriculo_path.open('rb') as curriculo_file:
 
-                print("🔹 Tentando anexar currículo:", curriculo_path)
+                        PdfReader(curriculo_file)
 
-                with open(curriculo_path, "rb") as f:
+                    with curriculo_path.open('rb') as curriculo_file:
 
-                    PdfReader(f)
+                        merger.append(curriculo_file)
 
-                with open(curriculo_path, 'rb') as file:
+                except Exception as exc:
 
-                    merger.append(file)
+                    logger.warning(
 
-                print("🔹 Currículo anexado com sucesso.")
+                        "Não foi possível anexar currículo %s ao PDF do CPF %s: %s",
 
-            except Exception as e:
+                        curriculo_path,
 
-                print("🔹 Erro ao anexar currículo:", e)
+                        cpf,
 
-                flash("O currículo não pôde ser anexado ao PDF.", "warning")
+                        exc,
 
-        else:
+                        exc_info=True,
 
-            print("🔹 Currículo não encontrado ou caminho vazio.")
+                    )
 
+                    flash(
 
+                        "O currículo não pôde ser anexado ao PDF final. "
 
-        output_pdf_path = os.path.join('static', 'temp', f'Candidato_{cpf}.pdf')
+                        "Faça o download apenas da ficha.",
 
-        with open(output_pdf_path, 'wb') as output_file:
+                        "warning",
 
-            merger.write(output_file)
-
-        merger.close()
-
-        print("🔹 PDF final gerado:", output_pdf_path, "Tamanho:", os.path.getsize(output_pdf_path) if os.path.exists(output_pdf_path) else 0)
+                    )
 
 
 
-        if not os.path.exists(output_pdf_path) or os.path.getsize(output_pdf_path) == 0:
+            output_pdf_path = output_dir / f'Candidato_{cpf}.pdf'
 
-            print("🔹 ERRO: PDF final não foi gerado corretamente.")
+            with output_pdf_path.open('wb') as output_file:
 
-            flash("Erro ao mesclar os PDFs.", "danger")
+                merger.write(output_file)
+
+        finally:
+
+            merger.close()
+
+
+
+        if not output_pdf_path.exists() or output_pdf_path.stat().st_size == 0:
+
+            flash("Erro ao mesclar os documentos do candidato.", "danger")
 
             return redirect(url_for('banco_rs'))
 
 
 
-        print("🔹 Tudo pronto! Retornando arquivo para download.")
+        return send_file(
 
-        return send_file(output_pdf_path, mimetype='application/pdf', 
+            str(output_pdf_path),
 
-                        as_attachment=True, download_name=f'Candidato_{cpf}.pdf')
+            mimetype='application/pdf',
+
+            as_attachment=True,
+
+            download_name=f'Candidato_{cpf}.pdf',
+
+        )
 
 
 
-    except Exception as e:
+    except Exception as exc:
 
-        print("🔹 ERRO GERAL:", e)
+        logger.error(
 
-        flash(f"Erro ao gerar o PDF do candidato: {e}", "danger")
+            "Erro inesperado ao exportar PDF do CPF %s: %s", cpf, exc, exc_info=True
+
+        )
+
+        flash(f"Erro ao gerar o PDF do candidato: {exc}", "danger")
 
         return redirect(url_for('banco_rs'))
 
 
 
     finally:
-
-        print("🔹 Fechando cursor e conexão com o banco.")
 
         cursor.close()
 
@@ -10163,7 +9838,6 @@ def get_registration_data():
 @app.route('/export_excel/<cpf>')
 
 @login_required
-
 def export_excel(cpf):
 
     db = get_sql_server_connection()
@@ -10376,7 +10050,7 @@ def sistema_os():
 
 
 
-@app.route('/get_data_nasc/<cpf>', methods=['GET'])
+@app.route('/get_data_nasc/<cpf>')
 
 def get_data_nasc(cpf):
 
@@ -10825,9 +10499,7 @@ def modal_view(cpf):
 
 
 @app.route('/update_form/<cpf>', methods=['GET', 'POST'])
-
 @login_required
-
 def update_form(cpf):
 
     db = None
@@ -11485,12 +11157,8 @@ def update_registration():
 
 
 @app.route('/auto_save_form/<cpf>', methods=['POST'])
-
 @login_required
-
 def auto_save_form(cpf):
-
-    import re  # Garante que o módulo está disponível
 
     db = None
 
@@ -12077,9 +11745,7 @@ def set_recruiter():
 
 
 @app.route('/create_ficha_manual', methods=['POST'])
-
 @login_required
-
 def create_ficha_manual():
 
     nome_completo = request.form.get('nome_completo', '').strip()
@@ -12741,9 +12407,7 @@ def local_recovery():
 @app.route('/admin/recovery', methods=['GET', 'POST'])
 
 @login_required
-
 @admin_required
-
 def admin_recovery():
 
     """Interface administrativa para recuperar fichas que falharam no salvamento."""
@@ -13439,52 +13103,99 @@ def send_to_dp(id):
                         cursor = db.cursor()
 
                         try:
+
                             # Buscar o ticket (opcional, só para validar)
+
                             cursor.execute('SELECT * FROM tickets WHERE id = ?', (id,))
+
                             ticket = cursor.fetchone()
 
+
+
                             if not ticket:
+
                                 return jsonify(success=False, message="Ticket não encontrado"), 404
+
+
 
                             sent_to_dp_at = datetime.now(BRASILIA_TZ).strftime('%Y-%m-%d %H:%M:%S')
 
+
+
                             # Atualizar ticket para enviar ao DP
+
                             cursor.execute('''
+
                                 UPDATE tickets 
+
                                 SET status = 'CHAMADO',
+
                                     dp_status = 'No DP',
+
                                     dp_start_time = ?,
+
                                     dp_process_start_time = NULL,
+
                                     dp_end_time = NULL,
+
                                     dp_notes = NULL,
+
                                     dp_responsible = NULL,
+
                                     dp_process_by = NULL,
+
                                     dp_completed_time = NULL,
+
                                     dp_completed_by = NULL,
+
                                     concluded_at = NULL
+
                                 WHERE id = ?
+
                             ''', (sent_to_dp_at, id))
+
+
 
                             db.commit()
 
+
+
                             # Notificar painel DP em tempo real (SocketIO)
+
                             socketio.emit('new_dp_ticket', {
+
                                 'id': id,
+
                                 'ticket_number': ticket.ticket_number,
+
                                 'name': ticket.name,
+
                                 'category': ticket.category,
+
                                 'dp_status': 'No DP',
+
                                 'dp_start_time': sent_to_dp_at
+
                             }, namespace='/')
+
+
 
                             return jsonify(success=True, message="Ticket enviado para o DP com sucesso")
 
+                
+
                         except Exception as e:
+
                             db.rollback()
+
                             return jsonify(success=False, message=f"Erro ao enviar ticket para o DP: {str(e)}"), 500
 
+
+
                         finally:
+
                             cursor.close()
+
                             db.close()
 
                         
@@ -13492,9 +13203,7 @@ def send_to_dp(id):
 
 
 @app.route('/painel_dp')
-
 @login_required
-
 def painel_dp():
 
     """
@@ -14254,11 +13963,7 @@ def display_tv():
 
 
 from datetime import datetime
-
-
-
 @app.route('/api/tickets_dp')
-
 def api_tickets_dp():
 
     db = get_sql_server_connection()
@@ -14338,4 +14043,3 @@ def api_tickets_dp():
 if __name__ == "__main__":
 
     socketio.run(app, host='192.168.0.79', port=5051, debug=True)
-

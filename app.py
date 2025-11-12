@@ -4517,10 +4517,18 @@ def banco_rs():
     # Filtrar os parâmetros ativos, excluindo os indesejados
 
     filtros_ativos = {
-
         k: v for k, v in form_data.items() if v and k not in parametros_excluidos
-
     }
+
+    campos_multivalorados = {
+        'regioes_preferencia': regioes_preferencia,
+        'disponibilidade_horario': disponibilidade_horario,
+        'cargo_indicado': cargos_indicados
+    }
+
+    for campo, valores in campos_multivalorados.items():
+        if valores:
+            filtros_ativos[campo] = ', '.join(valores)
 
 
 

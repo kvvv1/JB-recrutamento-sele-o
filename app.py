@@ -13,6 +13,7 @@ from io import BytesIO
 from pathlib import Path
 from shutil import which
 from typing import Optional
++import inspect
 
 import eventlet
 import eventlet.wsgi
@@ -67,6 +68,13 @@ WKHTMLTOPDF_CMD: Optional[str] = None
 
 try:
     from weasyprint import HTML
+    import pydyf  # type: ignore
+
+    pdf_init_params = inspect.signature(pydyf.PDF.__init__).parameters
+    if len(pdf_init_params) < 3:
+        raise RuntimeError(
+            "pydyf instalado é incompatível (versão muito antiga para o WeasyPrint atual)."
+        )
 
     WEASYPRINT_AVAILABLE = True
 except Exception as exc:  # noqa: BLE001
@@ -679,7 +687,6 @@ def atualizar_situacao_em_massa(cursor, db):
         cursor.execute(update_query, (situacao, situacao))
 
     db.commit()
-import time
 def atualizar_situacao_em_massa(cursor, db):
 
     """
@@ -2217,15 +2224,6 @@ def visualizar_ficha(id):
         return "Candidato não encontrado", 404
 
     return render_template('partials/_ficha_visualizacao.html', candidato=candidato)
-
-
-
-
-
-
-
-
-
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
 
 @login_required
@@ -2859,9 +2857,6 @@ def update_ticket():
 
 
     return redirect(url_for('painel'))  # Certifique-se de que a rota 'painel' exista
-
-
-
 @app.route('/submit_form', methods=['POST'])
 @login_required
 def submit_form():
@@ -4382,11 +4377,6 @@ def banco_rs():
     cursor.execute(query, params)
 
     candidatos = cursor.fetchall()
-
-
-
-
-
     # Converter resultados
     candidatos_dict = []
     for candidato in candidatos:
@@ -5100,9 +5090,6 @@ def manage_candidates():
     
 
     return render_template('manage_candidates.html', candidates=candidates)
-
-
-
 @app.route('/user_logs')
 @login_required
 def user_logs():
@@ -5726,11 +5713,6 @@ def enhance_with_interview_data(cursor, cpf, response_data):
             'warning': 'Este candidato já participou de uma entrevista anteriormente.'  # Adiciona o aviso
 
         })
-
-
-
-
-
 @app.route('/verify_cpf_modal', methods=['POST'])
 @login_required
 def verify_cpf_modal():
@@ -6506,15 +6488,6 @@ def send_tv(id):
         cursor.close()
 
         db.close()
-
-
-
-
-
-
-
-
-
 @app.route('/reposition_ticket/<int:id>', methods=['POST'])
 @login_required
 def reposition_ticket(id):
@@ -7022,9 +6995,6 @@ from flask import request, jsonify
 import pandas as pd
 
 import io
-
-
-
 @app.route('/indicadores/data')
 @login_required
 def indicadores_data():
@@ -7801,9 +7771,6 @@ def indicadores_data():
     db.close()
 
     return jsonify({'data': result})
-
-
-
 @app.route('/exportar_relatorio_situacao')
 def exportar_relatorio_situacao():
 
@@ -8357,7 +8324,6 @@ def get_calendar_events():
 
 
 # Rota para os indicadores diários
-
 @app.route('/api/get-indicators')
 def get_indicators():
 
@@ -9049,9 +9015,6 @@ def save_registration_form_from_ticket(ticket):
     cursor.close()
 
     db.close()
-
-
-
 @app.route('/conclude_ticket/<int:id>', methods=['POST'])
 def conclude_ticket(id):
 
@@ -9836,7 +9799,6 @@ def get_registration_data():
 
 
 @app.route('/export_excel/<cpf>')
-
 @login_required
 def export_excel(cpf):
 
@@ -10495,9 +10457,6 @@ def modal_view(cpf):
         cpf=cpf
 
     )
-
-
-
 @app.route('/update_form/<cpf>', methods=['GET', 'POST'])
 @login_required
 def update_form(cpf):
@@ -11153,9 +11112,6 @@ def update_registration():
         if db:
 
             db.close()
-
-
-
 @app.route('/auto_save_form/<cpf>', methods=['POST'])
 @login_required
 def auto_save_form(cpf):
@@ -11741,9 +11697,6 @@ def set_recruiter():
         flash('Erro ao definir recrutador.', 'danger')
 
         return redirect(request.referrer)
-
-
-
 @app.route('/create_ficha_manual', methods=['POST'])
 @login_required
 def create_ficha_manual():
@@ -12405,7 +12358,6 @@ def local_recovery():
 
 
 @app.route('/admin/recovery', methods=['GET', 'POST'])
-
 @login_required
 @admin_required
 def admin_recovery():
@@ -13197,11 +13149,6 @@ def send_to_dp(id):
                             cursor.close()
 
                             db.close()
-
-                        
-
-
-
 @app.route('/painel_dp')
 @login_required
 def painel_dp():
@@ -13957,11 +13904,6 @@ def display_tv():
         if db:
 
             db.close()
-
-
-
-
-
 from datetime import datetime
 @app.route('/api/tickets_dp')
 def api_tickets_dp():

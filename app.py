@@ -14,6 +14,13 @@ from pathlib import Path
 from shutil import which
 from typing import Optional
 import inspect
+import eventlet
+import eventlet.wsgi
+import pandas as pd
+import pygame
+import pyodbc
+import pytz
+import pyttsx3
 from flask import (
     Flask,
     abort,
@@ -2879,7 +2886,6 @@ def update_ticket():
 @app.route('/export_pdf/<cpf>')
 
 @login_required
-
 def export_pdf(cpf):
 
     db = get_sql_server_connection()
@@ -3678,7 +3684,6 @@ def submit_form():
         # Commit final das alterações
 
         db.commit()
-
         print(f"Commit finalizado com sucesso para CPF: {cpf}")
 
         
@@ -4408,9 +4413,6 @@ def banco_rs():
         params.append(f'%{assinatura_gerencia}%')
 
         total_params.append(f'%{assinatura_gerencia}%')
-
-
-
     if avaliacao_geral:
 
              if avaliacao_geral == 'Aprovado':
@@ -5150,7 +5152,6 @@ def view_or_fill_inscription(id):
 @app.route('/admin/manage_users', methods=['GET', 'POST'])
 
 @login_required
-
 def manage_users():
 
     if not current_user.is_admin:
@@ -6709,9 +6710,6 @@ def reposition_ticket(id):
     socketio.emit('update_queue', {'data': 'ticket repositioned'}, namespace='/')
 
     return redirect(url_for('painel'))
-
-
-
 @app.route('/reset_indicators', methods=['POST'])
 @login_required
 def reset_indicators():
@@ -9992,7 +9990,6 @@ def get_data_nasc(cpf):
 @app.route('/view_registration/<cpf>')
 
 @login_required
-
 def view_registration(cpf):
 
     db = get_sql_server_connection()

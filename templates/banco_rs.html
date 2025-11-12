@@ -558,13 +558,17 @@
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonHorario"
                             id="dropdown-options-horario" style="width: 100%;">
                             <li><label><input type="checkbox" name="disponibilidade_horario"
-                                        value="44h (Horário Comercial)">
+                                        value="44h (Horário Comercial)"
+                                        {% if '44h (Horário Comercial)' in request.args.getlist('disponibilidade_horario') %}checked{% endif %}>
                                     44h (Horário Comercial)</label></li>
-                            <li><label><input type="checkbox" name="disponibilidade_horario" value="12x36 Dia"> 12x36
-                                    Dia</label></li>
-                            <li><label><input type="checkbox" name="disponibilidade_horario" value="12x36 Noite"> 12x36
-                                    Noite</label></li>
-                            <li><label><input type="checkbox" name="disponibilidade_horario" value="Feirista">
+                            <li><label><input type="checkbox" name="disponibilidade_horario" value="12x36 Dia"
+                                        {% if '12x36 Dia' in request.args.getlist('disponibilidade_horario') %}checked{% endif %}>
+                                    12x36 Dia</label></li>
+                            <li><label><input type="checkbox" name="disponibilidade_horario" value="12x36 Noite"
+                                        {% if '12x36 Noite' in request.args.getlist('disponibilidade_horario') %}checked{% endif %}>
+                                    12x36 Noite</label></li>
+                            <li><label><input type="checkbox" name="disponibilidade_horario" value="Feirista"
+                                        {% if 'Feirista' in request.args.getlist('disponibilidade_horario') %}checked{% endif %}>
                                     Ferista</label></li>
                         </ul>
                     </div>
@@ -1215,18 +1219,23 @@
         const checkboxesHorario = document.querySelectorAll('#dropdown-options-horario input[type="checkbox"]');
         const titleHorario = document.getElementById('dropdown-title-horario');
 
-        checkboxesHorario.forEach(function (checkbox) {
-            checkbox.addEventListener('change', function () {
-                const checkedOptionsHorario = [];
-                checkboxesHorario.forEach(function (cb) {
-                    if (cb.checked) {
-                        checkedOptionsHorario.push(cb.value);
-                    }
-                });
+        if (!titleHorario) {
+            return;
+        }
 
-                titleHorario.textContent = checkedOptionsHorario.length > 0 ? checkedOptionsHorario.join(', ') : 'Selecione a disponibilidade';
-            });
-        });
+        function updateHorarioTitle() {
+            const checkedOptionsHorario = Array.from(checkboxesHorario)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            titleHorario.textContent = checkedOptionsHorario.length > 0
+                ? checkedOptionsHorario.join(', ')
+                : 'Selecione a disponibilidade';
+        }
+
+        checkboxesHorario.forEach(cb => cb.addEventListener('change', updateHorarioTitle));
+
+        updateHorarioTitle();
     });
 
     document.addEventListener('DOMContentLoaded', function () {

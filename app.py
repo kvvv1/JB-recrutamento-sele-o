@@ -13,13 +13,7 @@ from io import BytesIO
 from pathlib import Path
 from shutil import which
 from typing import Optional
-import eventlet
-import eventlet.wsgi
-import pandas as pd
-import pygame
-import pyodbc
-import pytz
-import pyttsx3
+import inspect
 from flask import (
     Flask,
     abort,
@@ -63,6 +57,7 @@ WEASYPRINT_IMPORT_ERROR: Optional[Exception] = None
 PDFKIT_IMPORTED = False
 PDFKIT_IMPORT_ERROR: Optional[Exception] = None
 WKHTMLTOPDF_CMD: Optional[str] = None
+PDFKIT_CONFIGURATION = None
 
 try:
     from weasyprint import HTML
@@ -91,6 +86,12 @@ try:
         logger.warning(
             "pdfkit importado, mas o executável 'wkhtmltopdf' não foi encontrado no PATH."
         )
+    else:
+        try:
+            PDFKIT_CONFIGURATION = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_CMD)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Falha ao configurar pdfkit: %s", exc)
+            PDFKIT_CONFIGURATION = None
 except ImportError as exc:
     PDFKIT_IMPORT_ERROR = exc
     logger.warning("pdfkit indisponível: %s.", exc)
@@ -103,7 +104,25 @@ DEFAULT_PDFKIT_OPTIONS = {
     "margin-left": "0.75in",
     "encoding": "UTF-8",
     "no-outline": None,
+    "enable-local-file-access": None,
 }
+
+
+def _fix_static_urls_for_pdfkit(rendered_html: str) -> str:
+    """Converte URLs /static/... em caminhos file:// absolutos para o wkhtmltopdf."""
+    static_root = Path(current_app.static_folder).resolve()
+
+    def repl(match: re.Match) -> str:
+        attr = match.group(1)
+        rel_path = match.group(2)  # começa com /static/
+        rel_without_prefix = rel_path[len("/static/") :]
+        abs_path = static_root / rel_without_prefix
+        # wkhtmltopdf no Windows aceita file:///C:/...
+        return f'{attr}="file:///{abs_path.as_posix()}"'
+
+    # Substitui em atributos src="/static/..." e href="/static/..."
+    pattern = r'(?:\s)(src|href)="(/static/[^"]+)"'
+    return re.sub(pattern, lambda m: " " + repl(m), rendered_html)
 
 
 def generate_pdf_from_html(rendered_html: str, output_path: Path) -> str:
@@ -126,13 +145,15 @@ def generate_pdf_from_html(rendered_html: str, output_path: Path) -> str:
             errors.append(f"WeasyPrint: {exc}")
 
     if PDFKIT_IMPORTED:
-        if WKHTMLTOPDF_CMD is None:
-            errors.append("pdfkit: executável 'wkhtmltopdf' não encontrado")
+        if WKHTMLTOPDF_CMD is None or PDFKIT_CONFIGURATION is None:
+            errors.append("pdfkit: executável 'wkhtmltopdf' não encontrado/sem configuração")
         else:
             try:
+                fixed_html = _fix_static_urls_for_pdfkit(rendered_html)
                 pdfkit.from_string(
-                    rendered_html,
+                    fixed_html,
                     str(output_path),
+                    configuration=PDFKIT_CONFIGURATION,
                     options=DEFAULT_PDFKIT_OPTIONS,
                 )
                 return "pdfkit"
@@ -1430,7 +1451,6 @@ def index():
 def home():
 
     return render_template('home.html')
-@app.route('/login', methods=['GET', 'POST'])
 def login():
 
     if current_user.is_authenticated:
@@ -2223,9 +2243,7 @@ def visualizar_ficha(id):
 
     return render_template('partials/_ficha_visualizacao.html', candidato=candidato)
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
-
 @login_required
-
 def edit_user(user_id):
 
     db = get_sql_server_connection()
@@ -2855,7 +2873,195 @@ def update_ticket():
 
 
     return redirect(url_for('painel'))  # Certifique-se de que a rota 'painel' exista
+
+
+
+@app.route('/export_pdf/<cpf>')
+
+@login_required
+
+def export_pdf(cpf):
+
+    db = get_sql_server_connection()
+
+    cursor = db.cursor()
+
+    try:
+
+        cursor.execute('SELECT * FROM registration_form WHERE cpf = ?', (cpf,))
+
+        row = cursor.fetchone()
+
+        if not row:
+
+            flash("Candidato não encontrado.", "danger")
+
+            return redirect(url_for('banco_rs'))
+
+
+
+        columns = [column[0] for column in cursor.description]
+
+        candidato = dict(zip(columns, row))
+
+
+
+        # Data de nascimento para exibição
+
+        if candidato.get('data_nasc'):
+
+            try:
+
+                candidato['data_nasc'] = candidato['data_nasc'].strftime('%d/%m/%Y')
+
+            except AttributeError:
+
+                candidato['data_nasc'] = "Data inválida"
+
+
+
+        # Currículo: só aceitar PDF existente
+
+        curriculo_path: Optional[Path] = None
+
+        if candidato.get('curriculo'):
+
+            p = Path('static') / 'uploads' / str(candidato['curriculo'])
+
+            if p.suffix.lower() == '.pdf' and p.exists():
+
+                curriculo_path = p
+
+            else:
+
+                flash("Currículo não é PDF ou não foi encontrado. Será ignorado no anexo.", "warning")
+
+
+
+        # Render do HTML da ficha (mantém estilização do template atual)
+
+        logo_url = 'https://jbconservadora.com.br/wp-content/uploads/2020/09/logo-final-jb.png'
+
+        rendered_html = render_template('candidato_template.html', form_data=candidato, logo_url=logo_url)
+
+
+
+        # Geração do PDF da ficha via backend disponível
+
+        out_dir = Path('static') / 'temp'
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        ficha_pdf_path = out_dir / f'Ficha_{cpf}.pdf'
+
+
+
+        try:
+
+            backend = generate_pdf_from_html(rendered_html, ficha_pdf_path)
+
+            logger.info("Ficha %s gerada com backend %s", cpf, backend)
+
+        except RuntimeError as exc:
+
+            logger.error("Falha ao gerar PDF da ficha %s: %s", cpf, exc, exc_info=True)
+
+            flash(str(exc), "danger")
+
+            return redirect(url_for('banco_rs'))
+
+
+
+        if not ficha_pdf_path.exists() or ficha_pdf_path.stat().st_size == 0:
+
+            flash("Erro ao gerar a ficha do candidato.", "danger")
+
+            return redirect(url_for('banco_rs'))
+
+
+
+        # Merge com currículo (se existir)
+
+        merger = PdfMerger()
+
+        try:
+
+            with ficha_pdf_path.open('rb') as f:
+
+                merger.append(f)
+
+            if curriculo_path:
+
+                try:
+
+                    with curriculo_path.open('rb') as f:
+
+                        PdfReader(f)  # valida PDF
+
+                    with curriculo_path.open('rb') as f:
+
+                        merger.append(f)
+
+                except Exception as exc:  # noqa: BLE001
+
+                    logger.warning("Falha ao anexar currículo %s: %s", curriculo_path, exc, exc_info=True)
+
+                    flash("O currículo não pôde ser anexado ao PDF final.", "warning")
+
+
+
+            final_pdf_path = out_dir / f'Candidato_{cpf}.pdf'
+
+            with final_pdf_path.open('wb') as f:
+
+                merger.write(f)
+
+        finally:
+
+            merger.close()
+
+
+
+        if not final_pdf_path.exists() or final_pdf_path.stat().st_size == 0:
+
+            flash("Erro ao mesclar os PDFs.", "danger")
+
+            return redirect(url_for('banco_rs'))
+
+
+
+        return send_file(
+
+            str(final_pdf_path),
+
+            mimetype='application/pdf',
+
+            as_attachment=True,
+
+            download_name=f'Candidato_{cpf}.pdf',
+
+        )
+
+
+
+    except Exception as exc:  # noqa: BLE001
+
+        logger.error("Erro inesperado no export_pdf para %s: %s", cpf, exc, exc_info=True)
+
+        flash(f"Erro ao gerar o PDF do candidato: {exc}", "danger")
+
+        return redirect(url_for('banco_rs'))
+
+    finally:
+
+        cursor.close()
+
+        db.close()
+
+
+
 @app.route('/submit_form', methods=['POST'])
+
 @login_required
 def submit_form():
 
@@ -4371,9 +4577,7 @@ def banco_rs():
 
 
     # Executar consulta
-
     cursor.execute(query, params)
-
     candidatos = cursor.fetchall()
     # Converter resultados
     candidatos_dict = []
@@ -5088,8 +5292,6 @@ def manage_candidates():
     
 
     return render_template('manage_candidates.html', candidates=candidates)
-@app.route('/user_logs')
-@login_required
 def user_logs():
 
     if not current_user.is_admin:
@@ -6511,9 +6713,7 @@ def reposition_ticket(id):
 
 
 @app.route('/reset_indicators', methods=['POST'])
-
 @login_required
-
 def reset_indicators():
 
     db = get_sql_server_connection()
@@ -6983,15 +7183,7 @@ def indicadores():
             historical_data=historical_data
 
         )
-
-
-
-
-
 from flask import request, jsonify
-
-import pandas as pd
-
 import io
 @app.route('/indicadores/data')
 @login_required
@@ -7769,7 +7961,6 @@ def indicadores_data():
     db.close()
 
     return jsonify({'data': result})
-@app.route('/exportar_relatorio_situacao')
 def exportar_relatorio_situacao():
 
     from io import BytesIO
@@ -8318,9 +8509,6 @@ def get_calendar_events():
 
 
     return jsonify(calendar_events)
-
-
-
 # Rota para os indicadores diários
 @app.route('/api/get-indicators')
 def get_indicators():
@@ -9464,246 +9652,6 @@ def get_candidato_by_id(id):
 
 
 
-@app.route('/export_pdf/<cpf>')
-
-@login_required
-
-def export_pdf(cpf):
-
-    db = get_sql_server_connection()
-
-    cursor = db.cursor()
-
-
-
-    try:
-
-        cursor.execute('SELECT * FROM registration_form WHERE cpf = ?', (cpf,))
-
-        candidato_row = cursor.fetchone()
-
-
-
-        if not candidato_row:
-
-            flash("Candidato não encontrado.", "danger")
-
-            return redirect(url_for('banco_rs'))
-
-
-
-        columns = [column[0] for column in cursor.description]
-
-        candidato = dict(zip(columns, candidato_row))
-
-
-
-        if candidato.get('data_nasc'):
-
-            try:
-
-                candidato['data_nasc'] = candidato['data_nasc'].strftime('%d/%m/%Y')
-
-            except AttributeError:
-
-                candidato['data_nasc'] = "Data inválida"
-
-
-
-        curriculo_path: Optional[Path] = None
-
-        if candidato.get('curriculo'):
-
-            curriculo_path = Path('static') / 'uploads' / candidato['curriculo']
-
-            if curriculo_path.suffix.lower() != '.pdf':
-
-                flash(
-
-                    "O currículo anexado não está em formato PDF e será ignorado.",
-
-                    "warning",
-
-                )
-
-                curriculo_path = None
-
-            elif not curriculo_path.exists():
-
-                flash("Currículo informado não foi encontrado no servidor.", "warning")
-
-                curriculo_path = None
-
-
-
-        logo_url = 'https://jbconservadora.com.br/wp-content/uploads/2020/09/logo-final-jb.png'
-
-        rendered_html = render_template(
-
-            'candidato_template.html',
-
-            form_data=candidato,
-
-            logo_url=logo_url,
-
-        )
-
-
-
-        output_dir = Path('static') / 'temp'
-
-        ficha_pdf_path = output_dir / f'Ficha_{cpf}.pdf'
-
-        ensure_parent_directory(ficha_pdf_path)
-
-
-
-        try:
-
-            backend = generate_pdf_from_html(rendered_html, ficha_pdf_path)
-
-            logger.info(
-
-                "Ficha do candidato %s gerada com sucesso utilizando %s em %s",
-
-                cpf,
-
-                backend,
-
-                ficha_pdf_path,
-
-            )
-
-        except RuntimeError as exc:
-
-            logger.error(
-
-                "Falha ao gerar PDF da ficha para CPF %s: %s", cpf, exc, exc_info=True
-
-            )
-
-            flash(str(exc), "danger")
-
-            return redirect(url_for('banco_rs'))
-
-
-
-        if not ficha_pdf_path.exists() or ficha_pdf_path.stat().st_size == 0:
-
-            flash("Erro ao gerar a ficha do candidato.", "danger")
-
-            return redirect(url_for('banco_rs'))
-
-
-
-        merger = PdfMerger()
-
-        try:
-
-            with ficha_pdf_path.open('rb') as ficha_file:
-
-                merger.append(ficha_file)
-
-
-
-            if curriculo_path:
-
-                try:
-
-                    with curriculo_path.open('rb') as curriculo_file:
-
-                        PdfReader(curriculo_file)
-
-                    with curriculo_path.open('rb') as curriculo_file:
-
-                        merger.append(curriculo_file)
-
-                except Exception as exc:
-
-                    logger.warning(
-
-                        "Não foi possível anexar currículo %s ao PDF do CPF %s: %s",
-
-                        curriculo_path,
-
-                        cpf,
-
-                        exc,
-
-                        exc_info=True,
-
-                    )
-
-                    flash(
-
-                        "O currículo não pôde ser anexado ao PDF final. "
-
-                        "Faça o download apenas da ficha.",
-
-                        "warning",
-
-                    )
-
-
-
-            output_pdf_path = output_dir / f'Candidato_{cpf}.pdf'
-
-            with output_pdf_path.open('wb') as output_file:
-
-                merger.write(output_file)
-
-        finally:
-
-            merger.close()
-
-
-
-        if not output_pdf_path.exists() or output_pdf_path.stat().st_size == 0:
-
-            flash("Erro ao mesclar os documentos do candidato.", "danger")
-
-            return redirect(url_for('banco_rs'))
-
-
-
-        return send_file(
-
-            str(output_pdf_path),
-
-            mimetype='application/pdf',
-
-            as_attachment=True,
-
-            download_name=f'Candidato_{cpf}.pdf',
-
-        )
-
-
-
-    except Exception as exc:
-
-        logger.error(
-
-            "Erro inesperado ao exportar PDF do CPF %s: %s", cpf, exc, exc_info=True
-
-        )
-
-        flash(f"Erro ao gerar o PDF do candidato: {exc}", "danger")
-
-        return redirect(url_for('banco_rs'))
-
-
-
-    finally:
-
-        cursor.close()
-
-        db.close()
-
-
-
-
-
 @app.route('/get_registration_data', methods=['POST'])
 
 @login_required
@@ -9791,13 +9739,6 @@ def get_registration_data():
 
 
     return jsonify(data)
-
-
-
-
-
-@app.route('/export_excel/<cpf>')
-@login_required
 def export_excel(cpf):
 
     db = get_sql_server_connection()
@@ -10455,8 +10396,6 @@ def modal_view(cpf):
         cpf=cpf
 
     )
-@app.route('/update_form/<cpf>', methods=['GET', 'POST'])
-@login_required
 def update_form(cpf):
 
     db = None
@@ -11110,8 +11049,6 @@ def update_registration():
         if db:
 
             db.close()
-@app.route('/auto_save_form/<cpf>', methods=['POST'])
-@login_required
 def auto_save_form(cpf):
 
     db = None
@@ -11695,8 +11632,6 @@ def set_recruiter():
         flash('Erro ao definir recrutador.', 'danger')
 
         return redirect(request.referrer)
-@app.route('/create_ficha_manual', methods=['POST'])
-@login_required
 def create_ficha_manual():
 
     nome_completo = request.form.get('nome_completo', '').strip()
@@ -12352,9 +12287,6 @@ def local_recovery():
     """Interface para o usuário recuperar fichas salvas localmente no navegador."""
 
     return render_template('local_recovery.html')
-
-
-
 @app.route('/admin/recovery', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -13141,7 +13073,7 @@ def send_to_dp(id):
                             return jsonify(success=False, message=f"Erro ao enviar ticket para o DP: {str(e)}"), 500
 
 
-
+                        
                         finally:
 
                             cursor.close()
@@ -13902,8 +13834,6 @@ def display_tv():
         if db:
 
             db.close()
-from datetime import datetime
-@app.route('/api/tickets_dp')
 def api_tickets_dp():
 
     db = get_sql_server_connection()

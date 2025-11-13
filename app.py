@@ -65,6 +65,7 @@ PDFKIT_IMPORTED = False
 PDFKIT_IMPORT_ERROR: Optional[Exception] = None
 WKHTMLTOPDF_CMD: Optional[str] = None
 PDFKIT_CONFIGURATION = None
+PDFKIT_CONFIG = None
 
 try:
     from weasyprint import HTML
@@ -93,12 +94,25 @@ try:
         logger.warning(
             "pdfkit importado, mas o executável 'wkhtmltopdf' não foi encontrado no PATH."
         )
+        # Tentativas de caminhos comuns no Windows
+        common_paths = [
+            r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe",
+            r"C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe",
+        ]
+        for candidate in common_paths:
+            if os.path.exists(candidate):
+                WKHTMLTOPDF_CMD = candidate
+                logger.info("wkhtmltopdf encontrado em caminho padrão: %s", candidate)
+                break
     else:
         try:
             PDFKIT_CONFIGURATION = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_CMD)
+            PDFKIT_CONFIG = PDFKIT_CONFIGURATION
+            logger.info("pdfkit configurado com wkhtmltopdf: %s", WKHTMLTOPDF_CMD)
         except Exception as exc:  # noqa: BLE001
             logger.warning("Falha ao configurar pdfkit: %s", exc)
             PDFKIT_CONFIGURATION = None
+            PDFKIT_CONFIG = None
 except ImportError as exc:
     PDFKIT_IMPORT_ERROR = exc
     logger.warning("pdfkit indisponível: %s.", exc)
@@ -111,6 +125,7 @@ DEFAULT_PDFKIT_OPTIONS = {
     "margin-left": "0.75in",
     "encoding": "UTF-8",
     "no-outline": None,
+    "quiet": "",
     "enable-local-file-access": None,
 }
 
@@ -2942,10 +2957,9 @@ def export_pdf(cpf):
 
 
         # Render do HTML da ficha (mantém estilização do template atual)
-
-        logo_url = 'https://jbconservadora.com.br/wp-content/uploads/2020/09/logo-final-jb.png'
-
-        rendered_html = render_template('candidato_template.html', form_data=candidato, logo_url=logo_url)
+        # Usa logo local para evitar bloqueios de rede/SSL no wkhtmltopdf
+        local_logo = url_for('static', filename='logo.png', _external=False)
+        rendered_html = render_template('candidato_template.html', form_data=candidato, logo_url=local_logo)
 
 
 

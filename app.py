@@ -5109,7 +5109,7 @@ def view_or_fill_inscription(id):
 
 
 
-    cpf = ticket[13]  # Supondo que 'cpf' está na coluna 13 no SQL Server
+    cpf = ticket[12]  # CPF na coluna 12 do SQL Server
 
     
 
@@ -10267,23 +10267,23 @@ def view_registration(cpf):
 
             form_data = {
 
-                'cpf': ticket[9],
+                'cpf': ticket[12],
 
                 'nome_completo': ticket[1],  # Nome do ticket
 
-                'cep': ticket[10],
+                'cep': ticket[13],
 
-                'endereco': ticket[11],
+                'endereco': ticket[14],
 
-                'numero': ticket[12],
+                'numero': ticket[15],
 
-                'complemento': ticket[13],
+                'complemento': ticket[16],
 
-                'bairro': ticket[14],
+                'bairro': ticket[17],
 
-                'cidade': ticket[15],
+                'cidade': ticket[18],
 
-                'telefone': ticket[16],
+                'telefone': ticket[19],
 
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 
@@ -10375,23 +10375,23 @@ def view_form(cpf):
 
             form_data = {
 
-                'cpf': ticket[9],
+                'cpf': ticket[12],
 
                 'nome_completo': ticket[1],
 
-                'cep': ticket[10],
+                'cep': ticket[13],
 
-                'endereco': ticket[11],
+                'endereco': ticket[14],
 
-                'numero': ticket[12],
+                'numero': ticket[15],
 
-                'complemento': ticket[13],
+                'complemento': ticket[16],
 
-                'bairro': ticket[14],
+                'bairro': ticket[17],
 
-                'cidade': ticket[15],
+                'cidade': ticket[18],
 
-                'telefone': ticket[16],
+                'telefone': ticket[19],
 
                 'cargo_pretendido': [],
 
@@ -10411,7 +10411,7 @@ def view_form(cpf):
 
                 'avaliacao_gerencia': '',
 
-                'data_nasc': ticket[19]
+                'data_nasc': ticket[23]
 
             }
 

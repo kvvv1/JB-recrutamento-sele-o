@@ -1458,6 +1458,7 @@ def index():
 def home():
 
     return render_template('home.html')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
 
     if current_user.is_authenticated:
@@ -3651,7 +3652,7 @@ def submit_form():
 
                             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
 
-                        ''', (novo_id_admitidos, candidato[0], admitido))
+                        ''', (novo_id_admitidos, candidato[0], 'Sim'))
 
             except Exception as e:
 
@@ -10898,7 +10899,7 @@ def update_registration():
 
             flash('CPF não encontrado no banco de dados.', 'danger')
 
-            return redirect('/view_registrations')
+            return redirect(url_for('banco_rs'))
 
         
 
@@ -10962,7 +10963,7 @@ def update_registration():
 
         db.commit()
 
-        return redirect('/view_registrations')
+        return redirect(url_for('banco_rs'))
 
         
 
@@ -11022,7 +11023,7 @@ def update_registration():
 
         flash(f'Erro ao atualizar registro: {erro_msg}', 'danger')
 
-        return redirect('/view_registrations')
+        return redirect(url_for('banco_rs'))
 
         
 

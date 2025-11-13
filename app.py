@@ -82,6 +82,20 @@ DISABLE_PDFKIT = os.environ.get("DISABLE_PDFKIT", "0").lower() in ("1", "true", 
 # Observação: a disponibilidade de WeasyPrint já foi determinada acima no import seguro.
 # Aqui prosseguimos apenas com a detecção/configuração do pdfkit.
 
+# ======================
+# Mapeamento de Guichês
+# ======================
+from datetime import datetime as _dt_guiche
+GUICHE_NAME_MAP = {'1': 'Guilherme', '2': 'Samira', '3': 'Rafaella', '4': 'Wilson', '5': 'Grasielle', '6': 'Nara'}
+GUICHE_MAPPING_EFFECTIVE_DATE = _dt_guiche(2025, 8, 21).date()
+def format_guiche_for_display(guiche_value, reference_date=None) -> str:
+    if not guiche_value:
+        return 'Nenhum'
+    key = str(guiche_value).strip()
+    if reference_date and reference_date >= GUICHE_MAPPING_EFFECTIVE_DATE and key in GUICHE_NAME_MAP:
+        return f'Guichê {key} - {GUICHE_NAME_MAP[key]}'
+    return f'Guichê {key}'
+
 try:
     import pdfkit  # type: ignore
 
@@ -2590,6 +2604,8 @@ def delete_user(user_id):
 @login_required
 
 def painel():
+
+    
 
     db = get_sql_server_connection()
 
@@ -6551,25 +6567,33 @@ def create_ticket():
         db.commit()
 
 
+        # Garante a criação/renovação da ficha conforme regra de 6 meses para reprovados
+        try:
+            ensure_registration_form_for_ticket({
+                'cpf': cpf,
+                'name': name,
+                'cep': cep,
+                'rua': rua,
+                'numero': numero,
+                'complemento': complemento,
+                'bairro': bairro,
+                'cidade': cidade,
+                'telefones': telefones,
+                'recruiter': recruiter
+            })
+        except Exception as ficha_err:
+            # Não interrompe o fluxo do ticket se a ficha falhar
+            print(f"[CREATE_TICKET] Aviso ao garantir ficha para CPF {cpf}: {ficha_err}")
 
         # Emissão do evento para adicionar o ticket em tempo real
-
         socketio.emit('new_ticket', {
-
             'id': ticket_id,
-
             'name': name,
-
             'ticket_number': ticket_number,
-
             'created_at': created_at,
-
             'category': category,
-
             'cpf': cpf,
-
             'data_nasc': data_nasc  # Inclui a data de nascimento no evento
-
         }, namespace='/')
 
 
@@ -9869,6 +9893,144 @@ def generate_ticket_number(category):
 
     return ticket_number
 
+
+
+def ensure_registration_form_for_ticket(ticket_info: dict):
+	"""
+	Garante a existência da ficha no registration_form quando um ticket é criado.
+	Se já existir e estiver Reprovado há 6+ meses, arquiva um snapshot e 'renova' a ficha com nova data.
+	"""
+	cpf = (ticket_info.get('cpf') or '').strip()
+	if not cpf:
+		return
+
+	# Normaliza CPF para comparação
+	cpf_normalizado = ''.join(filter(str.isdigit, cpf))
+
+	db = get_sql_server_connection()
+	cursor = db.cursor()
+	try:
+		# Busca registro existente por CPF (normalizado)
+		cursor.execute('''
+			SELECT TOP 1 id, cpf, nome_completo, situacao,
+			       LOWER(ISNULL(avaliacao_rh, '')) AS avaliacao_rh,
+			       LOWER(ISNULL(avaliacao_gerencia, '')) AS avaliacao_gerencia,
+			       created_at, last_updated,
+			       CASE WHEN DATEDIFF(DAY, COALESCE(last_updated, created_at), GETDATE()) >= 180 THEN 1 ELSE 0 END AS is_older_6m
+			FROM registration_form
+			WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = ?
+			ORDER BY COALESCE(last_updated, created_at) DESC
+		''', (cpf_normalizado,))
+		row = cursor.fetchone()
+
+		name = (ticket_info.get('name') or '').upper().strip()
+		cep = ticket_info.get('cep') or ''
+		rua = (ticket_info.get('rua') or '').upper().strip()
+		numero = ticket_info.get('numero') or ''
+		complemento = (ticket_info.get('complemento') or '').upper().strip()
+		bairro = (ticket_info.get('bairro') or '').upper().strip()
+		cidade = (ticket_info.get('cidade') or '').upper().strip()
+		telefone = ticket_info.get('telefones') or ''
+		recrutador = ticket_info.get('recruiter') or None
+
+		if not row:
+			# Inserir ficha mínima
+			cursor.execute('''
+				INSERT INTO registration_form (
+					cpf, nome_completo, cep, endereco, numero, complemento, bairro, cidade, telefone, recrutador, situacao, created_at, last_updated
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())
+			''', (cpf, name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, 'Não Avaliado'))
+			db.commit()
+			return
+
+		# Verifica regra de 6 meses + reprovado
+		id_existente = row[0]
+		situacao = (row[3] or '')
+		avaliacao_rh = (row[4] or '')
+		avaliacao_gerencia = (row[5] or '')
+		is_older_6m = bool(row[8])
+
+		is_reprovado = (
+			situacao.startswith('Reprovado') or
+			avaliacao_rh == 'reprovado' or
+			avaliacao_gerencia == 'reprovado'
+		)
+
+		if is_reprovado and is_older_6m:
+			# Arquivar snapshot da ficha antiga e renovar a atual
+			_ensure_history_table_exists(cursor)
+
+			# Captura snapshot completo
+			cursor.execute('SELECT * FROM registration_form WHERE id = ?', (id_existente,))
+			full_row = cursor.fetchone()
+			cols = [c[0] for c in cursor.description]
+			snapshot = dict(zip(cols, full_row)) if full_row else {}
+
+			# Próxima versão no histórico
+			cursor.execute('SELECT ISNULL(MAX(version), 0) + 1 FROM registration_form_history WHERE cpf = ?', (cpf,))
+			next_version = cursor.fetchone()[0]
+
+			# Salva no histórico
+			cursor.execute('''
+				INSERT INTO registration_form_history (cpf, version, archived_at, archive_reason, snapshot)
+				VALUES (?, ?, GETDATE(), ?, ?)
+			''', (cpf, next_version, 'REPROVADO_6M', json.dumps(snapshot, ensure_ascii=False, default=str)))
+
+			# Renova a ficha atual com dados básicos do ticket e nova data de cadastro
+			cursor.execute('''
+				UPDATE registration_form
+				SET nome_completo = ?, cep = ?, endereco = ?, numero = ?, complemento = ?, bairro = ?, cidade = ?,
+				    telefone = ?, recrutador = ?, situacao = 'Não Avaliado',
+				    avaliacao_rh = NULL, avaliacao_gerencia = NULL, sindicancia = NULL,
+				    admitido = NULL, motivo_reprovacao_rh = NULL,
+				    created_at = GETDATE(), last_updated = GETDATE()
+				WHERE id = ?
+			''', (name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, id_existente))
+
+			db.commit()
+		else:
+			# Opcional: atualizar campos básicos se estiverem vazios
+			cursor.execute('''
+				UPDATE registration_form
+				SET nome_completo = CASE WHEN (nome_completo IS NULL OR LTRIM(RTRIM(nome_completo)) = '') THEN ? ELSE nome_completo END,
+				    cep = CASE WHEN (cep IS NULL OR LTRIM(RTRIM(cep)) = '') THEN ? ELSE cep END,
+				    endereco = CASE WHEN (endereco IS NULL OR LTRIM(RTRIM(endereco)) = '') THEN ? ELSE endereco END,
+				    numero = CASE WHEN (numero IS NULL OR LTRIM(RTRIM(numero)) = '') THEN ? ELSE numero END,
+				    complemento = CASE WHEN (complemento IS NULL OR LTRIM(RTRIM(complemento)) = '') THEN ? ELSE complemento END,
+				    bairro = CASE WHEN (bairro IS NULL OR LTRIM(RTRIM(bairro)) = '') THEN ? ELSE bairro END,
+				    cidade = CASE WHEN (cidade IS NULL OR LTRIM(RTRIM(cidade)) = '') THEN ? ELSE cidade END,
+				    telefone = CASE WHEN (telefone IS NULL OR LTRIM(RTRIM(telefone)) = '') THEN ? ELSE telefone END,
+				    recrutador = COALESCE(recrutador, ?),
+				    last_updated = GETDATE()
+				WHERE id = ?
+			''', (name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, id_existente))
+			db.commit()
+	finally:
+		try:
+			cursor.close()
+		except Exception:
+			pass
+		try:
+			db.close()
+		except Exception:
+			pass
+
+
+def _ensure_history_table_exists(cursor):
+	# Cria a tabela de histórico se não existir
+	cursor.execute('''
+		IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'registration_form_history')
+		BEGIN
+			CREATE TABLE registration_form_history (
+				id INT IDENTITY(1,1) PRIMARY KEY,
+				cpf NVARCHAR(50) NOT NULL,
+				version INT NOT NULL,
+				archived_at DATETIME NOT NULL,
+				archive_reason NVARCHAR(255) NULL,
+				snapshot NVARCHAR(MAX) NULL
+			)
+		END
+	''')
 
 
 def get_candidato_by_id(id):

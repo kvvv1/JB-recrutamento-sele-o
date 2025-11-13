@@ -51,15 +51,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Mapeamento de guichê para nomes de recrutadores
-    const guicheParaNome = {
-        "6": "Nara",
-        "5": "Maria Eduarda",
-        "4": "Wilson",
-        "3": "Grasielle",
+    // Mapeamento de guichê para nomes (vigente a partir de 21/08/2025)
+    const DATA_CORTE_MAPEAMENTO = '2025-08-21';
+    const guicheParaNomeAtual = {
+        "1": "Guilherme",
         "2": "Samira",
-        "1": "Não designado"
+        "3": "Rafaella",
+        "4": "Wilson",
+        "5": "Grasielle",
+        "6": "Nara"
     };
+    function labelGuiche(guiche, dataReferencia) {
+        const g = (guiche || '').toString().trim();
+        if (!g) return 'Guichê N/D';
+        if (dataReferencia >= DATA_CORTE_MAPEAMENTO && guicheParaNomeAtual[g]) {
+            return `${guicheParaNomeAtual[g]}`;
+        }
+        return `Guichê ${g}`;
+    }
     
     // Variável para armazenar a data selecionada atualmente
     let dataAtualSelecionada = toLocalYMD(new Date()); // Data atual por padrão
@@ -307,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
         completedTicketsChart.data.datasets[0].data = data.ticketsCompleted;
         completedTicketsChart.update();
         
-        // Mapear os números de guichê para nomes e filtrar valores nulos
+        // Mapear os números de guichê para nomes (após a data de corte) e filtrar valores nulos
         const nomesRecrutadores = [];
         const desempenhoRecrutadores = [];
         
@@ -315,11 +324,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const guiche = data.recruiters[i];
             const desempenho = data.recruiterPerformance[i];
             
-            // Verificar se o guichê é null ou está no mapeamento
-            if (guiche && guicheParaNome[guiche]) {
-                nomesRecrutadores.push(guicheParaNome[guiche]);
-                desempenhoRecrutadores.push(desempenho);
-            }
+            if (!guiche) continue;
+            nomesRecrutadores.push(labelGuiche(guiche, dataAtualSelecionada));
+            desempenhoRecrutadores.push(desempenho);
         }
 
         recruiterPerformanceChart.data.labels = nomesRecrutadores;

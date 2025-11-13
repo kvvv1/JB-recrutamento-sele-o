@@ -66,6 +66,7 @@ PDFKIT_IMPORT_ERROR: Optional[Exception] = None
 WKHTMLTOPDF_CMD: Optional[str] = None
 PDFKIT_CONFIGURATION = None
 PDFKIT_CONFIG = None
+DISABLE_PDFKIT = os.environ.get("DISABLE_PDFKIT", "0").lower() in ("1", "true", "yes")
 
 try:
     from weasyprint import HTML
@@ -89,22 +90,29 @@ try:
     import pdfkit  # type: ignore
 
     PDFKIT_IMPORTED = True
-    WKHTMLTOPDF_CMD = which("wkhtmltopdf")
-    if WKHTMLTOPDF_CMD is None:
-        logger.warning(
-            "pdfkit importado, mas o executável 'wkhtmltopdf' não foi encontrado no PATH."
-        )
-        # Tentativas de caminhos comuns no Windows
-        common_paths = [
-            r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe",
-            r"C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe",
-        ]
-        for candidate in common_paths:
-            if os.path.exists(candidate):
-                WKHTMLTOPDF_CMD = candidate
-                logger.info("wkhtmltopdf encontrado em caminho padrão: %s", candidate)
-                break
+    # 1) Força caminho via variável de ambiente, se fornecido
+    forced_path = os.environ.get("WKHTMLTOPDF_PATH")
+    if forced_path and os.path.exists(forced_path):
+        WKHTMLTOPDF_CMD = forced_path
+        logger.info("WKHTMLTOPDF_PATH definido e encontrado: %s", forced_path)
     else:
+        # 2) which no PATH
+        WKHTMLTOPDF_CMD = which("wkhtmltopdf")
+        if WKHTMLTOPDF_CMD is None:
+            logger.warning(
+                "pdfkit importado, mas o executável 'wkhtmltopdf' não foi encontrado no PATH."
+            )
+            # 3) Tentativas de caminhos comuns no Windows
+            common_paths = [
+                r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe",
+                r"C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe",
+            ]
+            for candidate in common_paths:
+                if os.path.exists(candidate):
+                    WKHTMLTOPDF_CMD = candidate
+                    logger.info("wkhtmltopdf encontrado em caminho padrão: %s", candidate)
+                    break
+    if WKHTMLTOPDF_CMD:
         try:
             PDFKIT_CONFIGURATION = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_CMD)
             PDFKIT_CONFIG = PDFKIT_CONFIGURATION
@@ -166,17 +174,22 @@ def generate_pdf_from_html(rendered_html: str, output_path: Path) -> str:
             logger.warning("Falha ao gerar PDF com WeasyPrint: %s", exc, exc_info=True)
             errors.append(f"WeasyPrint: {exc}")
 
-    if PDFKIT_IMPORTED:
-        if WKHTMLTOPDF_CMD is None or PDFKIT_CONFIGURATION is None:
-            errors.append("pdfkit: executável 'wkhtmltopdf' não encontrado/sem configuração")
+    if PDFKIT_IMPORTED and not DISABLE_PDFKIT:
+        if PDFKIT_CONFIG is None:
+            errors.append("pdfkit: executável 'wkhtmltopdf' não configurado corretamente.")
         else:
             try:
                 fixed_html = _fix_static_urls_for_pdfkit(rendered_html)
+                # Permite habilitar logs verbosos desativando o 'quiet' via env
+                options = dict(DEFAULT_PDFKIT_OPTIONS)
+                quiet_env = os.environ.get("PDFKIT_QUIET", "1").lower()
+                if quiet_env in ("0", "false", "no"):
+                    options.pop("quiet", None)
                 pdfkit.from_string(
                     fixed_html,
                     str(output_path),
-                    configuration=PDFKIT_CONFIGURATION,
-                    options=DEFAULT_PDFKIT_OPTIONS,
+                    configuration=PDFKIT_CONFIG,
+                    options=options,
                 )
                 return "pdfkit"
             except Exception as exc:  # noqa: BLE001

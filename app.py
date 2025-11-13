@@ -5531,7 +5531,7 @@ def manage_candidates():
     
 
     return render_template('manage_candidates.html', candidates=candidates)
-</rewritten_file>def user_logs():
+def user_logs():
 
     if not current_user.is_admin:
 

@@ -10267,23 +10267,23 @@ def view_registration(cpf):
 
             form_data = {
 
-                'cpf': ticket[12],
+                'cpf': ticket[9],
 
                 'nome_completo': ticket[1],  # Nome do ticket
 
-                'cep': ticket[13],
+                'cep': ticket[10],
 
-                'endereco': ticket[14],
+                'endereco': ticket[11],
 
-                'numero': ticket[15],
+                'numero': ticket[12],
 
-                'complemento': ticket[16],
+                'complemento': ticket[13],
 
-                'bairro': ticket[17],
+                'bairro': ticket[14],
 
-                'cidade': ticket[18],
+                'cidade': ticket[15],
 
-                'telefone': ticket[19],
+                'telefone': ticket[16],
 
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 
@@ -10375,23 +10375,23 @@ def view_form(cpf):
 
             form_data = {
 
-                'cpf': ticket[12],
+                'cpf': ticket[9],
 
                 'nome_completo': ticket[1],
 
-                'cep': ticket[13],
+                'cep': ticket[10],
 
-                'endereco': ticket[14],
+                'endereco': ticket[11],
 
-                'numero': ticket[15],
+                'numero': ticket[12],
 
-                'complemento': ticket[16],
+                'complemento': ticket[13],
 
-                'bairro': ticket[17],
+                'bairro': ticket[14],
 
-                'cidade': ticket[18],
+                'cidade': ticket[15],
 
-                'telefone': ticket[19],
+                'telefone': ticket[16],
 
                 'cargo_pretendido': [],
 
@@ -10411,7 +10411,7 @@ def view_form(cpf):
 
                 'avaliacao_gerencia': '',
 
-                'data_nasc': ticket[23]
+                'data_nasc': ticket[19]
 
             }
 

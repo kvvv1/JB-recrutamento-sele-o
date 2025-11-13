@@ -17,6 +17,7 @@ import inspect
 import eventlet
 import eventlet.wsgi
 import pandas as pd
+import subprocess
 import pygame
 import pyodbc
 import pytz
@@ -37,6 +38,16 @@ from flask import (
     session,
     url_for,
 )
+
+# Suprimir aviso sobre pkg_resources (setuptools) para evitar poluir a saída
+import warnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API.*")
+
+# Não tenta importar WeasyPrint no Windows para evitar erro de carregamento de DLLs nativas
+# (libgobject-2.0-0.dll etc.). Preferimos usar pdfkit/wkhtmltopdf no Windows.
+WEASYPRINT_AVAILABLE = False
+WEASYPRINT_IMPORT_ERROR = None
+# ...existing code...
 from flask_login import (
     LoginManager,
     UserMixin,
@@ -59,7 +70,7 @@ from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
 
-WEASYPRINT_AVAILABLE = False
+PDFKIT_AVAILABLE = False  # valor padrão
 WEASYPRINT_IMPORT_ERROR: Optional[Exception] = None
 PDFKIT_IMPORTED = False
 PDFKIT_IMPORT_ERROR: Optional[Exception] = None
@@ -68,23 +79,8 @@ PDFKIT_CONFIGURATION = None
 PDFKIT_CONFIG = None
 DISABLE_PDFKIT = os.environ.get("DISABLE_PDFKIT", "0").lower() in ("1", "true", "yes")
 
-try:
-    from weasyprint import HTML
-    import pydyf  # type: ignore
-
-    pdf_init_params = inspect.signature(pydyf.PDF.__init__).parameters
-    if len(pdf_init_params) < 3:
-        raise RuntimeError(
-            "pydyf instalado é incompatível (versão muito antiga para o WeasyPrint atual)."
-        )
-
-    WEASYPRINT_AVAILABLE = True
-except Exception as exc:  # noqa: BLE001
-    WEASYPRINT_IMPORT_ERROR = exc
-    logger.warning(
-        "WeasyPrint indisponível: %s. Instale as dependências GTK+ ou mantenha o fallback.",
-        exc,
-    )
+# Observação: a disponibilidade de WeasyPrint já foi determinada acima no import seguro.
+# Aqui prosseguimos apenas com a detecção/configuração do pdfkit.
 
 try:
     import pdfkit  # type: ignore
@@ -141,6 +137,86 @@ DEFAULT_PDFKIT_OPTIONS = {
 }
 
 
+def find_chrome_executable() -> Optional[str]:
+    """Procura chrome / chromium / edge em caminhos comuns no Windows."""
+    candidates = []
+    # variável de ambiente opcional
+    env_path = os.environ.get("CHROME_PATH")
+    if env_path:
+        candidates.append(env_path)
+
+    # common installation paths
+    candidates.extend([
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    ])
+
+    # which in PATH
+    for name in ("chrome", "chrome.exe", "msedge", "msedge.exe", "chromium", "chromium.exe"):
+        path = which(name)
+        if path:
+            candidates.insert(0, path)
+
+    for c in candidates:
+        try:
+            if c and os.path.exists(c):
+                return c
+        except Exception:
+            continue
+    return None
+
+
+def try_chrome_print_to_pdf(rendered_html: str, output_path: Path, timeout: int = 30) -> bool:
+    """Tenta usar Chrome/Edge headless --print-to-pdf como fallback.
+
+    Retorna True se sucesso, False caso contrário.
+    """
+    chrome = find_chrome_executable()
+    if not chrome:
+        return False
+
+    tmp_html = None
+    try:
+        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.html', encoding='utf-8') as hf:
+            hf.write(rendered_html)
+            tmp_html = hf.name
+
+        cmd = [
+            chrome,
+            '--headless',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--virtual-time-budget=10000',
+            '--enable-features=NetworkService,NetworkServiceInProcess',
+            '--enable-local-file-accesses',
+            f'--print-to-pdf={str(output_path)}',
+            tmp_html,
+        ]
+
+        # Execução com timeout e captura de saída para diagnóstico
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+        if proc.returncode == 0 and output_path.exists() and output_path.stat().st_size > 0:
+            return True
+        else:
+            err = (proc.stderr or proc.stdout).decode(errors='replace')
+            logger.warning("chrome print-to-pdf failed (rc=%s): %s", proc.returncode, err)
+            return False
+    except subprocess.TimeoutExpired as te:
+        logger.warning("chrome print-to-pdf timeout: %s", te)
+        return False
+    except Exception as e:
+        logger.warning("Erro ao executar chrome print-to-pdf: %s", e, exc_info=True)
+        return False
+    finally:
+        if tmp_html and os.path.exists(tmp_html):
+            try:
+                os.unlink(tmp_html)
+            except Exception:
+                pass
+
+
 def _fix_static_urls_for_pdfkit(rendered_html: str) -> str:
     """Converte URLs /static/... em caminhos file:// absolutos para o wkhtmltopdf."""
     static_root = Path(current_app.static_folder).resolve()
@@ -183,23 +259,72 @@ def generate_pdf_from_html(rendered_html: str, output_path: Path) -> str:
         else:
             try:
                 fixed_html = _fix_static_urls_for_pdfkit(rendered_html)
-                # Permite habilitar logs verbosos desativando o 'quiet' via env
-                options = dict(DEFAULT_PDFKIT_OPTIONS)
-                quiet_env = os.environ.get("PDFKIT_QUIET", "1").lower()
-                if quiet_env in ("0", "false", "no"):
-                    options.pop("quiet", None)
-                    print("ℹ️ PDFKIT_QUIET desativado: logs verbosos habilitados para wkhtmltopdf.")
-                pdfkit.from_string(
-                    fixed_html,
-                    str(output_path),
-                    configuration=PDFKIT_CONFIG,
-                    options=options,
-                )
-                print(f"✅ PDF gerado via pdfkit em: {output_path}")
-                return "pdfkit"
+
+                # Tenta executar wkhtmltopdf diretamente via subprocess com timeout para evitar hangs
+                if WKHTMLTOPDF_CMD:
+                    # Cria arquivo HTML temporário
+                    tmp_html = None
+                    try:
+                        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.html', encoding='utf-8') as hf:
+                            hf.write(fixed_html)
+                            tmp_html = hf.name
+
+                        # Monta comando básico (habilita acesso local a arquivos)
+                        cmd = [WKHTMLTOPDF_CMD, '--enable-local-file-access']
+
+                        # Transforma algumas opções padrão em argumentos (opções simples)
+                        for k, v in DEFAULT_PDFKIT_OPTIONS.items():
+                            arg = f"--{k}"
+                            if v is None:
+                                cmd.append(arg)
+                            elif v == "":
+                                cmd.append(arg)
+                            else:
+                                cmd.extend([arg, str(v)])
+
+                        cmd.extend([tmp_html, str(output_path)])
+
+                        try:
+                            proc = subprocess.run(cmd, capture_output=True, timeout=30)
+                            if proc.returncode == 0:
+                                return 'wkhtmltopdf'
+                            else:
+                                err = proc.stderr.decode(errors='replace') or proc.stdout.decode(errors='replace')
+                                logger.warning("wkhtmltopdf failed (returncode %s): %s", proc.returncode, err)
+                                errors.append(f"wkhtmltopdf: {err}")
+                        except subprocess.TimeoutExpired as te:
+                            logger.warning("wkhtmltopdf timeout: %s", te)
+                            errors.append(f"wkhtmltopdf timeout: {te}")
+                    finally:
+                        if tmp_html and os.path.exists(tmp_html):
+                            try:
+                                os.unlink(tmp_html)
+                            except Exception:
+                                pass
+
+                # Se o subprocess direto falhar, tenta usar pdfkit como fallback
+                try:
+                    options = dict(DEFAULT_PDFKIT_OPTIONS)
+                    quiet_env = os.environ.get("PDFKIT_QUIET", "1").lower()
+                    if quiet_env in ("0", "false", "no"):
+                        options.pop("quiet", None)
+                        print("ℹ️ PDFKIT_QUIET desativado: logs verbosos habilitados para wkhtmltopdf.")
+
+                    pdfkit.from_string(
+                        fixed_html,
+                        str(output_path),
+                        configuration=PDFKIT_CONFIG,
+                        options=options,
+                    )
+                    print(f"✅ PDF gerado via pdfkit em: {output_path}")
+                    return "pdfkit"
+                except Exception as exc2:  # noqa: BLE001
+                    logger.warning("Falha ao gerar PDF com pdfkit após tentativa com subprocess: %s", exc2, exc_info=True)
+                    errors.append(f"pdfkit: {exc2}")
+
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Falha ao gerar PDF com pdfkit: %s", exc, exc_info=True)
-                errors.append(f"pdfkit: {exc}")
+                logger.warning("Falha ao gerar PDF com wkhtmltopdf/pdfkit: %s", exc, exc_info=True)
+                errors.append(f"pdfkit/wkhtmltopdf: {exc}")
 
     if WEASYPRINT_IMPORT_ERROR:
         errors.append(f"WeasyPrint indisponível: {WEASYPRINT_IMPORT_ERROR}")
@@ -2950,22 +3075,37 @@ def update_ticket():
 
 
     return redirect(url_for('painel'))  # Certifique-se de que a rota 'painel' exista
+
+
 @app.route('/export_pdf/<cpf>')
+
 @login_required
+
 def export_pdf(cpf):
 
-    print(f"[export_pdf] Rota chamada com CPF via path: {cpf!r}")
     db = get_sql_server_connection()
 
     cursor = db.cursor()
 
+
+
     try:
+
+        print("🔹 Início do export_pdf")  # <-- print inicial
+
+
 
         cursor.execute('SELECT * FROM registration_form WHERE cpf = ?', (cpf,))
 
-        row = cursor.fetchone()
+        candidato = cursor.fetchone()
 
-        if not row:
+        print("🔹 Resultado do fetchone:", candidato)  # <-- print resultado SQL
+
+
+
+        if not candidato:
+
+            print("🔹 Candidato não encontrado no banco de dados.")
 
             flash("Candidato não encontrado.", "danger")
 
@@ -2975,76 +3115,79 @@ def export_pdf(cpf):
 
         columns = [column[0] for column in cursor.description]
 
-        candidato = dict(zip(columns, row))
+        candidato = dict(zip(columns, candidato))
+
+        print("🔹 Dados do candidato como dict:", candidato)  # <-- print dict candidato
 
 
 
-        # Data de nascimento para exibição
+        # Data de nascimento
 
         if candidato.get('data_nasc'):
 
             try:
 
+                print("🔹 Data de nascimento original:", candidato['data_nasc'])
+
                 candidato['data_nasc'] = candidato['data_nasc'].strftime('%d/%m/%Y')
 
-            except AttributeError:
+                print("🔹 Data de nascimento formatada:", candidato['data_nasc'])
+
+            except AttributeError as e:
+
+                print("🔹 Erro ao formatar data de nascimento:", e)
 
                 candidato['data_nasc'] = "Data inválida"
 
 
 
-        # Currículo: só aceitar PDF existente
+        curriculo_path = os.path.join('static', 'uploads', candidato.get('curriculo', '')) if candidato.get('curriculo') else None
 
-        curriculo_path: Optional[Path] = None
-
-        if candidato.get('curriculo'):
-
-            p = Path('static') / 'uploads' / str(candidato['curriculo'])
-
-            if p.suffix.lower() == '.pdf' and p.exists():
-
-                curriculo_path = p
-
-            else:
-
-                flash("Currículo não é PDF ou não foi encontrado. Será ignorado no anexo.", "warning")
+        print("🔹 Curriculo path:", curriculo_path)
 
 
 
-        # Render do HTML da ficha (mantém estilização do template atual)
-        # Usa logo local para evitar bloqueios de rede/SSL no wkhtmltopdf
-        local_logo = url_for('static', filename='logo.png', _external=False)
-        rendered_html = render_template('candidato_template.html', form_data=candidato, logo_url=local_logo)
+        logo_url = 'https://jbconservadora.com.br/wp-content/uploads/2020/09/logo-final-jb.png'
+
+        rendered_html = render_template('candidato_template.html', form_data=candidato, logo_url=logo_url)
+
+        ficha_pdf_path = os.path.join('static', 'temp', f'Ficha_{cpf}.pdf')
 
 
 
-        # Geração do PDF da ficha via backend disponível
+        if not os.path.exists(os.path.dirname(ficha_pdf_path)):
 
-        out_dir = Path('static') / 'temp'
+            print("🔹 Criando diretório:", os.path.dirname(ficha_pdf_path))
 
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        ficha_pdf_path = out_dir / f'Ficha_{cpf}.pdf'
+            os.makedirs(os.path.dirname(ficha_pdf_path))
 
 
 
+        print("🔹 Gerando PDF da ficha...")
         try:
-
-            backend = generate_pdf_from_html(rendered_html, ficha_pdf_path)
-
-            logger.info("Ficha %s gerada com backend %s", cpf, backend)
-
-        except RuntimeError as exc:
-
-            logger.error("Falha ao gerar PDF da ficha %s: %s", cpf, exc, exc_info=True)
-
-            flash(str(exc), "danger")
-
+            # Usa a função centralizada que tenta pdfkit (wkhtmltopdf) e, se falhar, salva HTML
+            ensure_parent_directory(Path(ficha_pdf_path))
+            backend = generate_pdf_from_html(rendered_html, Path(ficha_pdf_path))
+            print(f"✅ PDF gerado via {backend} em: {ficha_pdf_path}")
+        except Exception as e:
+            logging.exception("Erro ao gerar PDF: %s", e)
+            # Salva HTML como fallback para não perder dados
+            html_path = ficha_pdf_path.replace('.pdf', '.html')
+            try:
+                with open(html_path, 'w', encoding='utf-8') as f:
+                    f.write(rendered_html)
+                flash("PDF não pôde ser gerado. Arquivo HTML foi salvo como alternativa.", "warning")
+            except Exception:
+                logging.exception("Falha ao salvar HTML de fallback para %s", html_path)
             return redirect(url_for('banco_rs'))
 
+        print("🔹 PDF da ficha gerado:", ficha_pdf_path, "Tamanho:", os.path.getsize(ficha_pdf_path) if os.path.exists(ficha_pdf_path) else 0)
 
 
-        if not ficha_pdf_path.exists() or ficha_pdf_path.stat().st_size == 0:
+
+        if not os.path.exists(ficha_pdf_path) or os.path.getsize(ficha_pdf_path) == 0:
+
+            print("🔹 ERRO: PDF da ficha não foi gerado corretamente.")
 
             flash("Erro ao gerar a ficha do candidato.", "danger")
 
@@ -3052,49 +3195,65 @@ def export_pdf(cpf):
 
 
 
-        # Merge com currículo (se existir)
-
         merger = PdfMerger()
 
-        try:
 
-            with ficha_pdf_path.open('rb') as f:
 
-                merger.append(f)
+        # Adiciona ficha do candidato
 
-            if curriculo_path:
+        with open(ficha_pdf_path, 'rb') as file:
 
-                try:
+            merger.append(file)
 
-                    with curriculo_path.open('rb') as f:
-
-                        PdfReader(f)  # valida PDF
-
-                    with curriculo_path.open('rb') as f:
-
-                        merger.append(f)
-
-                except Exception as exc:  # noqa: BLE001
-
-                    logger.warning("Falha ao anexar currículo %s: %s", curriculo_path, exc, exc_info=True)
-
-                    flash("O currículo não pôde ser anexado ao PDF final.", "warning")
+        print("🔹 Ficha do candidato anexada ao merger.")
 
 
 
-            final_pdf_path = out_dir / f'Candidato_{cpf}.pdf'
+        # Tenta anexar currículo
 
-            with final_pdf_path.open('wb') as f:
+        if curriculo_path and os.path.exists(curriculo_path):
 
-                merger.write(f)
+            try:
 
-        finally:
+                print("🔹 Tentando anexar currículo:", curriculo_path)
 
-            merger.close()
+                with open(curriculo_path, "rb") as f:
+
+                    PdfReader(f)
+
+                with open(curriculo_path, 'rb') as file:
+
+                    merger.append(file)
+
+                print("🔹 Currículo anexado com sucesso.")
+
+            except Exception as e:
+
+                print("🔹 Erro ao anexar currículo:", e)
+
+                flash("O currículo não pôde ser anexado ao PDF.", "warning")
+
+        else:
+
+            print("🔹 Currículo não encontrado ou caminho vazio.")
 
 
 
-        if not final_pdf_path.exists() or final_pdf_path.stat().st_size == 0:
+        output_pdf_path = os.path.join('static', 'temp', f'Candidato_{cpf}.pdf')
+
+        with open(output_pdf_path, 'wb') as output_file:
+
+            merger.write(output_file)
+
+        merger.close()
+
+        print("🔹 PDF final gerado:", output_pdf_path, "Tamanho:", os.path.getsize(output_pdf_path) if os.path.exists(output_pdf_path) else 0)
+
+
+
+        if not os.path.exists(output_pdf_path) or os.path.getsize(output_pdf_path) == 0:
+
+            print("🔹 ERRO: PDF final não foi gerado corretamente.")
 
             flash("Erro ao mesclar os PDFs.", "danger")
 
@@ -3102,29 +3261,27 @@ def export_pdf(cpf):
 
 
 
-        return send_file(
+        print("🔹 Tudo pronto! Retornando arquivo para download.")
 
-            str(final_pdf_path),
+        return send_file(output_pdf_path, mimetype='application/pdf', 
 
-            mimetype='application/pdf',
-
-            as_attachment=True,
-
-            download_name=f'Candidato_{cpf}.pdf',
-
-        )
+                        as_attachment=True, download_name=f'Candidato_{cpf}.pdf')
 
 
 
-    except Exception as exc:  # noqa: BLE001
+    except Exception as e:
 
-        logger.error("Erro inesperado no export_pdf para %s: %s", cpf, exc, exc_info=True)
+        print("🔹 ERRO GERAL:", e)
 
-        flash(f"Erro ao gerar o PDF do candidato: {exc}", "danger")
+        flash(f"Erro ao gerar o PDF do candidato: {e}", "danger")
 
         return redirect(url_for('banco_rs'))
 
+
+
     finally:
+
+        print("🔹 Fechando cursor e conexão com o banco.")
 
         cursor.close()
 
@@ -3132,16 +3289,7 @@ def export_pdf(cpf):
 
 
 
-@app.route('/export_pdf', methods=['GET', 'POST'])
-@login_required
-def export_pdf_query():
-    """Rota alternativa aceitando CPF via querystring (?cpf=) ou formulário (POST)."""
-    cpf = request.args.get('cpf') or request.form.get('cpf')
-    print(f"[export_pdf_query] Rota chamada com CPF via query/form: {cpf!r}")
-    if not cpf:
-        flash("CPF não informado para exportação do PDF.", "danger")
-        return redirect(url_for('banco_rs'))
-    return export_pdf(cpf)
+
 
 @app.route('/submit_form', methods=['POST'])
 

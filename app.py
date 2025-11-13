@@ -47,7 +47,7 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 # (libgobject-2.0-0.dll etc.). Preferimos usar pdfkit/wkhtmltopdf no Windows.
 WEASYPRINT_AVAILABLE = False
 WEASYPRINT_IMPORT_ERROR = None
-# ...existing code...
+# ...rest of the code...
 from flask_login import (
     LoginManager,
     UserMixin,
@@ -737,13 +737,6 @@ def sincronizar_banco(cursor, db):
     db.commit()
 
     print(f"[SINCRONIZADOR BANCO] {total_corrigidos} registros corrigidos/sincronizados.")
-
-
-
-
-
-
-
 def atualizar_situacao_em_massa(cursor, db):
 
     situacao_map = [
@@ -1522,7 +1515,6 @@ def save_registration_form(ticket_data):
 
 
 @login_manager.user_loader
-
 def load_user(user_id):
 
     db = get_sql_server_connection()
@@ -2180,7 +2172,6 @@ def gerar_excel(dados, data_inicio, data_fim, tipo='resumo_geral', logo_path='st
 
 
 @app.route('/relatorio_excel', methods=['POST'])
-
 def gerar_relatorio_excel():
 
     data_inicio = request.form['data_inicio']
@@ -2929,7 +2920,6 @@ def get_ticket(ticket_id):
 @app.route('/update_ticket', methods=['POST'])
 
 @login_required
-
 def update_ticket():
 
     # Captura os dados do formulário
@@ -3292,7 +3282,6 @@ def export_pdf(cpf):
 
 
 @app.route('/submit_form', methods=['POST'])
-
 @login_required
 def submit_form():
 
@@ -3648,6 +3637,36 @@ def submit_form():
 
 
 
+        # Normaliza campos de data para o formato YYYY-MM-DD (sem timezone)
+
+        try:
+
+            if form_data.get('data_nasc'):
+
+                raw = str(form_data['data_nasc']).strip()
+
+                try:
+
+                    if "/" in raw:
+
+                        dt = datetime.strptime(raw, '%d/%m/%Y')
+
+                    else:
+
+                        dt = datetime.strptime(raw, '%Y-%m-%d')
+
+                    form_data['data_nasc'] = dt.strftime('%Y-%m-%d')
+
+                except ValueError:
+
+                    pass
+
+        except Exception:
+
+            pass
+
+
+
         # Backup dos dados do formulário em arquivo local antes de tentar salvar no banco
 
         # Isso garante que mesmo em falha total, os dados possam ser recuperados
@@ -3682,7 +3701,11 @@ def submit_form():
 
         # Filtrar o dicionário para incluir apenas colunas que existem na tabela
 
-        form_data_filtered = {k: v for k, v in form_data.items() if k in column_names}
+        form_data_filtered = {k: (v if v is not None else '') 
+
+                           for k, v in form_data.items() 
+
+                           if k in column_names}
 
         
 
@@ -3903,8 +3926,11 @@ def submit_form():
             print(f"Erro ao salvar log em arquivo: {log_error}")
 
             # Continua mesmo com erro de log
+
         # Commit final das alterações
+
         db.commit()
+
         print(f"Commit finalizado com sucesso para CPF: {cpf}")
 
         
@@ -4062,6 +4088,7 @@ def _salvar_backup_formulario(dados):
         print(f"Erro ao salvar backup: {e}")
 
         return False
+
 def _remover_backup_formulario(cpf):
 
     """Remove backups existentes para um CPF após salvamento bem-sucedido"""
@@ -4087,9 +4114,6 @@ def _remover_backup_formulario(cpf):
     except Exception as e:
 
         print(f"Erro ao remover backup: {e}")
-
-
-
 def _salvar_erro_local(cpf, tipo_erro, mensagem, dados):
 
     """Salva detalhes de erro em arquivo local para recuperação posterior"""
@@ -4796,9 +4820,6 @@ def banco_rs():
     '''
 
     params.extend([start_row, end_row])
-
-
-
     # Executar consulta
     cursor.execute(query, params)
     candidatos = cursor.fetchall()
@@ -5510,9 +5531,7 @@ def manage_candidates():
     
 
     return render_template('manage_candidates.html', candidates=candidates)
-@app.route('/user_logs')
-@login_required
-def user_logs():
+</rewritten_file>def user_logs():
 
     if not current_user.is_admin:
 
@@ -11358,6 +11377,36 @@ def auto_save_form(cpf):
 
 
 
+            # Normaliza campos de data para o formato YYYY-MM-DD (sem timezone)
+
+            try:
+
+                if complete_data.get('data_nasc'):
+
+                    raw = str(complete_data['data_nasc']).strip()
+
+                    try:
+
+                        if "/" in raw:
+
+                            dt = datetime.strptime(raw, '%d/%m/%Y')
+
+                        else:
+
+                            dt = datetime.strptime(raw, '%Y-%m-%d')
+
+                        complete_data['data_nasc'] = dt.strftime('%Y-%m-%d')
+
+                    except ValueError:
+
+                        pass
+
+            except Exception:
+
+                pass
+
+
+
             # Filtrar para incluir apenas colunas válidas
 
             valid_data = {k: v for k, v in complete_data.items() if k in valid_columns}
@@ -11473,6 +11522,36 @@ def auto_save_form(cpf):
         processed_data['situacao'] = situacao_atualizada
 
         # >>>> FIM DA MODIFICAÇÃO <<<<
+
+
+
+        # Normaliza campos de data para o formato YYYY-MM-DD (sem timezone)
+
+        try:
+
+            if processed_data.get('data_nasc'):
+
+                raw = str(processed_data['data_nasc']).strip()
+
+                try:
+
+                    if "/" in raw:
+
+                        dt = datetime.strptime(raw, '%d/%m/%Y')
+
+                    else:
+
+                        dt = datetime.strptime(raw, '%Y-%m-%d')
+
+                    processed_data['data_nasc'] = dt.strftime('%Y-%m-%d')
+
+                except ValueError:
+
+                    pass
+
+        except Exception:
+
+            pass
 
 
 
@@ -12650,7 +12729,6 @@ def _processar_arquivo_backup(filepath):
 @app.route('/local_recovery')
 
 @login_required
-
 def local_recovery():
 
     """Interface para o usuário recuperar fichas salvas localmente no navegador."""
@@ -14203,7 +14281,6 @@ def display_tv():
         if db:
 
             db.close()
-@app.route('/api/tickets_dp')
 def api_tickets_dp():
 
     db = get_sql_server_connection()

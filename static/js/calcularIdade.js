@@ -3,15 +3,28 @@ function calcularIdade(dataNasc) {
     if (!dataNasc || dataNasc.length < 10) return ''; // Verifica se a data tem 10 caracteres completos (AAAA-MM-DD)
 
     var hoje = new Date();
-    var nascimento = new Date(dataNasc);
+    // Parse local sem timezone (AAAA-MM-DD ou DD/MM/AAAA)
+    var y, m, d;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataNasc)) {
+        y = parseInt(dataNasc.slice(0, 4), 10);
+        m = parseInt(dataNasc.slice(5, 7), 10);
+        d = parseInt(dataNasc.slice(8, 10), 10);
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataNasc)) {
+        d = parseInt(dataNasc.slice(0, 2), 10);
+        m = parseInt(dataNasc.slice(3, 5), 10);
+        y = parseInt(dataNasc.slice(6, 10), 10);
+    } else {
+        return '';
+    }
+    var nascimento = new Date(y, m - 1, d);
 
     if (isNaN(nascimento.getTime())) {
         return ''; // Retorna vazio se a data for inválida
     }
 
     var idade = hoje.getFullYear() - nascimento.getFullYear();
-    var m = hoje.getMonth() - nascimento.getMonth();
-    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+    var mm = hoje.getMonth() - nascimento.getMonth();
+    if (mm < 0 || (mm === 0 && hoje.getDate() < nascimento.getDate())) {
         idade--; // Subtrai um ano da idade
     }
 

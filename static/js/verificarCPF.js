@@ -28,7 +28,18 @@
                     document.getElementById('estado_nasc').value = data.estado_nasc;
                     preencherCidades(data.estado_nasc);
                     document.getElementById('cidade_nasc').value = data.cidade_nasc;
-                    document.getElementById('data_nasc').value = data.data_nasc;
+                    // Normaliza data_nasc para YYYY-MM-DD
+                    (function() {
+                        const raw = data.data_nasc || '';
+                        let ymd = '';
+                        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                            ymd = raw.slice(0,10);
+                        } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+                            const d = raw.slice(0,2), m = raw.slice(3,5), y = raw.slice(6,10);
+                            ymd = `${y}-${m}-${d}`;
+                        }
+                        document.getElementById('data_nasc').value = ymd;
+                    })();
                     document.getElementById('idade').value = data.idade;
                     document.getElementById('numero_filhos').value = data.filhos;
                     document.getElementById('fumante_sim').checked = data.fumante == 'Sim';

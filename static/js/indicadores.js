@@ -3,6 +3,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let ticketsChart, completedTicketsChart, recruiterPerformanceChart;
     let averageWaitTimeChart, averageServiceTimeChart, waitVsServiceTimeChart;
     
+    // Helper: formata Date para YYYY-MM-DD usando horário local
+    function toLocalYMD(dateObj) {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    
     // Configuração do Relatório de Situação
     const btnRelatorioSituacao = document.getElementById('btn-relatorio-situacao');
     const btnConfirmarExportacao = document.getElementById('btn-confirmar-exportacao');
@@ -16,8 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const dataFinalInput = document.getElementById('data-final-situacao');
         
         if (dataInicialInput && dataFinalInput) {
-            dataInicialInput.value = inicioAno.toISOString().split('T')[0];
-            dataFinalInput.value = hoje.toISOString().split('T')[0];
+            dataInicialInput.value = toLocalYMD(inicioAno);
+            dataFinalInput.value = toLocalYMD(hoje);
         }
         
         btnConfirmarExportacao.addEventListener('click', function() {
@@ -54,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Variável para armazenar a data selecionada atualmente
-    let dataAtualSelecionada = new Date().toISOString().split('T')[0]; // Data atual por padrão
+    let dataAtualSelecionada = toLocalYMD(new Date()); // Data atual por padrão
     
     // Variável para armazenar a categoria selecionada
     let categoriaSelecionada = "ALL"; // Todas as categorias por padrão
@@ -103,8 +111,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Função para formatar a data no padrão brasileiro
     function formatarData(dataStr) {
-        // Adicionar timezone (T00:00:00) para evitar problemas com fuso horário
-        // onde a data pode mudar durante a conversão
         const dataParts = dataStr.split('-');
         const data = new Date(dataParts[0], dataParts[1] - 1, dataParts[2]);
         return data.toLocaleDateString('pt-BR');
@@ -394,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
         
-        const dataFormatada = dataConsulta.toISOString().split('T')[0];
+        const dataFormatada = toLocalYMD(dataConsulta);
         dataAtualSelecionada = dataFormatada;
         
         // Atualizar o valor do calendário
@@ -405,16 +411,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (periodo) {
             switch (periodo) {
                 case '3DIAS':
-                    textoData = `Últimos 3 Dias (até ${formatarData(new Date().toISOString().split('T')[0])})`;
+                    textoData = `Últimos 3 Dias (até ${formatarData(toLocalYMD(new Date()))})`;
                     break;
                 case 'SEMANA':
-                    textoData = `Última Semana (até ${formatarData(new Date().toISOString().split('T')[0])})`;
+                    textoData = `Última Semana (até ${formatarData(toLocalYMD(new Date()))})`;
                     break;
                 case 'MES':
-                    textoData = `Último Mês (até ${formatarData(new Date().toISOString().split('T')[0])})`;
+                    textoData = `Último Mês (até ${formatarData(toLocalYMD(new Date()))})`;
                     break;
                 case 'ANO':
-                    textoData = `Último Ano (até ${formatarData(new Date().toISOString().split('T')[0])})`;
+                    textoData = `Último Ano (até ${formatarData(toLocalYMD(new Date()))})`;
                     break;
             }
         }

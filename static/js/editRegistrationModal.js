@@ -1,9 +1,19 @@
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0'); // Dia com dois dígitos
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Mês com dois dígitos (0-indexado)
-    const year = date.getFullYear(); // Ano com 4 dígitos
-    return `${day}/${month}/${year}`; // Formato dd/mm/yyyy
+    if (!dateString) return '';
+    // Converte para YYYY-MM-DD sem timezone
+    let y, m, d;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        // já está em formato ISO simples
+        return dateString.slice(0, 10);
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+        d = dateString.slice(0, 2);
+        m = dateString.slice(3, 5);
+        y = dateString.slice(6, 10);
+        return `${y}-${m}-${d}`;
+    } else {
+        // Tenta extrair apenas parte de data se vier com hora
+        return dateString.slice(0, 10);
+    }
 }    
     
     document.querySelectorAll('.btn-edit').forEach(button => {
@@ -36,7 +46,7 @@ function formatDate(dateString) {
                 document.getElementById('edit-cidade').value = data.cidade || '';
                 document.getElementById('edit-observacoes').value = data.observacoes || '';
                 document.getElementById('edit-situacao').value = data.situacao || '';
-                // Formata a data de nascimento
+                // Normaliza a data de nascimento para YYYY-MM-DD
                 const formattedDate = data.data_nasc ? formatDate(data.data_nasc) : '';
                 document.getElementById('edit-data_nasc').value = formattedDate;                
                 document.getElementById('edit-escolaridade').value = data.escolaridade || '';

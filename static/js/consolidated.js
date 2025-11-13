@@ -27,7 +27,20 @@ function calcularIdade(dataNascimento) {
     if (!dataNascimento) return "";
     
     const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
+    // Parse local sem timezone
+    let y, m, d;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataNascimento)) {
+        y = parseInt(dataNascimento.slice(0, 4), 10);
+        m = parseInt(dataNascimento.slice(5, 7), 10);
+        d = parseInt(dataNascimento.slice(8, 10), 10);
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataNascimento)) {
+        d = parseInt(dataNascimento.slice(0, 2), 10);
+        m = parseInt(dataNascimento.slice(3, 5), 10);
+        y = parseInt(dataNascimento.slice(6, 10), 10);
+    } else {
+        return "";
+    }
+    const nascimento = new Date(y, m - 1, d);
     let idade = hoje.getFullYear() - nascimento.getFullYear();
     const mesAtual = hoje.getMonth();
     const mesNascimento = nascimento.getMonth();

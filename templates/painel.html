@@ -1185,12 +1185,21 @@
                     // Tratamento especial para a data de nascimento
                     if (data.data_nasc) {
                         // Converte a data para o formato YYYY-MM-DD esperado pelo input type="date"
-                        const dataObj = new Date(data.data_nasc);
-                        const ano = dataObj.getFullYear();
-                        // getMonth() retorna 0-11, por isso adiciona 1
-                        const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                        const dia = String(dataObj.getDate()).padStart(2, '0');
-                        const dataFormatada = `${ano}-${mes}-${dia}`;
+                        let y, m, d;
+                        if (/^\d{4}-\d{2}-\d{2}/.test(data.data_nasc)) {
+                            y = data.data_nasc.slice(0, 4);
+                            m = data.data_nasc.slice(5, 7);
+                            d = data.data_nasc.slice(8, 10);
+                        } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(data.data_nasc)) {
+                            d = data.data_nasc.slice(0, 2);
+                            m = data.data_nasc.slice(3, 5);
+                            y = data.data_nasc.slice(6, 10);
+                        } else {
+                            y = data.data_nasc.slice(0, 4);
+                            m = data.data_nasc.slice(5, 7);
+                            d = data.data_nasc.slice(8, 10);
+                        }
+                        const dataFormatada = `${y}-${m}-${d}`;
 
                         console.log("Data formatada para o input:", dataFormatada);
                         document.getElementById('edit-data_nasc').value = dataFormatada;

@@ -1865,6 +1865,23 @@ Sistema RS - Atualizar Ficha
 </script>
 {% endif %}
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dataNascInput = document.getElementById('data_nasc');
+        if (!dataNascInput) return;
+        let v = (dataNascInput.value || '').trim();
+        if (!v) return;
+        // Converte de DD/MM/YYYY para YYYY-MM-DD quando necessário
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
+            const [d, m, y] = v.split('/');
+            dataNascInput.value = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        } else if (!/^\d{4}-\d{2}-\d{2}/.test(v) && v.length >= 10) {
+            // Garante apenas a parte da data quando vier com hora
+            dataNascInput.value = v.slice(0, 10);
+        }
+    });
+</script>
+
 
 
 

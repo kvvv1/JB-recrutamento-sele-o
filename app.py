@@ -2954,6 +2954,7 @@ def update_ticket():
 @login_required
 def export_pdf(cpf):
 
+    print(f"[export_pdf] Rota chamada com CPF via path: {cpf!r}")
     db = get_sql_server_connection()
 
     cursor = db.cursor()
@@ -3130,6 +3131,17 @@ def export_pdf(cpf):
         db.close()
 
 
+
+@app.route('/export_pdf', methods=['GET', 'POST'])
+@login_required
+def export_pdf_query():
+    """Rota alternativa aceitando CPF via querystring (?cpf=) ou formulário (POST)."""
+    cpf = request.args.get('cpf') or request.form.get('cpf')
+    print(f"[export_pdf_query] Rota chamada com CPF via query/form: {cpf!r}")
+    if not cpf:
+        flash("CPF não informado para exportação do PDF.", "danger")
+        return redirect(url_for('banco_rs'))
+    return export_pdf(cpf)
 
 @app.route('/submit_form', methods=['POST'])
 

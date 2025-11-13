@@ -117,13 +117,16 @@ try:
             PDFKIT_CONFIGURATION = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_CMD)
             PDFKIT_CONFIG = PDFKIT_CONFIGURATION
             logger.info("pdfkit configurado com wkhtmltopdf: %s", WKHTMLTOPDF_CMD)
+            print(f"✅ pdfkit configurado com wkhtmltopdf: {WKHTMLTOPDF_CMD}")
         except Exception as exc:  # noqa: BLE001
             logger.warning("Falha ao configurar pdfkit: %s", exc)
             PDFKIT_CONFIGURATION = None
             PDFKIT_CONFIG = None
+            print(f"⚠️ Falha ao configurar pdfkit: {exc}")
 except ImportError as exc:
     PDFKIT_IMPORT_ERROR = exc
     logger.warning("pdfkit indisponível: %s.", exc)
+    print(f"⚠️ pdfkit indisponível: {exc}")
 
 DEFAULT_PDFKIT_OPTIONS = {
     "page-size": "A4",
@@ -185,12 +188,14 @@ def generate_pdf_from_html(rendered_html: str, output_path: Path) -> str:
                 quiet_env = os.environ.get("PDFKIT_QUIET", "1").lower()
                 if quiet_env in ("0", "false", "no"):
                     options.pop("quiet", None)
+                    print("ℹ️ PDFKIT_QUIET desativado: logs verbosos habilitados para wkhtmltopdf.")
                 pdfkit.from_string(
                     fixed_html,
                     str(output_path),
                     configuration=PDFKIT_CONFIG,
                     options=options,
                 )
+                print(f"✅ PDF gerado via pdfkit em: {output_path}")
                 return "pdfkit"
             except Exception as exc:  # noqa: BLE001
                 logger.warning("Falha ao gerar PDF com pdfkit: %s", exc, exc_info=True)
@@ -1848,6 +1853,42 @@ def admin_dashboard():
 
 
     return render_template('admin_dashboard.html', users=users)
+@app.route('/admin/pdf_status')
+@login_required
+@admin_required
+def pdf_status():
+    """Exibe o status de carregamento do stack de PDF e faz verificações básicas."""
+    try:
+        static_dir = Path(app.static_folder).resolve()
+        temp_dir = static_dir / "temp"
+        uploads_dir = static_dir / "uploads"
+        logo_path = static_dir / "logo.png"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        status = {
+            "weasyprint_available": WEASYPRINT_AVAILABLE,
+            "pdfkit_imported": PDFKIT_IMPORTED,
+            "wkhtmltopdf_cmd": WKHTMLTOPDF_CMD,
+            "pdfkit_config_ok": PDFKIT_CONFIG is not None,
+            "disable_pdfkit_env": DISABLE_PDFKIT,
+            "pdfkit_quiet": os.environ.get("PDFKIT_QUIET", "1"),
+            "wkhtmltopdf_env_path": os.environ.get("WKHTMLTOPDF_PATH"),
+            "static_dir": str(static_dir),
+            "temp_dir_exists": temp_dir.exists(),
+            "uploads_dir_exists": uploads_dir.exists(),
+            "logo_png_exists": logo_path.exists(),
+        }
+        # Teste opcional de geração rápida com HTML mínimo (?test=1)
+        if request.args.get("test") == "1":
+            html = "<html><body><h1>Teste PDF</h1><p>OK</p></body></html>"
+            out = temp_dir / "teste_pdf_status.pdf"
+            try:
+                backend = generate_pdf_from_html(html, out)
+                status["test_generation"] = {"success": True, "backend": backend, "output": str(out)}
+            except Exception as exc:  # noqa: BLE001
+                status["test_generation"] = {"success": False, "error": str(exc)}
+        return jsonify(status)
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": str(exc)}), 500
 
 
 

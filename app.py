@@ -2880,9 +2880,6 @@ def update_ticket():
 
 
     return redirect(url_for('painel'))  # Certifique-se de que a rota 'painel' exista
-
-
-
 @app.route('/export_pdf/<cpf>')
 @login_required
 def export_pdf(cpf):
@@ -3677,9 +3674,6 @@ def submit_form():
             print(f"Erro ao salvar log em arquivo: {log_error}")
 
             # Continua mesmo com erro de log
-
-
-
         # Commit final das alterações
         db.commit()
         print(f"Commit finalizado com sucesso para CPF: {cpf}")
@@ -5144,9 +5138,6 @@ def view_or_fill_inscription(id):
     cursor.close()
 
     return render_template('view_or_fill_inscription.html', ticket=ticket, form_data=form_data)
-
-
-
 @app.route('/admin/manage_users', methods=['GET', 'POST'])
 @login_required
 def manage_users():
@@ -5290,6 +5281,8 @@ def manage_candidates():
     
 
     return render_template('manage_candidates.html', candidates=candidates)
+@app.route('/user_logs')
+@login_required
 def user_logs():
 
     if not current_user.is_admin:
@@ -7956,6 +7949,7 @@ def indicadores_data():
     db.close()
 
     return jsonify({'data': result})
+@app.route('/exportar_relatorio_situacao')
 def exportar_relatorio_situacao():
 
     from io import BytesIO
@@ -9734,6 +9728,8 @@ def get_registration_data():
 
 
     return jsonify(data)
+@app.route('/export_excel/<cpf>')
+@login_required
 def export_excel(cpf):
 
     db = get_sql_server_connection()
@@ -9979,11 +9975,6 @@ def get_data_nasc(cpf):
     
 
     return jsonify({'error': 'Candidato não encontrado'}), 404
-
-
-
-   
-
 @app.route('/view_registration/<cpf>')
 @login_required
 def view_registration(cpf):
@@ -10389,6 +10380,8 @@ def modal_view(cpf):
         cpf=cpf
 
     )
+@app.route('/update_form/<cpf>', methods=['GET', 'POST'])
+@login_required
 def update_form(cpf):
 
     db = None
@@ -11042,6 +11035,8 @@ def update_registration():
         if db:
 
             db.close()
+@app.route('/auto_save_form/<cpf>', methods=['POST'])
+@login_required
 def auto_save_form(cpf):
 
     db = None
@@ -11625,6 +11620,8 @@ def set_recruiter():
         flash('Erro ao definir recrutador.', 'danger')
 
         return redirect(request.referrer)
+@app.route('/create_ficha_manual', methods=['POST'])
+@login_required
 def create_ficha_manual():
 
     if request.method == 'GET':
@@ -11635,11 +11632,27 @@ def create_ficha_manual():
 
 
 
-    nome_completo = request.form.get('nome_completo', '').strip()
+    # Suporta tanto POST de formulário quanto JSON (fetch)
 
-    cpf = request.form.get('cpf', '').replace('.', '').replace('-', '').strip()
+    is_json = request.is_json
 
-    data_nasc = request.form.get('data_nasc', '').strip()
+    if is_json:
+
+        data = request.get_json(silent=True) or {}
+
+        nome_completo = (data.get('nome_completo') or '').strip()
+
+        cpf = re.sub(r'[^0-9]', '', (data.get('cpf') or ''))
+
+        data_nasc = (data.get('data_nasc') or '').strip()
+
+    else:
+
+        nome_completo = request.form.get('nome_completo', '').strip()
+
+        cpf = request.form.get('cpf', '').replace('.', '').replace('-', '').strip()
+
+        data_nasc = request.form.get('data_nasc', '').strip()
 
 
 
@@ -11660,6 +11673,10 @@ def create_ficha_manual():
 
 
         if existing_candidate:
+
+            if is_json:
+
+                return jsonify({"success": False, "message": "Já existe uma ficha criada com este CPF!"}), 400
 
             flash('Já existe uma ficha criada com este CPF!', 'warning')
 
@@ -11690,6 +11707,10 @@ def create_ficha_manual():
                     data_nasc = datetime.strptime(data_nasc, '%Y-%m-%d').strftime('%Y-%m-%d')
 
             except ValueError:
+
+                if is_json:
+
+                    return jsonify({"success": False, "message": "Formato de data inválido. Use DD/MM/YYYY ou YYYY-MM-DD."}), 400
 
                 flash('Formato de data inválido. Use DD/MM/YYYY ou YYYY-MM-DD.', 'danger')
 
@@ -11813,21 +11834,15 @@ def create_ficha_manual():
 
         }
 
-
-
         # Filtrar colunas válidas para evitar erros
 
         form_data = {k: v for k, v in form_data.items() if k in valid_columns}
-
-
 
         # Construa a query dinamicamente
 
         columns = ', '.join(form_data.keys())
 
         placeholders = ', '.join(['?' for _ in form_data])
-
-
 
         # Insere os dados (Sem o campo ID)
 
@@ -11837,6 +11852,10 @@ def create_ficha_manual():
 
 
 
+        if is_json:
+
+            return jsonify({"success": True, "cpf": cpf})
+
         flash('Ficha criada com sucesso!', 'success')
 
         return redirect(url_for('view_form', cpf=cpf))
@@ -11845,6 +11864,10 @@ def create_ficha_manual():
 
     except Exception as e:
 
+        if is_json:
+
+            return jsonify({"success": False, "message": f"Erro ao criar a ficha: {str(e)}"}), 500
+
         print(f"Erro ao criar ficha manual: {e}")
 
         flash('Erro ao criar a ficha.', 'danger')
@@ -11852,6 +11875,122 @@ def create_ficha_manual():
         return redirect(url_for('banco_rs'))
 
 
+
+    finally:
+
+        cursor.close()
+
+        db.close()
+
+
+
+@app.route('/create_final_manual', methods=['POST'])
+
+@login_required
+
+def create_final_manual():
+
+    """Cria uma ficha manual via JSON (fetch), retornando JSON com CPF ou erro."""
+
+    if not request.is_json:
+
+        return jsonify({"success": False, "message": "Conteúdo inválido. Envie JSON."}), 400
+
+    data = request.get_json(silent=True) or {}
+
+    nome_completo = (data.get('nome_completo') or '').strip()
+
+    cpf = re.sub(r'[^0-9]', '', (data.get('cpf') or ''))
+
+    data_nasc = (data.get('data_nasc') or '').strip()
+
+
+
+    if not nome_completo or not cpf:
+
+        return jsonify({"success": False, "message": "Nome completo e CPF são obrigatórios."}), 400
+
+
+
+    db = get_sql_server_connection()
+
+    cursor = db.cursor()
+
+    try:
+
+        cursor.execute('SELECT cpf FROM registration_form WHERE cpf = ?', (cpf,))
+
+        if cursor.fetchone():
+
+            return jsonify({"success": False, "message": "Já existe uma ficha criada com este CPF!"}), 400
+
+
+
+        if data_nasc:
+
+            try:
+
+                if "/" in data_nasc:
+
+                    data_nasc = datetime.strptime(data_nasc, '%d/%m/%Y').strftime('%Y-%m-%d')
+
+                else:
+
+                    data_nasc = datetime.strptime(data_nasc, '%Y-%m-%d').strftime('%Y-%m-%d')
+
+            except ValueError:
+
+                return jsonify({"success": False, "message": "Formato de data inválido. Use DD/MM/YYYY ou YYYY-MM-DD."}), 400
+
+        else:
+
+            data_nasc = None
+
+
+
+        # Obtenha colunas válidas
+
+        cursor.execute('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?', ('registration_form',))
+
+        valid_columns = {row[0] for row in cursor.fetchall()}
+
+
+
+        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        form_data = {k: v for k, v in {
+
+            'nome_completo': nome_completo,
+
+            'cpf': cpf,
+
+            'data_nasc': data_nasc,
+
+            'created_at': created_at,
+
+            'situacao': '',
+
+            'last_updated': ''
+
+        }.items() if k in valid_columns}
+
+
+
+        columns = ', '.join(form_data.keys())
+
+        placeholders = ', '.join(['?' for _ in form_data])
+
+        cursor.execute(f'INSERT INTO registration_form ({columns}) VALUES ({placeholders})', tuple(form_data.values()))
+
+        db.commit()
+
+        return jsonify({"success": True, "cpf": cpf})
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({"success": False, "message": f"Erro ao criar a ficha: {str(e)}"}), 500
 
     finally:
 
@@ -13835,6 +13974,7 @@ def display_tv():
         if db:
 
             db.close()
+@app.route('/api/tickets_dp')
 def api_tickets_dp():
 
     db = get_sql_server_connection()

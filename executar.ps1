@@ -12,3 +12,4 @@ Write-Host "Ativando ambiente virtual..." -ForegroundColor Yellow
 Write-Host "Executando app.py..." -ForegroundColor Green
 py app.py
 
+

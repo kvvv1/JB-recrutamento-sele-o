@@ -77,7 +77,66 @@ function inicializarMascaras() {
 
 // Função para buscar CEP (usa a função melhorada se disponível, senão usa implementação própria)
 async function buscarCEP() {
-    // Se a função melhorada estiver disponível, usa ela
+    // Se a função melhorada com fallback completo estiver disponível, usa ela
+    if (window.buscarCEPComFallback) {
+        const cepField = document.getElementById('cep');
+        if (!cepField) {
+            conditionalLog('Campo CEP não encontrado');
+            return;
+        }
+
+        const cep = cepField.value.replace(/\D/g, '');
+        
+        if (cep.length !== 8) {
+            alert('CEP inválido. Por favor, insira um CEP com 8 dígitos.');
+            return;
+        }
+
+        try {
+            const dados = await window.buscarCEPComFallback(cep);
+            
+            if (dados) {
+                // Preenche os campos
+                const enderecoField = document.getElementById('endereco') || document.getElementById('rua');
+                const bairroField = document.getElementById('bairro');
+                const cidadeField = document.getElementById('cidade') || document.getElementById('localidade');
+                const ufField = document.getElementById('uf') || document.getElementById('estado') || document.getElementById('estado_nasc');
+
+                if (enderecoField) enderecoField.value = dados.logradouro || '';
+                if (bairroField) bairroField.value = dados.bairro || '';
+                if (cidadeField) cidadeField.value = dados.cidade || '';
+                
+                // Preenche UF se for select
+                if (ufField) {
+                    if (ufField.tagName === 'SELECT') {
+                        const valorUF = (dados.uf || '').toUpperCase();
+                        for (let i = 0; i < ufField.options.length; i++) {
+                            if (ufField.options[i].value === valorUF) {
+                                ufField.value = valorUF;
+                                break;
+                            }
+                        }
+                    } else {
+                        ufField.value = dados.uf || '';
+                    }
+                }
+
+                // Foca no campo de número
+                const numeroField = document.getElementById('numero');
+                if (numeroField) {
+                    setTimeout(() => numeroField.focus(), 300);
+                }
+            } else {
+                alert('CEP não encontrado. Verifique se o CEP está correto.');
+            }
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+            alert('Erro ao buscar o endereço. Tente novamente mais tarde.');
+        }
+        return;
+    }
+
+    // Se buscarEnderecoPorCEP estiver disponível, usa ela
     if (window.buscarEnderecoPorCEP) {
         await window.buscarEnderecoPorCEP();
         // Foca no campo de número após preencher o endereço
@@ -88,7 +147,7 @@ async function buscarCEP() {
         return;
     }
 
-    // Fallback: implementação própria com suporte a múltiplas APIs
+    // Fallback: implementação básica (não deveria chegar aqui se buscarCep.js estiver carregado)
     const cepField = document.getElementById('cep');
     if (!cepField) {
         conditionalLog('Campo CEP não encontrado');
@@ -102,82 +161,7 @@ async function buscarCEP() {
         return;
     }
 
-    // Tenta ViaCEP primeiro
-    try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Erro na resposta da API');
-        }
-
-        const data = await response.json();
-
-        if (data.erro === true) {
-            // Se ViaCEP falhar, tenta BrasilAPI
-            throw new Error('CEP não encontrado no ViaCEP');
-        }
-
-        // Preenche os campos
-        const enderecoField = document.getElementById('endereco');
-        const bairroField = document.getElementById('bairro');
-        const cidadeField = document.getElementById('cidade');
-
-        if (enderecoField) enderecoField.value = data.logradouro || '';
-        if (bairroField) bairroField.value = data.bairro || '';
-        if (cidadeField) cidadeField.value = data.localidade || '';
-
-        // Foca no campo de número
-        const numeroField = document.getElementById('numero');
-        if (numeroField) {
-            setTimeout(() => numeroField.focus(), 300);
-        }
-
-    } catch (error) {
-        // Fallback: tenta BrasilAPI
-        try {
-            const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro na resposta da BrasilAPI');
-            }
-
-            const data = await response.json();
-
-            if (data.type === 'service_error' || data.type === 'validation_error') {
-                alert('CEP não encontrado. Verifique se o CEP está correto.');
-                return;
-            }
-
-            // Preenche os campos
-            const enderecoField = document.getElementById('endereco');
-            const bairroField = document.getElementById('bairro');
-            const cidadeField = document.getElementById('cidade');
-
-            if (enderecoField) enderecoField.value = data.street || '';
-            if (bairroField) bairroField.value = data.neighborhood || '';
-            if (cidadeField) cidadeField.value = data.city || '';
-
-            // Foca no campo de número
-            const numeroField = document.getElementById('numero');
-            if (numeroField) {
-                setTimeout(() => numeroField.focus(), 300);
-            }
-
-        } catch (fallbackError) {
-            console.error('Erro ao buscar CEP:', fallbackError);
-            alert('Erro ao buscar o endereço. Tente novamente mais tarde.');
-        }
-    }
+    alert('Função de busca de CEP não disponível. Verifique se o arquivo buscarCep.js está carregado.');
 }
 
 // Inicialização quando o documento estiver pronto

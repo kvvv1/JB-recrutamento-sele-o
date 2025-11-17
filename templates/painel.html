@@ -1116,6 +1116,7 @@
     <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
     <script src="{{ url_for('static', filename='js/verify_cpf.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mascaras.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/buscarCep.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script>
@@ -1824,43 +1825,102 @@
             }
         });
 
-        function buscarEndereco() {
-            var cep = document.getElementById('cep').value.replace(/\D/g, '');
+        // Função melhorada que usa o sistema de fallback com múltiplas APIs
+        async function buscarEndereco() {
+            // Se a função global melhorada estiver disponível, usa ela
+            if (window.buscarEndereco) {
+                await window.buscarEndereco();
+                return;
+            }
 
-            if (cep !== "") {
-                // Expressão regular para validar o CEP
-                var validacep = /^[0-9]{8}$/;
+            // Fallback: implementação básica
+            var cepField = document.getElementById('cep') || document.getElementById('edit-cep');
+            var prefix = '';
+            
+            if (document.activeElement && document.activeElement.closest('#edit-ticket-form')) {
+                cepField = document.getElementById('edit-cep');
+                prefix = 'edit-';
+            } else {
+                cepField = document.getElementById('cep');
+                prefix = '';
+            }
 
-                if (validacep.test(cep)) {
-                    // Mostrar a mensagem de "Aguarde..."
-                    document.getElementById('loading-ticket').style.display = 'flex';
+            if (!cepField) {
+                alert("Campo CEP não encontrado!");
+                return;
+            }
 
-                    // Fetch para a API do ViaCEP
-                    fetch(`https://viacep.com.br/ws/${cep}/json/`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (!("erro" in data)) {
-                                // Atualiza os campos com os valores retornados pela API
-                                document.getElementById('rua').value = data.logradouro || '';
-                                document.getElementById('bairro').value = data.bairro || '';
-                                document.getElementById('cidade').value = data.localidade || '';
-                            } else {
-                                alert("CEP não encontrado.");
-                            }
-                            // Esconde a mensagem de "Aguarde..."
-                            document.getElementById('loading-ticket').style.display = 'none';
-                        })
-                        .catch(error => {
-                            console.error("Erro ao buscar o endereço:", error);
-                            alert("Erro ao buscar o endereço.");
-                            // Esconde a mensagem de "Aguarde..."
-                            document.getElementById('loading-ticket').style.display = 'none';
-                        });
-                } else {
-                    alert("Formato de CEP inválido.");
+            var cep = cepField.value.replace(/\D/g, '');
+
+            if (cep === "") {
+                alert("Por favor, preencha o campo CEP.");
+                return;
+            }
+
+            // Expressão regular para validar o CEP
+            var validacep = /^[0-9]{8}$/;
+
+            if (!validacep.test(cep)) {
+                alert("Formato de CEP inválido.");
+                return;
+            }
+
+            // Mostrar a mensagem de "Aguarde..."
+            var loadingElement = document.getElementById('loading-ticket');
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+            }
+
+            // Usar a função de fallback melhorada se disponível
+            if (window.buscarCEPComFallback) {
+                try {
+                    const dados = await window.buscarCEPComFallback(cep);
+                    if (dados) {
+                        var ruaField = document.getElementById(prefix + 'rua') || document.getElementById(prefix + 'endereco');
+                        var bairroField = document.getElementById(prefix + 'bairro');
+                        var cidadeField = document.getElementById(prefix + 'cidade');
+
+                        if (ruaField) ruaField.value = dados.logradouro || '';
+                        if (bairroField) bairroField.value = dados.bairro || '';
+                        if (cidadeField) cidadeField.value = dados.cidade || '';
+                    } else {
+                        alert("CEP não encontrado. Verifique se o CEP está correto.");
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar o endereço:", error);
+                    alert("Erro ao buscar o endereço. Tente novamente mais tarde.");
+                } finally {
+                    if (loadingElement) {
+                        loadingElement.style.display = 'none';
+                    }
                 }
             } else {
-                alert("Por favor, preencha o campo CEP.");
+                // Fallback: ViaCEP direto (não deveria chegar aqui)
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!("erro" in data)) {
+                            var ruaField = document.getElementById(prefix + 'rua') || document.getElementById(prefix + 'endereco');
+                            var bairroField = document.getElementById(prefix + 'bairro');
+                            var cidadeField = document.getElementById(prefix + 'cidade');
+
+                            if (ruaField) ruaField.value = data.logradouro || '';
+                            if (bairroField) bairroField.value = data.bairro || '';
+                            if (cidadeField) cidadeField.value = data.localidade || '';
+                        } else {
+                            alert("CEP não encontrado.");
+                        }
+                        if (loadingElement) {
+                            loadingElement.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro ao buscar o endereço:", error);
+                        alert("Erro ao buscar o endereço.");
+                        if (loadingElement) {
+                            loadingElement.style.display = 'none';
+                        }
+                    });
             }
         }
 

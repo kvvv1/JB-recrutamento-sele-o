@@ -14527,4 +14527,4 @@ def api_tickets_dp():
 
 if __name__ == "__main__":
 
-    socketio.run(app, host='192.168.0.79', port=5051, debug=True)
+    socketio.run(app, host='192.168.0.79', port=5050, debug=True)

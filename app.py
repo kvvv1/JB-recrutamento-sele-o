@@ -6579,7 +6579,8 @@ def create_ticket():
                 'bairro': bairro,
                 'cidade': cidade,
                 'telefones': telefones,
-                'recruiter': recruiter
+                'recruiter': recruiter,
+                'data_nasc': data_nasc
             })
         except Exception as ficha_err:
             # Não interrompe o fluxo do ticket se a ficha falhar
@@ -9932,14 +9933,15 @@ def ensure_registration_form_for_ticket(ticket_info: dict):
 		cidade = (ticket_info.get('cidade') or '').upper().strip()
 		telefone = ticket_info.get('telefones') or ''
 		recrutador = ticket_info.get('recruiter') or None
+		data_nasc = ticket_info.get('data_nasc') or None
 
 		if not row:
 			# Inserir ficha mínima
 			cursor.execute('''
 				INSERT INTO registration_form (
-					cpf, nome_completo, cep, endereco, numero, complemento, bairro, cidade, telefone, recrutador, situacao, created_at, last_updated
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())
-			''', (cpf, name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, 'Não Avaliado'))
+					cpf, nome_completo, cep, endereco, numero, complemento, bairro, cidade, telefone, recrutador, situacao, data_nasc, created_at, last_updated
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())
+			''', (cpf, name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, 'Não Avaliado', data_nasc))
 			db.commit()
 			return
 
@@ -9983,9 +9985,10 @@ def ensure_registration_form_for_ticket(ticket_info: dict):
 				    telefone = ?, recrutador = ?, situacao = 'Não Avaliado',
 				    avaliacao_rh = NULL, avaliacao_gerencia = NULL, sindicancia = NULL,
 				    admitido = NULL, motivo_reprovacao_rh = NULL,
+				    data_nasc = ?,
 				    created_at = GETDATE(), last_updated = GETDATE()
 				WHERE id = ?
-			''', (name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, id_existente))
+			''', (name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, data_nasc, id_existente))
 
 			db.commit()
 		else:
@@ -10001,9 +10004,10 @@ def ensure_registration_form_for_ticket(ticket_info: dict):
 				    cidade = CASE WHEN (cidade IS NULL OR LTRIM(RTRIM(cidade)) = '') THEN ? ELSE cidade END,
 				    telefone = CASE WHEN (telefone IS NULL OR LTRIM(RTRIM(telefone)) = '') THEN ? ELSE telefone END,
 				    recrutador = COALESCE(recrutador, ?),
+				    data_nasc = CASE WHEN (data_nasc IS NULL) THEN ? ELSE data_nasc END,
 				    last_updated = GETDATE()
 				WHERE id = ?
-			''', (name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, id_existente))
+			''', (name, cep, rua, numero, complemento, bairro, cidade, telefone, recrutador, data_nasc, id_existente))
 			db.commit()
 	finally:
 		try:
@@ -10446,6 +10450,8 @@ def view_registration(cpf):
                 'cidade': ticket[18],
 
                 'telefone': ticket[19],
+
+                'data_nasc': ticket[23] if len(ticket) > 23 else None,  # Data de nascimento do ticket
 
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 

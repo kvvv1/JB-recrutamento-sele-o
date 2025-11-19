@@ -506,7 +506,8 @@
             </div>
             <div class="form-group">
                 <label for="data_nasc">Data de Nascimento:</label>
-                <input type="date" name="data_nasc" id="data_nasc" class="form-control" required>
+                <input type="text" name="data_nasc" id="data_nasc" class="form-control" required
+                    placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" autocomplete="off">
             </div>
             <div class="form-group">
                 <label for="cep">CEP:</label>
@@ -1799,6 +1800,54 @@
         // Adiciona o evento de mudança na categoria
         document.getElementById('category').addEventListener('change', toggleFields);
 
+        const dataNascInput = document.getElementById('data_nasc');
+        const BR_DATE_REGEX = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+        function formatBrazilianDate(value) {
+            const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+
+            if (digits.length <= 2) {
+                return digits;
+            }
+
+            if (digits.length <= 4) {
+                return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+            }
+
+            return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+        }
+
+        function convertBrazilianToISO(value) {
+            if (!value) {
+                return '';
+            }
+
+            const match = value.match(BR_DATE_REGEX);
+
+            if (!match) {
+                return '';
+            }
+
+            const [, day, month, year] = match;
+            return `${year}-${month}-${day}`;
+        }
+
+        if (dataNascInput) {
+            dataNascInput.addEventListener('input', function () {
+                const formatted = formatBrazilianDate(this.value);
+                this.value = formatted;
+                this.classList.remove('is-invalid');
+            });
+
+            dataNascInput.addEventListener('blur', function () {
+                if (this.value && !BR_DATE_REGEX.test(this.value)) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        }
+
         // Preenchendo os campos ocultos no submit do formulário
         document.getElementById('ticket-form').addEventListener('submit', function (event) {
             var recruiterElement = document.getElementById('recruiter');
@@ -2192,7 +2241,24 @@
         document.getElementById('ticket-form').addEventListener('submit', function (event) {
             event.preventDefault(); // 🚀 Evita o recarregamento da página
 
+            const dataNascField = document.getElementById('data_nasc');
+            const dataNascISO = dataNascField ? convertBrazilianToISO(dataNascField.value.trim()) : '';
+
+            if (dataNascField) {
+                if (!dataNascISO) {
+                    alert('Informe a data de nascimento no formato DD/MM/AAAA.');
+                    dataNascField.classList.add('is-invalid');
+                    dataNascField.focus();
+                    return;
+                }
+
+                dataNascField.classList.remove('is-invalid');
+            }
+
             let formData = new FormData(this); // Captura os dados do formulário
+            if (dataNascISO) {
+                formData.set('data_nasc', dataNascISO);
+            }
 
             document.getElementById('loading-ticket').style.display = 'flex'; // Exibe "Aguarde..."
 

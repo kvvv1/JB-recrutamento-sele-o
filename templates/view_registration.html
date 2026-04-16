@@ -626,8 +626,7 @@ Sistema RS - Atualizar Ficha
                     Rodrigues</option>
                 <option value="Wilson Monteiro" {% if form_data.recrutador=='Wilson Monteiro' %}selected{% endif %}>
                     Wilson Monteiro</option>
-                <option value="Rafaella Capanema" {% if form_data.recrutador=='Rafaella Capanema' %}selected{% endif %}>
-                    Rafaella Capanema</option>
+                <option value="Ana Lourenço" {% if form_data.recrutador=='Ana Lourenço' %}selected{% endif %}>Ana Lourenço</option>
                 <option value="Grasielle Mapa" {% if form_data.recrutador=='Grasielle Mapa' %}selected{% endif %}>
                     Grasielle Mapa</option>
                 <option value="Guilherme Vieira" {% if form_data.recrutador=='Guilherme Vieira' %}selected{% endif %}>
@@ -1033,7 +1032,7 @@ Sistema RS - Atualizar Ficha
                     <label for="cep">CEP:</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="cep" name="cep" value="{{ form_data.cep }}">
-                        <button class="btn btn-outline-secondary" type="button" id="buscarCep">
+                        <button class="btn btn-outline-secondary" type="button" id="buscarCep" onclick="buscarEndereco('cep')">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>

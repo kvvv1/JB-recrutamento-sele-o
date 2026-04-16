@@ -475,7 +475,7 @@
                     <option value="wilson.monteiro">Wilson</option>
                     <option value="vivian.wanderley">Vivian</option>
                     <option value="grasielle.mapa">Grasielle</option>
-                    <option value="rafaella.capanema">Rafaella</option>
+                    <option value="ana.lourenco">Ana Lourenço</option>
                 </select>
             </div>
             <br>
@@ -514,7 +514,7 @@
                 <div class="input-group">
                     <input type="text" name="cep" id="cep" class="form-control" required
                         style="text-transform: uppercase;" value="{{ form_data['cep'] }}">
-                    <span class="input-group-text" onclick="buscarEndereco()">
+                    <span class="input-group-text" onclick="buscarEndereco('cep')">
                         <i class="fas fa-search"></i>
                     </span>
                 </div>
@@ -765,7 +765,7 @@
                                             <option value="" disabled selected>Guichê</option>
                                             <option value="1" {% if ticket.guiche=='1' %}selected{% endif %}>1</option>
                                             <option value="2" {% if ticket.guiche=='2' %}selected{% endif %}>2</option>
-                                            <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3</option>
+                                            <option value="3" {% if ticket.guiche=='3' %}selected{% endif %}>3 - Ana Lourenço</option>
                                             <option value="4" {% if ticket.guiche=='4' %}selected{% endif %}>4</option>
                                             <option value="5" {% if ticket.guiche=='5' %}selected{% endif %}>5</option>
                                             <option value="6" {% if ticket.guiche=='6' %}selected{% endif %}>6</option>
@@ -950,7 +950,7 @@
                                 <option value="wilson.monteiro">Wilson</option>
                                 <option value="vivian.wanderley">Vivian</option>
                                 <option value="grasielle.mapa">Grasielle</option>
-                                <option value="rafaella.capanema">Rafaella</option>
+                                <option value="ana.lourenco">Ana Lourenço</option>
                             </select>
                         </div>
 
@@ -965,7 +965,7 @@
                             <label for="edit-cep">CEP:</label>
                             <div class="input-group">
                                 <input type="text" name="cep" id="edit-cep" class="form-control" required>
-                                <span class="input-group-text" onclick="buscarEndereco()">
+                                <span class="input-group-text" onclick="buscarEndereco('edit-cep')">
                                     <i class="fas fa-search"></i>
                                 </span>
                             </div>
@@ -1184,50 +1184,71 @@
                     document.getElementById('edit-telefones').value = data.telefones;
                     document.getElementById('edit-priority').value = data.priority;
 
-                    // Tratamento especial para a data de nascimento
-                    if (data.data_nasc) {
-                        // Converte a data para o formato YYYY-MM-DD esperado pelo input type="date"
-                        let y, m, d;
-                        if (/^\d{4}-\d{2}-\d{2}/.test(data.data_nasc)) {
-                            y = data.data_nasc.slice(0, 4);
-                            m = data.data_nasc.slice(5, 7);
-                            d = data.data_nasc.slice(8, 10);
-                        } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(data.data_nasc)) {
-                            d = data.data_nasc.slice(0, 2);
-                            m = data.data_nasc.slice(3, 5);
-                            y = data.data_nasc.slice(6, 10);
-                        } else {
-                            y = data.data_nasc.slice(0, 4);
-                            m = data.data_nasc.slice(5, 7);
-                            d = data.data_nasc.slice(8, 10);
-                        }
-                        const dataFormatada = `${y}-${m}-${d}`;
+                    // Função auxiliar: tenta normalizar várias representações de data para YYYY-MM-DD
+                    function parseDateForInput(raw) {
+                        if (!raw) return '';
+                        raw = raw.toString().trim();
 
-                        console.log("Data formatada para o input:", dataFormatada);
-                        document.getElementById('edit-data_nasc').value = dataFormatada;
-                    } else {
-                        document.getElementById('edit-data_nasc').value = '';
+                        // Já no formato ISO ou com tempo: 2023-12-01 ou 2023-12-01T12:00:00
+                        let m = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
+                        if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+
+                        // Formato DD/MM/YYYY ou DD-MM-YYYY
+                        m = raw.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+                        if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+
+                        // Tentar criar Date e extrair componentes (fallback)
+                        let d = new Date(raw);
+                        if (!isNaN(d.getTime())) {
+                            let y = d.getFullYear();
+                            let mm = String(d.getMonth() + 1).padStart(2, '0');
+                            let dd = String(d.getDate()).padStart(2, '0');
+                            return `${y}-${mm}-${dd}`;
+                        }
+
+                        // Se não conseguir, retornar string vazia para evitar erro no input date
+                        return '';
                     }
+
+                    // Tratamento especial para a data de nascimento: define no formato YYYY-MM-DD para o input date
+                    document.getElementById('edit-data_nasc').value = parseDateForInput(data.data_nasc);
 
                     // Preenche o recrutador e especificação, se necessário
                     const recruiterSelect = document.getElementById('edit-recruiter');
-                    recruiterSelect.value = data.recruiter || '';
+                    // Tenta atribuir pelo value
+                    if (data.recruiter) recruiterSelect.value = data.recruiter;
+
+                    // Se não houve correspondência pelo value, tenta localizar pela label/text (case-insensitive)
+                    if (!recruiterSelect.value || recruiterSelect.value === '') {
+                        const desired = (data.recruiter || '').toLowerCase();
+                        for (let i = 0; i < recruiterSelect.options.length; i++) {
+                            const opt = recruiterSelect.options[i];
+                            if ((opt.text || '').toLowerCase().includes(desired) || (opt.value || '').toLowerCase() === desired) {
+                                recruiterSelect.value = opt.value;
+                                break;
+                            }
+                        }
+                    }
 
                     // Carrega a especificação se a categoria for "Outros"
                     document.getElementById('edit-especificacao').value = data.especificacao || '';
 
-                    // Exibe ou oculta os campos relevantes
-                    toggleFields(); // Verifica se deve mostrar o campo de especificação
-                    toggleRecruiterSelect(); // Verifica se deve mostrar o campo de recrutador
+                    // Exibe ou oculta os campos relevantes no modal
+                    // Chama a função específica do modal para habilitar/desabilitar campos
+                    try {
+                        toggleEditFields(); // garante habilitação correta de 'edit-especificacao'
+                    } catch (e) {
+                        // Se não existir, apenas prosseguir
+                        console.warn('toggleEditFields não encontrada:', e);
+                    }
 
-                    // Se a categoria for "Outros", mostra o campo de especificação
+                    // Exibir os grupos específicos de acordo com a categoria recebida
                     if (data.category === "Outros") {
                         document.getElementById('edit-especifique-group').style.display = "block";
                     } else {
                         document.getElementById('edit-especifique-group').style.display = "none";
                     }
 
-                    // Se a categoria for "Agendado", mostra o campo de recrutador
                     if (data.category === "Agendado") {
                         document.getElementById('edit-recruiter-select').style.display = "block";
                     } else {
@@ -1357,7 +1378,7 @@
                                 <option value="" disabled ${!ticket.guiche ? "selected" : ""}>Guichê</option>
                                 <option value="1" ${ticket.guiche == '1' ? "selected" : ""}>1 - Guilherme</option>
                                 <option value="2" ${ticket.guiche == '2' ? "selected" : ""}>2 - Samira</option>
-                                <option value="3" ${ticket.guiche == '3' ? "selected" : ""}>3 - Rafaella</option>
+                                <option value="3" ${ticket.guiche == '3' ? "selected" : ""}>3 - Ana Lourenço</option>
                                 <option value="4" ${ticket.guiche == '4' ? "selected" : ""}>4 - Wilson</option>
                                 <option value="5" ${ticket.guiche == '5' ? "selected" : ""}>5 - Grasielle</option>
                                 <option value="6" ${ticket.guiche == '6' ? "selected" : ""}>6 - Nara</option>
@@ -1635,7 +1656,6 @@
         <td>${ticket.ticket_number}</td>
         <td>${ticket.name}</td>
         <td>${ticket.category}</td>
-        <td class="status status-chamado">CHAMADO</td>
         <td>${ticket.guiche || 'Nenhum'}</td>
         <td>${ticket.called_at}</td>
         <td>
@@ -1646,26 +1666,26 @@
                         <option value="" disabled selected>Guichê</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
-                        <option value="3">3</option>
+                        <option value="3">3 - Ana Lourenço</option>
                         <option value="4">4</option>
                         <option value="5">5</option>
                         <option value="6">6</option>
                     </select>
                     <button type="submit" class="btn btn-dark btn-sm me-2">TV</button>
-                </form>
+                </div>
+            </form>
 
-                <!-- Botão Chamar -->
-                <form action="/call_with_alert/${ticket.id}" method="POST" class="d-inline" onsubmit="callTicket(event, '${ticket.id}')">
-                    <input type="hidden" name="guiche" id="guiche-input-call-${ticket.id}" value="${ticket.guiche}">
-                    <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
-                </form>
+            <!-- Botão Chamar -->
+            <form action="/call_with_alert/${ticket.id}" method="POST" class="d-inline" onsubmit="callTicket(event, '${ticket.id}')">
+                <input type="hidden" name="guiche" id="guiche-input-call-${ticket.id}" value="${ticket.guiche}">
+                <button type="submit" class="btn btn-primary btn-sm me-2">Chamar</button>
+            </form>
 
-                <!-- Botão Concluir -->
-                <form action="/conclude_ticket/${ticket.id}" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-success btn-sm me-2" onclick="validateAction(event, '${ticket.id}')">Concluir</button>
-                </form>
-            </div>
-        </td>
+            <!-- Botão Concluir -->
+            <form action="/conclude_ticket/${ticket.id}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-success btn-sm me-2" onclick="validateAction(event, '${ticket.id}')">Concluir</button>
+            </form>
+        </div>
         <td>
             <!-- Botão com ícone de seta para expandir/colapsar os detalhes -->
             <button class="btn btn-info btn-sm toggle-details" data-id="${ticket.id}">
@@ -1875,23 +1895,20 @@
         });
 
         // Função melhorada que usa o sistema de fallback com múltiplas APIs
-        async function buscarEndereco() {
-            // Se a função global melhorada estiver disponível, usa ela
-            if (window.buscarEndereco) {
-                await window.buscarEndereco();
-                return;
-            }
+        // Aceita opcionalmente o id do campo de CEP para evitar problemas quando o usuário clica no ícone
+        async function buscarEndereco(cepFieldId = null) {
+            // Observação: não delegamos para window.buscarEndereco aqui para evitar recursão
 
-            // Fallback: implementação básica
-            var cepField = document.getElementById('cep') || document.getElementById('edit-cep');
+            // Determina o campo de CEP a partir do parâmetro ou tenta localizar por padrão
+            var cepField = null;
             var prefix = '';
-            
-            if (document.activeElement && document.activeElement.closest('#edit-ticket-form')) {
-                cepField = document.getElementById('edit-cep');
-                prefix = 'edit-';
+            if (cepFieldId) {
+                cepField = document.getElementById(cepFieldId);
+                prefix = cepFieldId.startsWith('edit-') ? 'edit-' : '';
             } else {
-                cepField = document.getElementById('cep');
-                prefix = '';
+                // fallback automático: prioriza campo visível no formulário de edição, senão o principal
+                cepField = document.getElementById('cep') || document.getElementById('edit-cep');
+                prefix = (cepField && cepField.id && cepField.id.startsWith('edit-')) ? 'edit-' : '';
             }
 
             if (!cepField) {
@@ -2056,7 +2073,7 @@
                         <option value="" disabled></option>
                         <option value="1">1</option>
                         <option value="2">2</option>
-                        <option value="3">3</option>
+                        <option value="3">3 - Ana Lourenço</option>
                         <option value="4">4</option>
                         <option value="5">5</option>
                         <option value="6">6</option>
@@ -2089,7 +2106,6 @@
             var selectElement = document.getElementById(`guiche-select-${ticketId}`);
             var hiddenInput = document.getElementById(`guiche-input-${ticketId}`);
             var hiddenCallInput = document.getElementById(`guiche-input-call-${ticketId}`);
-
             hiddenInput.value = selectElement.value;
             hiddenCallInput.value = selectElement.value;
         }
@@ -2312,7 +2328,7 @@
                             <option value="" disabled ${!ticket.guiche ? "selected" : ""}>Guichê</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
-                            <option value="3">3</option>
+                            <option value="3">3 - Ana Lourenço</option>
                             <option value="4">4</option>
                             <option value="5">5</option>
                             <option value="6">6</option>
@@ -2379,7 +2395,7 @@
                         let waitingRow = document.querySelector(`#ticket-list-waiting tr[data-id="${ticketId}"]`);
                         let detailsRow = document.querySelector(`#details-${ticketId}`);
                         if (waitingRow) waitingRow.remove();
-                        if (detailsRow) detailsRow.remove();
+                        if (detailsRow) waitingRow.remove();
                     } else {
                         alert("Erro ao enviar para o DP: " + (data.message || "Erro desconhecido."));
                     }

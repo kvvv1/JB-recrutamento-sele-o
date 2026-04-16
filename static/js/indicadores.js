@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const guicheParaNomeAtual = {
         "1": "Guilherme",
         "2": "Samira",
-        "3": "Rafaella",
+        "3": "Ana Lourenço",
         "4": "Wilson",
         "5": "Grasielle",
         "6": "Nara"

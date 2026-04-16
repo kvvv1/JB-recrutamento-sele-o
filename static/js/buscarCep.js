@@ -430,119 +430,6 @@ async function buscarEnderecoPorCEP() {
     }
 }
 
-/**
- * Função buscarEndereco para compatibilidade com o painel.html
- */
-async function buscarEndereco() {
-    // Determinar qual campo CEP está sendo usado baseado em qual botão foi clicado
-    var cepField;
-    var prefix = '';
-    
-    // Verificar se o botão clicado está no formulário de edição
-    if (document.activeElement && document.activeElement.closest('#edit-ticket-form')) {
-        cepField = document.getElementById('edit-cep');
-        prefix = 'edit-';
-    } else {
-        // Caso contrário, assumimos que é o formulário principal
-        cepField = document.getElementById('cep');
-        prefix = '';
-    }
-    
-    // Se não encontrarmos o campo, exibimos uma mensagem e saímos da função
-    if (!cepField) {
-        alert("Elemento de CEP não encontrado!");
-        return;
-    }
-    
-    const cep = cepField.value;
-
-    if (!cep || cep.trim() === '') {
-        alert("Por favor, preencha o campo CEP.");
-        return;
-    }
-
-    const cepNormalizado = normalizarCEP(cep);
-
-    if (!validarCEP(cepNormalizado)) {
-        alert("Formato de CEP inválido. Por favor, insira um CEP com 8 dígitos.");
-        return;
-    }
-
-    // Mostrar a mensagem de "Aguarde..."
-    var loadingElement = document.getElementById('loading-ticket');
-    if (loadingElement) {
-        loadingElement.style.display = 'flex';
-    }
-
-    try {
-        const dados = await buscarCEPComFallback(cepNormalizado);
-
-        if (dados) {
-            preencherCamposEndereco(dados, prefix);
-        } else {
-            alert("CEP não encontrado. Verifique se o CEP está correto.");
-        }
-    } catch (error) {
-        console.error("Erro ao buscar o endereço:", error);
-        alert("Erro ao buscar o endereço. Tente novamente mais tarde.");
-    } finally {
-        // Esconde a mensagem de "Aguarde..."
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
-    }
-}
-
-/**
- * Função para buscar o endereço na edição de ticket
- */
-async function buscarEnderecoEdicao() {
-    const cepField = document.getElementById('edit-cep');
-    
-    if (!cepField) {
-        alert("Campo CEP não encontrado.");
-        return;
-    }
-
-    const cep = cepField.value;
-
-    if (!cep || cep.trim() === '') {
-        alert("Por favor, preencha o campo CEP.");
-        return;
-    }
-
-    const cepNormalizado = normalizarCEP(cep);
-
-    if (!validarCEP(cepNormalizado)) {
-        alert("Formato de CEP inválido. Por favor, insira um CEP com 8 dígitos.");
-        return;
-    }
-
-    // Mostrar a mensagem de "Aguarde..."
-    const loadingElement = document.getElementById('loading-ticket');
-    if (loadingElement) {
-        loadingElement.style.display = 'flex';
-    }
-
-    try {
-        const dados = await buscarCEPComFallback(cepNormalizado);
-
-        if (dados) {
-            preencherCamposEndereco(dados, 'edit-');
-        } else {
-            alert("CEP não encontrado. Verifique se o CEP está correto.");
-        }
-    } catch (error) {
-        console.error("Erro ao buscar o endereço:", error);
-        alert("Erro ao buscar o endereço. Tente novamente mais tarde.");
-    } finally {
-        // Esconde a mensagem de "Aguarde..."
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
-    }
-}
-
 // Adicionar event listener para o botão de buscar CEP no view_registration.html
 document.addEventListener('DOMContentLoaded', function() {
     const buscarCepBtn = document.getElementById('buscarCep');
@@ -552,9 +439,61 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Exportar funções para uso global
+// Função pública para buscar endereço a partir de um campo de CEP específico
+async function buscarEndereco(cepFieldId = null) {
+    // Determina campo e prefixo
+    var cepField = null;
+    var prefix = '';
+
+    if (cepFieldId) {
+        cepField = document.getElementById(cepFieldId);
+        prefix = cepFieldId.startsWith('edit-') ? 'edit-' : '';
+    } else {
+        cepField = document.getElementById('cep') || document.getElementById('edit-cep');
+        prefix = (cepField && cepField.id && cepField.id.startsWith('edit-')) ? 'edit-' : '';
+    }
+
+    if (!cepField) {
+        alert('Campo CEP não encontrado!');
+        return;
+    }
+
+    var cep = cepField.value.replace(/\D/g, '');
+
+    if (!cep) {
+        alert('Por favor, preencha o campo CEP.');
+        return;
+    }
+
+    var validacep = /^[0-9]{8}$/;
+    if (!validacep.test(cep)) {
+        alert('Formato de CEP inválido.');
+        return;
+    }
+
+    // Mostrar loading se existir
+    var loadingElement = document.getElementById('loading-cep') || document.getElementById('loading-ticket');
+    if (loadingElement) loadingElement.style.display = 'flex';
+
+    try {
+        const dados = await buscarCEPComFallback(cep);
+        if (dados) {
+            preencherCamposEndereco(dados, prefix);
+        } else {
+            alert('CEP não encontrado. Verifique se o CEP está correto.');
+        }
+    } catch (err) {
+        console.error('[CEP] Erro ao buscar o CEP:', err);
+        alert('Erro ao buscar o CEP. Tente novamente mais tarde.');
+    } finally {
+        if (loadingElement) loadingElement.style.display = 'none';
+    }
+}
+
+// Exporta a função para uso em templates
 window.buscarEndereco = buscarEndereco;
-window.buscarEnderecoEdicao = buscarEnderecoEdicao;
+
+// Exportar apenas os helpers e a função de fallback para evitar sobrescrita global
 window.buscarEnderecoPorCEP = buscarEnderecoPorCEP;
 window.buscarCEPComFallback = buscarCEPComFallback;
 window.normalizarCEP = normalizarCEP;

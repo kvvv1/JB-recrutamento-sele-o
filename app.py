@@ -47,6 +47,17 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 # (libgobject-2.0-0.dll etc.). Preferimos usar pdfkit/wkhtmltopdf no Windows.
 WEASYPRINT_AVAILABLE = False
 WEASYPRINT_IMPORT_ERROR = None
+HTML = None
+# Tentativa segura de importar WeasyPrint (não falhará caso não esteja disponível)
+try:
+    from weasyprint import HTML as WeasyHTML  # type: ignore
+    HTML = WeasyHTML
+    WEASYPRINT_AVAILABLE = True
+    print("WeasyPrint disponível e importado com sucesso.")
+except Exception as exc:  # pragma: no cover
+    WEASYPRINT_AVAILABLE = False
+    WEASYPRINT_IMPORT_ERROR = exc
+    print("WeasyPrint não disponível:", exc)
 # ...rest of the code...
 from flask_login import (
     LoginManager,
@@ -58,7 +69,24 @@ from flask_login import (
 )
 from flask_paginate import Pagination, get_page_parameter
 from flask_socketio import SocketIO
-from gevent import monkey
+# Detecta e configura o backend assíncrono para Flask-SocketIO.
+# Preferimos eventlet quando disponível; caso contrário tentamos gevent.
+# Aplicamos o monkey-patch correspondente para evitar conflitos entre bibliotecas.
+async_mode = None
+try:
+    import eventlet  # type: ignore
+    eventlet.monkey_patch()
+    async_mode = 'eventlet'
+    print("Usando eventlet como async_mode para SocketIO.")
+except Exception:
+    try:
+        from gevent import monkey as gevent_monkey  # type: ignore
+        gevent_monkey.patch_all()
+        async_mode = 'gevent'
+        print("Usando gevent como async_mode para SocketIO.")
+    except Exception:
+        async_mode = None
+        print("Nenhum worker assíncrono detectado; SocketIO definirá async_mode automaticamente.")
 from markupsafe import Markup
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image
@@ -86,8 +114,8 @@ DISABLE_PDFKIT = os.environ.get("DISABLE_PDFKIT", "0").lower() in ("1", "true", 
 # Mapeamento de Guichês
 # ======================
 from datetime import datetime as _dt_guiche
-GUICHE_NAME_MAP = {'1': 'Guilherme', '2': 'Samira', '3': 'Rafaella', '4': 'Wilson', '5': 'Grasielle', '6': 'Nara'}
-GUICHE_MAPPING_EFFECTIVE_DATE = _dt_guiche(2025, 8, 21).date()
+GUICHE_NAME_MAP = {'1': 'Guilherme', '2': 'Samira', '3': 'Ana Lourenço', '4': 'Wilson', '5': 'Grasielle', '6': 'Nara'}
+GUICHE_MAPPING_EFFECTIVE_DATE = _dt_guiche(2025, 12, 22).date()
 def format_guiche_for_display(guiche_value, reference_date=None) -> str:
     if not guiche_value:
         return 'Nenhum'
@@ -466,7 +494,7 @@ def make_session_permanent():
 
 
 
-socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins='*')
 
 DATABASE = 'app.db'
 
@@ -1556,45 +1584,19 @@ def load_user(user_id):
 
 
 class User(UserMixin):
-
     def __init__(self, id, username, name, email, password, is_admin):
-
         self.id = id
-
         self.username = username
-
-        self.name = name  # Aqui é onde o nome é atribuído
-
+        self.name = name
         self.email = email
-
         self.password = password
-
-        self.is_admin = is_admin
-
-
-
-
-
-    def is_active(self):
-
-        return True
-
-
-
-    def is_authenticated(self):
-
-        return True
-
-
-
-    def is_anonymous(self):
-
-        return False
-
-
+        # Garantir booleano
+        try:
+            self.is_admin = bool(int(is_admin)) if isinstance(is_admin, (str, int)) else bool(is_admin)
+        except Exception:
+            self.is_admin = False
 
     def get_id(self):
-
         return str(self.id)
 
 
@@ -1694,27 +1696,23 @@ def login():
                 
 
                 if senha_valida:
-
                     user = User(user_id, db_username, name, email, db_password, is_admin)
-
-                    login_user(user, remember=True)
-
+                    # Previne session fixation e evita usar remember por padrão nesta ramificação antiga
+                    try:
+                        logout_user()
+                    except Exception:
+                        pass
+                    session.clear()
+                    session.modified = True
+                    login_user(user, remember=False)
                     
-
                     # Registrar o login
-
                     log_login(user_id, username)
-
                     
-
                     # Verificar se existem fichas perdidas para recuperação
-
                     check_for_lost_forms(user_id)
-
                     
-
                     # Redirecionar para a página solicitada originalmente ou home
-
                     next_page = request.args.get('next')
 
                     return redirect(next_page or url_for('home'))
@@ -1870,18 +1868,36 @@ def check_for_lost_forms(user_id):
 
 
 @app.route('/logout')
-
 @login_required
-
 def logout():
+    # Tenta efetuar logout via flask-login e garante limpeza de sessão e cookies de "remember"
+    try:
+        logout_user()
+    except Exception as e:
+        app.logger.exception('Erro durante logout: %s', e)
 
-    logout_user()
-
+    # Limpa a sessão do Flask
     session.clear()
 
-    flash('Desconectado com sucesso!', 'success')
+    # Prepara resposta de redirecionamento para a tela de login
+    resp = redirect(url_for('login'))
 
-    return redirect(url_for('login'))
+    # Remove cookie de 'remember' (nome padrão usado pelo Flask-Login)
+    remember_cookie = app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
+    try:
+        resp.delete_cookie(remember_cookie, path='/', domain=None)
+    except Exception:
+        pass
+
+    # Remove cookie de sessão explicitamente
+    session_cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
+    try:
+        resp.delete_cookie(session_cookie_name, path='/', domain=None)
+    except Exception:
+        pass
+
+    flash('Desconectado com sucesso!', 'success')
+    return resp
 
 
 
@@ -8774,6 +8790,227 @@ def get_calendar_events():
 # Rota para os indicadores diários
 @app.route('/api/get-indicators')
 def get_indicators():
+    # Inicializa parâmetros
+    date = request.args.get('date')
+    category_filter = request.args.get('category')
+    period = request.args.get('period')
+
+    db = get_sql_server_connection()
+    cursor = db.cursor()
+
+    categories = ['Admissão', 'Demissão', 'Entrevista', 'Agendado', 'Treinamento', 'Documentação', 'Outros']
+
+    # Determina intervalo de datas
+    if date:
+        start_date, end_date = date, date
+    else:
+        start_date, end_date = get_dates_for_period(period or 'HOJE')
+
+    # 1) Tickets emitidos / concluídos por categoria
+    tickets_issued = []
+    tickets_completed = []
+    for cat in categories:
+        if period:
+            issued = cursor.execute(
+                "SELECT COUNT(*) FROM tickets WHERE category = ? AND CONVERT(DATE, created_at) BETWEEN ? AND ?",
+                (cat, start_date, end_date)
+            ).fetchone()[0]
+            completed = cursor.execute(
+                "SELECT COUNT(*) FROM tickets WHERE category = ? AND CONVERT(DATE, concluded_at) BETWEEN ? AND ?",
+                (cat, start_date, end_date)
+            ).fetchone()[0]
+        else:
+            issued = cursor.execute(
+                "SELECT COUNT(*) FROM tickets WHERE category = ? AND CONVERT(DATE, created_at) = ?",
+                (cat, date)
+            ).fetchone()[0]
+            completed = cursor.execute(
+                "SELECT COUNT(*) FROM tickets WHERE category = ? AND CONVERT(DATE, concluded_at) = ?",
+                (cat, date)
+            ).fetchone()[0]
+        tickets_issued.append(issued)
+        tickets_completed.append(completed)
+
+    # 2) Recrutadores / guichês
+    recruiter_query = "SELECT DISTINCT guiche FROM tickets WHERE guiche IS NOT NULL"
+    if category_filter and category_filter in categories:
+        recruiter_query += " AND category = ?"
+        cursor.execute(recruiter_query, (category_filter,))
+    else:
+        cursor.execute(recruiter_query)
+    recruiters = cursor.fetchall()
+
+    # data de referência para nomes amigáveis
+    try:
+        ref_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except Exception:
+        try:
+            ref_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        except Exception:
+            ref_date = datetime.now().date()
+
+    recruiter_values = [r[0] for r in recruiters]
+    recruiter_labels = [format_guiche_for_display(rv, reference_date=ref_date) if rv else 'Nenhum' for rv in recruiter_values]
+
+    recruiter_performance = []
+    for rv in recruiter_values:
+        if category_filter and category_filter in categories:
+            if period:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND category = ? AND CONVERT(DATE, concluded_at) BETWEEN ? AND ?",
+                    (rv, category_filter, start_date, end_date)
+                ).fetchone()[0]
+            else:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND category = ? AND CONVERT(DATE, concluded_at) = ?",
+                    (rv, category_filter, date)
+                ).fetchone()[0]
+        else:
+            if period:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND CONVERT(DATE, concluded_at) BETWEEN ? AND ?",
+                    (rv, start_date, end_date)
+                ).fetchone()[0]
+            else:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND CONVERT(DATE, concluded_at) = ?",
+                    (rv, date)
+                ).fetchone()[0]
+        recruiter_performance.append(count)
+
+    # 3) Tempo médio de espera e atendimento por categoria
+    average_wait_times = []
+    average_service_times = []
+    for cat in categories:
+        if period:
+            avg_wait = cursor.execute(
+                "SELECT AVG(DATEDIFF(MINUTE, created_at, called_at)) FROM tickets WHERE category = ? AND CONVERT(DATE, created_at) BETWEEN ? AND ? AND called_at IS NOT NULL",
+                (cat, start_date, end_date)
+            ).fetchone()[0] or 0
+            avg_service = cursor.execute(
+                "SELECT AVG(DATEDIFF(MINUTE, called_at, concluded_at)) FROM tickets WHERE category = ? AND CONVERT(DATE, called_at) BETWEEN ? AND ? AND concluded_at IS NOT NULL",
+                (cat, start_date, end_date)
+            ).fetchone()[0] or 0
+        else:
+            avg_wait = cursor.execute(
+                "SELECT AVG(DATEDIFF(MINUTE, created_at, called_at)) FROM tickets WHERE category = ? AND CONVERT(DATE, created_at) = ? AND called_at IS NOT NULL",
+                (cat, date)
+            ).fetchone()[0] or 0
+            avg_service = cursor.execute(
+                "SELECT AVG(DATEDIFF(MINUTE, called_at, concluded_at)) FROM tickets WHERE category = ? AND CONVERT(DATE, called_at) = ? AND concluded_at IS NOT NULL",
+                (cat, date)
+            ).fetchone()[0] or 0
+        average_wait_times.append(avg_wait)
+        average_service_times.append(avg_service)
+
+    wait_times = average_wait_times
+    service_times = average_service_times
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        'categories': categories,
+        'ticketsIssued': tickets_issued,
+        'ticketsCompleted': tickets_completed,
+        'recruiters': recruiter_labels,
+        'recruiterIds': recruiter_values,
+        'recruiterPerformance': recruiter_performance,
+        'averageWaitTimes': average_wait_times,
+        'averageServiceTimes': average_service_times,
+        'waitTimes': wait_times,
+        'serviceTimes': service_times,
+        'period': period,
+        'startDate': start_date,
+        'endDate': end_date
+    })
+    # Inicializa parâmetros e conexão para evitar UnboundLocalError quando a rota é chamada
+    date = request.args.get('date')
+    category_filter = request.args.get('category')
+    period = request.args.get('period')
+
+    db = get_sql_server_connection()
+    cursor = db.cursor()
+
+    # Categorias disponíveis (mesma lista usada em outras funções)
+    categories = ['Admissão', 'Demissão', 'Entrevista', 'Agendado', 'Treinamento', 'Documentação', 'Outros']
+
+    # Determinar intervalo de datas com base no parâmetro recebido
+    if date:
+        start_date, end_date = date, date
+    else:
+        start_date, end_date = get_dates_for_period(period or 'HOJE')
+
+    recruiter_query = "SELECT DISTINCT guiche FROM tickets WHERE guiche IS NOT NULL"
+    if category_filter and category_filter in categories:
+        recruiter_query += " AND category = ?"
+        cursor.execute(recruiter_query, (category_filter,))
+    else:
+        cursor.execute(recruiter_query)
+    
+    recruiters = cursor.fetchall()
+
+    # Determina a data de referência para mapear nomes amigáveis (usa end_date/start_date ou hoje)
+    try:
+        ref_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except Exception:
+        try:
+            ref_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        except Exception:
+            ref_date = datetime.now().date()
+
+    # Constrói lista de rótulos amigáveis para os guichês usando format_guiche_for_display
+    recruiter_values = [r[0] for r in recruiters]
+    recruiter_labels = [format_guiche_for_display(rv, reference_date=ref_date) if rv else 'Nenhum' for rv in recruiter_values]
+
+    recruiter_performance = []
+    for rv in recruiter_values:
+        if category_filter and category_filter in categories:
+            if period:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND category = ? AND CONVERT(DATE, concluded_at) BETWEEN ? AND ?",
+                    (rv, category_filter, start_date, end_date)
+                ).fetchone()[0]
+            else:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND category = ? AND CONVERT(DATE, concluded_at) = ?",
+                    (rv, category_filter, date)
+                ).fetchone()[0]
+        else:
+            if period:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND CONVERT(DATE, concluded_at) BETWEEN ? AND ?",
+                    (rv, start_date, end_date)
+                ).fetchone()[0]
+            else:
+                count = cursor.execute(
+                    "SELECT COUNT(*) FROM tickets WHERE guiche = ? AND CONVERT(DATE, concluded_at) = ?",
+                    (rv, date)
+                ).fetchone()[0]
+        recruiter_performance.append(count)
+
+    # 4. Tempo Médio de Espera por Categoria (já construído acima)
+
+    cursor.close()
+    db.close()
+
+    # Retornar os dados em JSON para os gráficos
+
+    return jsonify({
+        'categories': categories,
+        'ticketsIssued': tickets_issued,
+        'ticketsCompleted': tickets_completed,
+        'recruiters': recruiter_labels,               # Rótulos amigáveis (ex.: 'Guichê 3 - Ana Lourenço')
+        'recruiterIds': recruiter_values,             # Valores brutos dos guichês (para referência)
+        'recruiterPerformance': recruiter_performance,
+        'averageWaitTimes': average_wait_times,
+        'averageServiceTimes': average_service_times,
+        'waitTimes': wait_times,
+        'serviceTimes': service_times,
+        'period': period,
+        'startDate': start_date,
+        'endDate': end_date
+    })
 
     date = request.args.get('date')
 
@@ -14526,5 +14763,12 @@ def api_tickets_dp():
 
 
 if __name__ == "__main__":
+    bind_host = os.environ.get('HOST', '0.0.0.0')
+    access_host = os.environ.get('ACCESS_HOST', '192.168.0.79')
+    port = int(os.environ.get('PORT', '5050'))
+    debug = os.environ.get('FLASK_DEBUG', '1').lower() in ('1', 'true', 'yes')
 
-    socketio.run(app, host='192.168.0.79', port=5050, debug=True)
+    print(f"Servidor escutando em {bind_host}:{port}")
+    print(f"Acesso na rede esperado em http://{access_host}:{port}")
+
+    socketio.run(app, host=bind_host, port=port, debug=debug)
